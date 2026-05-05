@@ -12,7 +12,14 @@
       "typesRoutes": true
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "expo-video",
+          {
+            "supportsBackgroundPlayback": true,
+            "supportsPictureInPicture": true
+          }
+      ]
     ],
     "orientation": "portrait",
     "icon": "./assets/icon.png",
