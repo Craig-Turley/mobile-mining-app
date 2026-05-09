@@ -2,6 +2,7 @@ import { PropsWithChildren } from "react";
 import { View, Text, LayoutChangeEvent } from "react-native";
 import { secondsToTime, SubtitleCue } from "@/utils/subtitles";
 import { cn } from "@/utils/cn";
+import { getTokens } from "@kuzulabz/expo-kagome";
 
 export interface SubtitleProps extends PropsWithChildren {
   cue: SubtitleCue;
@@ -10,6 +11,16 @@ export interface SubtitleProps extends PropsWithChildren {
 }
 
 export default function Subtitle({ cue, active, onLayout }: SubtitleProps) {
+  const tokenize = async () => {
+    const tokens = await getTokens(cue.text);
+    console.log(tokens[0]);
+  };
+
+  if (active) {
+    console.log("getting tokens...");
+    tokenize();
+  }
+
   return (
     <View
       className={cn(
