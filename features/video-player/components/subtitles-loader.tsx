@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, Button } from "react-native";
+import { View, Button } from "react-native";
 import { useVideoPlayerContext } from "../contexts/video-screen-context";
 import * as DocumentPicker from "expo-document-picker";
 

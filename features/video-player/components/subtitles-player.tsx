@@ -58,32 +58,29 @@ export default function SubtitlesPlayer() {
   }
 
   return (
-    <>
-      <Button title="Set to last" onPress={() => setActiveSubtitleIndex(5)} />
-      <View className="flex-1 bg-background p-2">
-        <FlatList
-          ref={subtitleListRef}
-          data={subtitles}
-          keyExtractor={(item) => `${item.id}`}
-          renderItem={({ item }) => (
-            <Subtitle cue={item} />
-          )}
-          onScrollToIndexFailed={(info) => {
-            subtitleListRef.current?.scrollToOffset({
-              offset: info.averageItemLength * info.index,
-              animated: true,
-            });
+    <View className="flex-1 bg-background p-2">
+      <FlatList
+        ref={subtitleListRef}
+        data={subtitles}
+        keyExtractor={(item) => `${item.id}`}
+        renderItem={({ item, index }) => (
+          <Subtitle cue={item} active={activeSubtitleIndex != -1 && activeSubtitleIndex == index} />
+        )}
+        onScrollToIndexFailed={(info) => {
+          subtitleListRef.current?.scrollToOffset({
+            offset: info.averageItemLength * info.index,
+            animated: true,
+          });
 
-            setTimeout(() => {
-              subtitleListRef.current?.scrollToIndex({
-                index: info.index,
-                animated: true,
-                viewPosition: 0,
-              });
-            }, 250);
-          }}
-        />
-      </View>
-    </>
+          setTimeout(() => {
+            subtitleListRef.current?.scrollToIndex({
+              index: info.index,
+              animated: true,
+              viewPosition: 0,
+            });
+          }, 250);
+        }}
+      />
+    </View>
   );
 }

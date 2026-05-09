@@ -19,7 +19,6 @@ export default function VideoPlayer() {
 
   useEventListener(player, "timeUpdate", ({ currentTime }) => {
     setTimeStamp(currentTime);
-    console.log("Hello");
   });
 
   return (
