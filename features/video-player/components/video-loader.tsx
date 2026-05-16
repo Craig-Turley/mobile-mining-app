@@ -3,6 +3,16 @@ import { useVideoPlayerContext } from "../contexts/video-screen-context";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
+import { cssInterop } from "nativewind";
+
+cssInterop(Ionicons, {
+  className: {
+    target: "style",
+    nativeStyleToProp: {
+      color: true,
+    },
+  },
+});
 
 export default function VideoLoader() {
   const { setVideoUri } = useVideoPlayerContext();
@@ -38,7 +48,7 @@ export default function VideoLoader() {
         className="w-full border-y border-border py-3"
       >
         <View className="flex-row items-center gap-2">
-          <Ionicons name="folder-outline" size={28} />
+          <Ionicons className="text-foreground" name="folder-outline" size={28} />
           <Text className="text-foreground">Upload from Files</Text>
         </View>
       </TouchableOpacity>
@@ -48,7 +58,7 @@ export default function VideoLoader() {
         className="w-full border-y border-border py-3"
       >
         <View className="flex-row items-center gap-2">
-          <Ionicons name="images-outline" size={28} />
+          <Ionicons className="text-foreground" name="images-outline" size={28} />
           <Text className="text-foreground">Upload from Photos</Text>
         </View>
       </TouchableOpacity>
