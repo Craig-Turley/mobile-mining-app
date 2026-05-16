@@ -32,6 +32,12 @@ export const lightColors = {
 
   jp: "rgb(19, 22, 29)",
   jpMuted: "rgb(67, 71, 83)",
+
+  posNoun: "rgb(156, 95, 0)",
+  posVerb: "rgb(0, 121, 158)",
+  posAdj: "rgb(0, 124, 70)",
+  posParticle: "rgb(120, 112, 133)",
+  posAdv: "rgb(169, 63, 151)",
 };
 
 export const darkColors = {
@@ -68,6 +74,12 @@ export const darkColors = {
 
   jp: "rgb(251, 248, 241)",
   jpMuted: "rgb(188, 183, 169)",
+
+  posNoun: "rgb(238, 183, 82)",
+  posVerb: "rgb(68, 206, 221)",
+  posAdj: "rgb(83, 210, 136)",
+  posParticle: "rgb(137, 128, 153)",
+  posAdv: "rgb(225, 139, 218)",
 };
 
 export type ColorTokens = typeof lightColors;

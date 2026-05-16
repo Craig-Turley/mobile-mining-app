@@ -11,6 +11,7 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@expo/vector-icons": "^15.0.3",
     "@kuzulabz/expo-kagome": "^0.2.1",
     "clsx": "^2.1.1",
     "expo": "^54.0.0",

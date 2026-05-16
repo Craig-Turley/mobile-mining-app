@@ -46,6 +46,12 @@ module.exports = {
 
         jp: "var(--color-jp)",
         jpMuted: "var(--color-jp-muted)",
+
+        posNoun: "var(--color-pos-noun)",
+        posVerb: "var(--color-pos-verb)",
+        posAdj: "var(--color-pos-adj)",
+        posParticle: "var(--color-pos-particle)",
+        posAdv: "var(--color-pos-adv)",
       },
     },
   },

@@ -36,5 +36,11 @@ export function createThemeVars(colors: ColorTokens) {
 
     "--color-jp": colors.jp,
     "--color-jp-muted": colors.jpMuted,
+
+    "--color-pos-noun": colors.posNoun,
+    "--color-pos-verb": colors.posVerb,
+    "--color-pos-adj": colors.posAdj,
+    "--color-pos-particle": colors.posParticle,
+    "--color-pos-adv": colors.posAdv,
   });
 }
