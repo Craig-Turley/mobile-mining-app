@@ -10,11 +10,11 @@ interface ScreenContentProps extends PropsWithChildren {
 }
 
 export const VideoPlayerScreen: React.FC<ScreenContentProps> = ({ children }) => {
-  const { videoLoaded, subtitlesLoaded } = useVideoPlayerContext();
+  const { playerLoaded, subtitlesLoaded } = useVideoPlayerContext();
 
   return (
     <View className="flex-1 bg-background">
-      {!videoLoaded ? (
+      {!playerLoaded ? (
         <VideoLoader />
       ) : (
         <>
