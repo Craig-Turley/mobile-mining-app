@@ -20,3 +20,9 @@ export const getPosTag = (token: Token): PosTag => {
       return "other";
   }
 };
+
+export function katakanaToHiragana(input: string): string {
+  return input.replace(/[\u30A1-\u30F6]/g, (char) =>
+    String.fromCharCode(char.charCodeAt(0) - 0x60)
+  );
+}

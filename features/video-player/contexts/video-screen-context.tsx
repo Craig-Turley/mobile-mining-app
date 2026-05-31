@@ -1,4 +1,3 @@
-import { useEventListener } from 'expo';
 import { useVideoPlayer, VideoPlayer } from "expo-video";
 import {
   createContext,
@@ -22,7 +21,6 @@ type VideoScreenContextType = {
   clearSubtitles: () => void;
   reset: () => void;
 
-  timeStamp: number;
   setTimeStamp: (t: number) => void;
 };
 
@@ -34,46 +32,42 @@ type VideoScreenProviderProps = {
 
 export function VideoScreenProvider({ children }: VideoScreenProviderProps) {
   const player = useVideoPlayer(null, player => {
-    player.timeUpdateEventInterval = 0.25
+    player.timeUpdateEventInterval = 0.25;
     player.play();
   });
 
   const [videoUri, setVideoUriState] = useState<string | null>(null);
   const [subtitlesUri, setSubtitlesUriState] = useState<string | null>(null);
-  const [timeStamp, setTimeStampState] = useState(0);
+
   const playerLoaded = Boolean(videoUri);
   const subtitlesLoaded = Boolean(subtitlesUri);
 
-  const setVideoUri = (uri: string) => {
+  const setVideoUri = useCallback((uri: string) => {
     setVideoUriState(uri);
     player.replace(uri);
-  };
+  }, [player]);
 
-  const setSubtitlesUri = (uri: string | null) => {
+  const setSubtitlesUri = useCallback((uri: string | null) => {
     setSubtitlesUriState(uri);
-  };
+  }, []);
+
+  const clearVideo = useCallback(() => {
+    player.replace(null);
+    setVideoUriState(null);
+  }, [player]);
+
+  const clearSubtitles = useCallback(() => {
+    setSubtitlesUriState(null);
+  }, []);
+
+  const reset = useCallback(() => {
+    clearVideo();
+    clearSubtitles();
+  }, [clearVideo, clearSubtitles]);
 
   const setTimeStamp = useCallback((seconds: number) => {
     player.currentTime = seconds;
-    setTimeStampState(seconds);
   }, [player]);
-
-  const clearVideo = () => {
-    player.replace(null);
-  }
-
-  const clearSubtitles = () => {
-    setSubtitlesUriState(null);
-  }
-
-  const reset = () => {
-    clearVideo();
-    clearSubtitles();
-  }
-
-  useEventListener(player, 'timeUpdate', event => {
-    setTimeStampState(event.currentTime);
-  });
 
   const value = useMemo(() => ({
     player,
@@ -88,18 +82,29 @@ export function VideoScreenProvider({ children }: VideoScreenProviderProps) {
     clearSubtitles,
     reset,
 
-    timeStamp,
     setTimeStamp,
-  }), [playerLoaded, videoUri, subtitlesLoaded, subtitlesUri, timeStamp],
-  );
+  }), [
+    player,
+    playerLoaded,
+    setVideoUri,
+
+    subtitlesLoaded,
+    subtitlesUri,
+    setSubtitlesUri,
+
+    clearVideo,
+    clearSubtitles,
+    reset,
+
+    setTimeStamp,
+  ]);
 
   return (
     <VideoScreenContext.Provider value={value}>
       {children}
     </VideoScreenContext.Provider>
   );
-
-};
+}
 
 export function useVideoPlayerContext() {
   const context = useContext(VideoScreenContext);

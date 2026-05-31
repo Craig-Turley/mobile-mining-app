@@ -1,12 +1,13 @@
-import { View, Text, FlatList, Button } from "react-native";
+import { View, Text, FlatList } from "react-native";
 import { useVideoPlayerContext } from "../contexts/video-screen-context";
 import { File } from 'expo-file-system';
 import { useEffect, useRef, useState } from "react";
 import { parseSubtitles, SubtitleCue } from "@/utils/subtitles";
 import Subtitle from "./subtitle";
+import { useEventListener } from "expo";
 
 export default function SubtitlesPlayer() {
-  const { subtitlesUri, timeStamp } = useVideoPlayerContext();
+  const { player, subtitlesUri } = useVideoPlayerContext();
 
   const [subtitles, setSubtitles] = useState<SubtitleCue[]>([]);
   const subtitleListRef = useRef<FlatList<SubtitleCue> | null>(null);
@@ -38,15 +39,19 @@ export default function SubtitlesPlayer() {
     });
   }, [activeSubtitleIndex]);
 
-  useEffect(() => {
-    setActiveSubtitleIndex((prev) => {
-      const currentIndex = subtitles.findIndex(
-        (cue) => cue.start <= timeStamp && timeStamp <= cue.end
+  useEventListener(player, 'timeUpdate', event => {
+    const currentTime = event.currentTime;
+
+    setActiveSubtitleIndex(prev => {
+      const next = subtitles.findIndex(
+        cue => cue.start <= currentTime && currentTime <= cue.end
       );
 
-      return currentIndex !== -1 ? currentIndex : prev;
+      if (next === -1 || next === prev) return prev;
+
+      return next;
     });
-  }, [timeStamp, subtitles]);
+  });
 
   // TODO: style this
   if (subtitlesUri == null) {

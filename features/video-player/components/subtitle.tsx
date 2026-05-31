@@ -3,8 +3,9 @@ import { View, Text, LayoutChangeEvent, Pressable } from "react-native";
 import { secondsToTime, SubtitleCue } from "@/utils/subtitles";
 import { cn } from "@/utils/cn";
 import { getTokens, Token } from "@kuzulabz/expo-kagome";
-import { getPosTag } from "@/utils/tokenizer";
+import { getPosTag, katakanaToHiragana } from "@/utils/tokenizer";
 import { useVideoPlayerContext } from "../contexts/video-screen-context";
+import { useEntryModal } from "../contexts/entry-modal-context";
 
 export interface SubtitleProps extends PropsWithChildren {
   cue: SubtitleCue;
@@ -15,9 +16,11 @@ export interface SubtitleProps extends PropsWithChildren {
 export default function Subtitle({ cue, active, onLayout }: SubtitleProps) {
   const { setTimeStamp } = useVideoPlayerContext();
   const [tokens, setTokens] = useState<Token[]>([]);
+  const { setToken } = useEntryModal();
 
   // NOTE: the flatlist that holds these components takes care of the rendering when 
   // it needs to be mounted so we're not hammering the cpu with unnessarcy tokenize calls 
+  // (i think)
   useEffect(() => {
     tokenize();
   }, []);
@@ -30,11 +33,16 @@ export default function Subtitle({ cue, active, onLayout }: SubtitleProps) {
       return;
     }
 
+    tokenList.forEach(t => t.reading = katakanaToHiragana(t.reading));
     setTokens(tokenList);
   };
 
   const renderToken = (token: Token, index: number) => (
-    <Text key={index} className={`${getTokenColor(token)}`} >
+    <Text
+      key={index}
+      className={`${getTokenColor(token)}`}
+      onPress={() => setToken(token)}
+    >
       {token.surface_form}
     </Text >
   );
@@ -61,7 +69,7 @@ export default function Subtitle({ cue, active, onLayout }: SubtitleProps) {
     >
       <View
         className={cn(
-          "bg-surface rounded-lg p-2 py-4 my-3 border-muted border-4 border-solid w-full gap-1",
+          "rounded-lg p-2 py-4 my-3 border-muted border-4 border-solid w-full gap-1",
           active ? "border-primary" : ""
         )
         }

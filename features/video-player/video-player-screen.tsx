@@ -1,5 +1,5 @@
 import React, { PropsWithChildren } from 'react';
-import { View, Text } from 'react-native';
+import { View } from 'react-native';
 import VideoPlayer from './components/video-player';
 import { useVideoPlayerContext } from './contexts/video-screen-context';
 import VideoLoader from './components/video-loader';
@@ -19,7 +19,6 @@ export const VideoPlayerScreen: React.FC<ScreenContentProps> = ({ children }) =>
       ) : (
         <>
           <VideoPlayer />
-
           {subtitlesLoaded ? (
             <SubtitlesPlayer />
           ) : (

@@ -19,7 +19,9 @@
           "supportsBackgroundPlayback": true,
           "supportsPictureInPicture": true
         }
-      ]
+      ],
+      "expo-sqlite",
+      "expo-asset"
     ],
     "orientation": "portrait",
     "icon": "./assets/icon.png",
