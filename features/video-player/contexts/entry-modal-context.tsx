@@ -31,28 +31,16 @@ export function EntryModalProvider({ children }: EntryModalProviderProps) {
   const bottomSheetRef = useRef<BottomSheetModalType>(null);
 
   const [token, setTokenState] = useState<Token | null>(null);
-  const [shouldPresent, setShouldPresent] = useState(false);
-  const [isDismissing, setIsDismissing] = useState(false);
 
   const setToken = useCallback((nextToken: Token) => {
     console.log("set token", nextToken.surface_form);
-
     setTokenState(nextToken);
-    setShouldPresent(true);
   }, []);
 
   useEffect(() => {
     if (!token) return;
-    if (!shouldPresent) return;
-    if (isDismissing) return;
-
-    const frame = requestAnimationFrame(() => {
-      bottomSheetRef.current?.present();
-      setShouldPresent(false);
-    });
-
-    return () => cancelAnimationFrame(frame);
-  }, [token, shouldPresent, isDismissing]);
+    bottomSheetRef.current?.present();
+  }, [token]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -63,14 +51,6 @@ export function EntryModalProvider({ children }: EntryModalProviderProps) {
           <EntryBottomSheetModal
             ref={bottomSheetRef}
             token={token}
-            onDismiss={() => {
-              setIsDismissing(false);
-            }}
-            onAnimate={(fromIndex, toIndex) => {
-              if (toIndex === -1) {
-                setIsDismissing(true);
-              }
-            }}
           >
           </EntryBottomSheetModal>
         </EntryModalContext.Provider>

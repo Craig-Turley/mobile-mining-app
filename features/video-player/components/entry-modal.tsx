@@ -26,7 +26,7 @@ cssInterop(BottomSheetModal, {
 
 export const EntryBottomSheetModal = forwardRef<BottomSheetModalType, Omit<EntryModalProps, "children">>(
   ({ token, ...props }, ref) => {
-    const snapPoints = useMemo(() => ["30%, 75%"], []);
+    const snapPoints = useMemo(() => ["30%", "75%"], []);
 
     const bgColor =
       useAppTheme().theme === "light"
