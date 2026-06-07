@@ -11,7 +11,7 @@ import { ActivityIndicator, Text, View } from "react-native";
 import type { SQLiteDatabase } from "expo-sqlite";
 
 import { ensureLookupDbInstalled, openLookupDb } from "@/lib/sqlite";
-import { Entry, JITENDEX_GET_QUERY } from "@/lib/entry";
+import { DBEntry, Entry, JMDICT_GET_QUERY } from "@/lib/entry";
 import { Token } from "@kuzulabz/expo-kagome";
 
 type LookupDbContextValue = {
@@ -65,11 +65,25 @@ export function DictionaryProvider({ children }: LookupDbProviderProps) {
         throw new Error("Lookup database is not ready");
       }
 
-      return db.getAllAsync<Entry>(
-        JITENDEX_GET_QUERY,
+      const entries = await db.getAllAsync<DBEntry>(
+        JMDICT_GET_QUERY,
+        token.base_form,
+        token.reading,
+        token.base_form,
+        token.reading,
+        token.base_form,
+        token.reading,
         token.base_form,
         token.reading
-      );
+      )
+
+
+      return entries.map((entry) => ({
+        id: entry.id,
+        kanji: JSON.parse(entry.kanji_json),
+        kana: JSON.parse(entry.kana_json),
+        sense: JSON.parse(entry.sense_json),
+      }));
     },
     [db]
   );

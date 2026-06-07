@@ -1,193 +1,272 @@
 package main
 
 import (
-	"archive/zip"
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"io"
-	"os"
-	"strings"
-
 	"log"
-	"regexp"
+	"os"
+	"strconv"
+	"strings"
+	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 )
 
-const DATABASE_NAME = "jitendex.db"
-const TABLE_NAME = "entries"
-
-var COLUMN_NAMES = []string{
-	"expression",
-	"reading",
-	"definition_tags",
-	"rules",
-	"score",
-	"definitions_json",
-	"sequence",
-	"term_tags",
+type JMdict struct {
+	Version       string            `json:"version"`
+	Languages     []string          `json:"languages"`
+	DictDate      string            `json:"dictDate"`
+	DictRevisions []string          `json:"dictRevisions"`
+	CommonOnly    bool              `json:"commonOnly"`
+	Tags          map[string]string `json:"tags"`
+	Words         []Word            `json:"words"`
 }
 
-// ["ヽ", "ヽ", "", "", 0, [{"type": "structured-content", "content": [{"tag": "div", "data": {"content": "sense-group"}, "content": [{"tag": "span", "title": "unclassified", "data": {"class": "tag", "code": "unc", "content": "part-of-speech-info"}, "content": "unclass"}, {"tag": "div", "data": {"content": "sense"}, "content": [{"tag": "ul", "data": {"content": "glossary"}, "content": {"tag": "li", "content": "repetition mark in katakana"}}, {"tag": "div", "data": {"content": "extra-info"}, "content": {"tag": "div", "content": {"tag": "div", "data": {"class": "extra-box", "content": "xref"}, "content": [{"tag": "div", "data": {"content": "xref-content"}, "content": [{"tag": "span", "lang": "en", "data": {"content": "reference-label"}, "content": "See also"}, {"tag": "a", "lang": "ja", "href": "?query=%E4%B8%80%E3%81%AE%E5%AD%97%E7%82%B9&wildcards=off&primary_reading=%E3%81%84%E3%81%A1%E3%81%AE%E3%81%98%E3%81%A6%E3%82%93", "content": [{"tag": "ruby", "content": ["一", {"tag": "rt", "content": "いち"}]}, "の", {"tag": "ruby", "content": ["字", {"tag": "rt", "content": "じ"}]}, {"tag": "ruby", "content": ["点", {"tag": "rt", "content": "てん"}]}]}]}, {"tag": "div", "data": {"content": "xref-glossary"}, "content": "kana iteration mark"}]}}}]}]}, {"tag": "div", "data": {"content": "attribution"}, "content": {"tag": "a", "href": "https://www.edrdg.org/jmwsgi/entr.py?svc=jmdict&q=1000000", "content": "JMdict"}}]}], 1000000, ""]
+type Xref []any
 
-var INSERT_TERM_QUERY = fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)", TABLE_NAME, strings.Join(COLUMN_NAMES, ", "), strings.TrimRight(strings.Repeat("?, ", len(COLUMN_NAMES)), ", "))
-var CREATE_QUERY = fmt.Sprintf(`
+type Word struct {
+	ID    string  `json:"id"`
+	Kanji []Kanji `json:"kanji"`
+	Kana  []Kana  `json:"kana"`
+	Sense []Sense `json:"sense"`
+}
+
+type Kanji struct {
+	Common bool     `json:"common"`
+	Text   string   `json:"text"`
+	Tags   []string `json:"tags"`
+}
+
+type Kana struct {
+	Common         bool     `json:"common"`
+	Text           string   `json:"text"`
+	Tags           []string `json:"tags"`
+	AppliesToKanji []string `json:"appliesToKanji"`
+}
+
+type Sense struct {
+	PartOfSpeech   []string `json:"partOfSpeech"`
+	AppliesToKanji []string `json:"appliesToKanji"`
+	AppliesToKana  []string `json:"appliesToKana"`
+
+	Related []Xref `json:"related"`
+	Antonym []Xref `json:"antonym"`
+
+	Field   []string `json:"field"`
+	Dialect []string `json:"dialect"`
+	Misc    []string `json:"misc"`
+	Info    []string `json:"info"`
+
+	LanguageSource []LanguageSource `json:"languageSource"`
+
+	Gloss    []Gloss   `json:"gloss"`
+	Examples []Example `json:"examples"`
+}
+
+type Gloss struct {
+	Lang   string  `json:"lang"`
+	Gender *string `json:"gender"`
+	Type   *string `json:"type"`
+	Text   string  `json:"text"`
+}
+
+type LanguageSource struct {
+	Lang  string  `json:"lang"`
+	Text  *string `json:"text"`
+	Full  bool    `json:"full"`
+	Wasei bool    `json:"wasei"`
+}
+
+type Example struct {
+	Source    ExampleSource     `json:"source"`
+	Text      string            `json:"text"`
+	Sentences []ExampleSentence `json:"sentences"`
+}
+
+type ExampleSource struct {
+	Type  string `json:"type"`
+	Value string `json:"value"`
+}
+
+type ExampleSentence struct {
+	Lang string `json:"lang"`
+	Text string `json:"text"`
+}
+
+type WordDictionaryEntry struct {
+	Id        int
+	KanjiJSON string
+	KanaJSON  string
+	SenseJSON string
+}
+
+func WordEntryFromWord(word *Word) *WordDictionaryEntry {
+	id, err := strconv.Atoi(word.ID)
+	if err != nil {
+		panic(err)
+	}
+
+	kanjiJSON, err := json.Marshal(word.Kanji)
+	if err != nil {
+		panic(err)
+	}
+
+	kanaJSON, err := json.Marshal(word.Kana)
+	if err != nil {
+		panic(err)
+	}
+
+	senseJSON, err := json.Marshal(word.Sense)
+	if err != nil {
+		panic(err)
+	}
+
+	return &WordDictionaryEntry{
+		Id:        id,
+		KanjiJSON: string(kanjiJSON),
+		KanaJSON:  string(kanaJSON),
+		SenseJSON: string(senseJSON),
+	}
+}
+
+type LookupEntry struct {
+	Entry_id   int // fk entry.id
+	Expression string
+	Reading    string
+}
+
+func appliesToAllKanji(appliesToKanji []string) bool {
+	return len(appliesToKanji) == 1 && appliesToKanji[0] == "*"
+}
+
+type Form struct {
+	Expression string
+	Reading    string
+}
+
+const DATABASE_NAME = "jmdict.db"
+const ENTRIES_TABLE_NAME = "entries"
+const LOOKUP_TABLE_NAME = "lookup"
+
+var DROP_ENTRIES_QUERY = fmt.Sprintf("DROP TABLE IF EXISTS %s;", ENTRIES_TABLE_NAME)
+var DROP_LOOKUP_QUERY = fmt.Sprintf("DROP TABLE IF EXISTS %s;", LOOKUP_TABLE_NAME)
+var CREATE_LOOKUP_QUERY = fmt.Sprintf(`
 CREATE TABLE IF NOT EXISTS %s (
-  id INTEGER PRIMARY KEY,
-  expression TEXT NOT NULL,
-  reading TEXT NOT NULL,
-  definition_tags TEXT,
-  rules TEXT,
-  score REAL,
-	definitions_json TEXT NOT NULL,
-  sequence INTEGER,
-  term_tags TEXT
-);`, TABLE_NAME)
+	entry_id INTEGER NOT NULL,
+	expression TEXT,
+	reading TEXT,
 
-func indexQueryBuilder(idxName, tableName, column string) string {
-	return fmt.Sprintf("CREATE INDEX IF NOT EXISTS %s ON %s(%s);", idxName, tableName, column)
+	FOREIGN KEY (entry_id)
+		REFERENCES %s(id)
+		ON DELETE CASCADE
+);`, LOOKUP_TABLE_NAME, ENTRIES_TABLE_NAME)
+var INSERT_LOOKUP_QUERY = fmt.Sprintf(
+	`INSERT INTO %s (%s) VALUES (?, ?, ?)`,
+	LOOKUP_TABLE_NAME,
+	"entry_id, expression, reading",
+)
+
+var CREATE_TABLE_COMMANDS = []string{
+	DROP_ENTRIES_QUERY,
+	DROP_LOOKUP_QUERY,
+	CREATE_LOOKUP_QUERY,
+	CREATE_ENTRIES_QUERY,
 }
 
-var INDEX_EXPRESSION = indexQueryBuilder("idx_entries_expression", TABLE_NAME, "expression")
-var INDEX_READING = indexQueryBuilder("idx_entries_reading", TABLE_NAME, "reading")
-var INDEX_SEQUENCE = indexQueryBuilder("idx_entries_sequence", TABLE_NAME, "sequence")
+var CREATE_ENTRIES_QUERY = fmt.Sprintf(`
+CREATE TABLE IF NOT EXISTS %s (
+	id INTEGER PRIMARY KEY,
+	kanji_json TEXT NOT NULL,
+	kana_json TEXT NOT NULL,
+	sense_json TEXT NOT NULL
+);`, ENTRIES_TABLE_NAME)
 
-var INDEXES = []string{
-	INDEX_EXPRESSION,
-	INDEX_READING,
-	INDEX_SEQUENCE,
-}
+var INSERT_ENTRY_QUERY = fmt.Sprintf(
+	`INSERT INTO %s (id, kanji_json, kana_json, sense_json) VALUES (?, ?, ?, ?)`,
+	ENTRIES_TABLE_NAME,
+)
 
-type TermEntry struct {
-	Expression      string
-	Reading         string
-	DefinitionTags  string
-	Rules           string
-	Score           float64
-	DefinitionsJSON string
-	Sequence        int64
-	TermTags        string
-}
+func buildLookupForms(word Word) []Form {
+	forms := make([]Form, 0, max(1, len(word.Kanji))*len(word.Kana))
 
-func (e *TermEntry) UnmarshalJSON(data []byte) error {
-	var row []json.RawMessage
+	for _, kana := range word.Kana {
+		switch {
+		case len(word.Kanji) == 0 || len(kana.AppliesToKanji) == 0:
+			forms = append(forms, Form{
+				Expression: "",
+				Reading:    kana.Text,
+			})
 
-	if err := json.Unmarshal(data, &row); err != nil {
-		return err
-	}
+		case appliesToAllKanji(kana.AppliesToKanji):
+			for _, kanji := range word.Kanji {
+				forms = append(forms, Form{
+					Expression: kanji.Text,
+					Reading:    kana.Text,
+				})
+			}
 
-	if len(row) != 8 {
-		return fmt.Errorf("expected 8 fields, got %d", len(row))
-	}
-
-	if err := json.Unmarshal(row[0], &e.Expression); err != nil {
-		return fmt.Errorf("expression: %w", err)
-	}
-
-	if err := json.Unmarshal(row[1], &e.Reading); err != nil {
-		return fmt.Errorf("reading: %w", err)
-	}
-
-	if string(row[2]) != "null" {
-		if err := json.Unmarshal(row[2], &e.DefinitionTags); err != nil {
-			return fmt.Errorf("definitionTags: %w", err)
-		}
-	}
-
-	if string(row[3]) != "null" {
-		if err := json.Unmarshal(row[3], &e.Rules); err != nil {
-			return fmt.Errorf("rules: %w", err)
-		}
-	}
-
-	if err := json.Unmarshal(row[4], &e.Score); err != nil {
-		return fmt.Errorf("score: %w", err)
-	}
-
-	e.DefinitionsJSON = string(row[5])
-
-	if err := json.Unmarshal(row[6], &e.Sequence); err != nil {
-		return fmt.Errorf("sequence: %w", err)
-	}
-
-	if string(row[7]) != "null" {
-		if err := json.Unmarshal(row[7], &e.TermTags); err != nil {
-			return fmt.Errorf("termTags: %w", err)
-		}
-	}
-
-	return nil
-}
-
-func processDictionary(db *sql.DB) error {
-	if len(os.Args) < 4 {
-		return errors.New("missing 4th arguments <dict-zip-path>")
-	}
-
-	zipPath := os.Args[3]
-
-	reader, err := zip.OpenReader(zipPath)
-	if err != nil {
-		return err
-	}
-	defer reader.Close()
-
-	tx, err := db.Begin()
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	if _, err := tx.Exec(CREATE_QUERY); err != nil {
-		return err
-	}
-
-	termBankPattern := regexp.MustCompile(`^term_bank_\d+\.json$`)
-
-	for _, file := range reader.File {
-		if !termBankPattern.MatchString(file.Name) {
-			continue
-		}
-
-		rc, err := file.Open()
-		if err != nil {
-			return err
-		}
-
-		data, err := io.ReadAll(rc)
-		rc.Close()
-
-		if err != nil {
-			return err
-		}
-
-		var entries []TermEntry
-		if err := json.Unmarshal(data, &entries); err != nil {
-			return err
-		}
-
-		for _, e := range entries {
-			if err := insertHelper(tx, e); err != nil {
-				return err
+		default:
+			for _, expression := range kana.AppliesToKanji {
+				forms = append(forms, Form{
+					Expression: expression,
+					Reading:    kana.Text,
+				})
 			}
 		}
 	}
 
-	return tx.Commit()
+	return forms
 }
 
-func createIndexes(db *sql.DB) error {
+func processDictionary(db *sql.DB) error {
+	file, err := os.Open("./dictionaries/jmdict-examples-eng-3.6.2.json")
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	var dict JMdict
+	if err := json.NewDecoder(file).Decode(&dict); err != nil {
+		return err
+	}
+
 	tx, err := db.Begin()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer tx.Rollback()
 
-	for _, q := range INDEXES {
+	for _, q := range CREATE_TABLE_COMMANDS {
 		if _, err := tx.Exec(q); err != nil {
 			return err
+		}
+	}
+
+	for _, word := range dict.Words {
+		entry := WordEntryFromWord(&word)
+
+		if _, err := tx.Exec(
+			INSERT_ENTRY_QUERY,
+			entry.Id,
+			entry.KanjiJSON,
+			entry.KanaJSON,
+			entry.SenseJSON,
+		); err != nil {
+			return err
+		}
+
+		forms := buildLookupForms(word)
+
+		for _, form := range forms {
+			if _, err := tx.Exec(
+				INSERT_LOOKUP_QUERY,
+				entry.Id,
+				form.Expression,
+				form.Reading,
+			); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -213,40 +292,25 @@ func main() {
 	}
 	defer db.Close()
 
+	start := time.Now()
+
 	switch operation {
 	case "process_dict":
 		if err := processDictionary(db); err != nil {
 			log.Fatal(err)
 		}
-	case "create_indexes":
-		if err := createIndexes(db); err != nil {
-			log.Fatal(err)
-		}
+	// case "create_indexes":
+	// 	if err := createIndexes(db); err != nil {
+	// 		log.Fatal(err)
+	// 	}
 	default:
 		log.Fatalf("Operation not supported. Please use one of the following options: %s", strings.Join(SUPPORTED_OPERATIONS, " "))
 	}
 
-	log.Println("Complete")
-}
+	end := time.Now()
+	elapsed := end.Sub(start)
 
-func insertHelper(tx *sql.Tx, t TermEntry) error {
-	stmt, err := tx.Prepare(INSERT_TERM_QUERY)
-	if err != nil {
-		return err
-	}
-
-	if _, err := stmt.Exec(
-		t.Expression,
-		t.Reading,
-		t.DefinitionTags,
-		t.Rules,
-		t.Score,
-		t.DefinitionsJSON,
-		t.Sequence,
-		t.TermTags,
-	); err != nil {
-		return err
-	}
-
-	return nil
+	log.Printf("Started:  %s", start.Format(time.RFC3339))
+	log.Printf("Finished: %s", end.Format(time.RFC3339))
+	log.Printf("Complete. Took: %s", elapsed)
 }

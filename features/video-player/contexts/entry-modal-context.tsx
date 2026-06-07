@@ -33,7 +33,6 @@ export function EntryModalProvider({ children }: EntryModalProviderProps) {
   const [token, setTokenState] = useState<Token | null>(null);
 
   const setToken = useCallback((nextToken: Token) => {
-    console.log("set token", nextToken.surface_form);
     setTokenState(nextToken);
   }, []);
 

@@ -1,11 +1,11 @@
 import * as SQLite from "expo-sqlite";
 import * as FileSystem from "expo-file-system/legacy";
 
-const DB_NAME = "jitendex.db";
+const DB_NAME = "jmdict-v1.db";
 const SQLITE_DIR = `${FileSystem.documentDirectory}SQLite/`;
 const DB_PATH = `${SQLITE_DIR}${DB_NAME}`;
 
-const REMOTE_DB_URL = "http://localhost:8080/dicts/jitendex-v1.db";
+const REMOTE_DB_URL = `http://localhost:8080/dicts/${DB_NAME}`;
 
 export async function ensureLookupDbInstalled(
   onProgress?: (progress: number) => void
