@@ -11,9 +11,7 @@ export default function App() {
       <DictionaryProvider>
         <AppThemeProvider>
           <SafeAreaProvider>
-            <SafeAreaView className="flex-1" edges={["top", "left", "right", "bottom"]}>
-              <AppTabs />
-            </SafeAreaView>
+            <AppTabs />
           </SafeAreaProvider>
         </AppThemeProvider>
       </DictionaryProvider>

@@ -1,12 +1,13 @@
 import React, { createContext, useContext, useMemo, useState } from "react";
 import { View } from "react-native";
-import { darkColors, lightColors, type ThemeName } from "./colors";
+import { ColorTokens, darkColors, lightColors, type ThemeName } from "./colors";
 import { createThemeVars } from "./theme-vars";
 
 type ThemeContextValue = {
   theme: ThemeName;
   setTheme: (theme: ThemeName) => void;
   toggleTheme: () => void;
+  colors: ColorTokens;
 };
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
@@ -25,6 +26,7 @@ export function AppThemeProvider({ children }: { children: React.ReactNode }) {
       toggleTheme: () => {
         setTheme((current) => (current === "dark" ? "light" : "dark"));
       },
+      colors: theme === "dark" ? darkColors : lightColors,
     }),
     [theme]
   );
