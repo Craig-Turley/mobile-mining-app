@@ -1,4 +1,4 @@
-import { useLookupDb } from "@/contexts/sqlite";
+import { useLookupDb } from "@/contexts/dictionary-sqlite";
 import { Entry } from "@/lib/entry";
 import { Token } from "@kuzulabz/expo-kagome";
 import { useEffect, useState } from "react";

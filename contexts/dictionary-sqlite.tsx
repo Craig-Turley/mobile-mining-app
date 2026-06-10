@@ -25,7 +25,7 @@ type LookupDbProviderProps = {
 };
 
 export function DictionaryProvider({ children }: LookupDbProviderProps) {
-  const [db, setDb] = useState<SQLiteDatabase | null>(null);
+  const [jmdictDb, setJmdictDb] = useState<SQLiteDatabase | null>(null);
   const [progress, setProgress] = useState<number | null>(null);
   const [error, setError] = useState<unknown>(null);
 
@@ -43,7 +43,7 @@ export function DictionaryProvider({ children }: LookupDbProviderProps) {
         const lookupDb = await openLookupDb();
 
         if (!cancelled) {
-          setDb(lookupDb);
+          setJmdictDb(lookupDb);
         }
       } catch (err) {
         if (!cancelled) {
@@ -61,11 +61,11 @@ export function DictionaryProvider({ children }: LookupDbProviderProps) {
 
   const lookup = useCallback(
     async (token: Token): Promise<Entry[]> => {
-      if (!db) {
+      if (!jmdictDb) {
         throw new Error("Lookup database is not ready");
       }
 
-      const entries = await db.getAllAsync<DBEntry>(
+      const entries = await jmdictDb.getAllAsync<DBEntry>(
         JMDICT_GET_QUERY,
         token.base_form,
         token.reading,
@@ -77,7 +77,6 @@ export function DictionaryProvider({ children }: LookupDbProviderProps) {
         token.reading
       )
 
-
       return entries.map((entry) => ({
         id: entry.id,
         kanji: JSON.parse(entry.kanji_json),
@@ -85,14 +84,14 @@ export function DictionaryProvider({ children }: LookupDbProviderProps) {
         sense: JSON.parse(entry.sense_json),
       }));
     },
-    [db]
+    [jmdictDb]
   );
 
   const value = useMemo<LookupDbContextValue | null>(() => {
-    if (!db) return null;
+    if (!jmdictDb) return null;
 
     return { lookup };
-  }, [db, lookup]);
+  }, [jmdictDb, lookup]);
 
   if (error) {
     return (

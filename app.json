@@ -9,7 +9,7 @@
     },
     "experiments": {
       "tsconfigPaths": true,
-      "typesRoutes": true
+      "typedRoutes": true
     },
     "plugins": [
       "expo-router",
@@ -21,7 +21,8 @@
         }
       ],
       "expo-sqlite",
-      "expo-asset"
+      "expo-asset",
+      "expo-font"
     ],
     "orientation": "portrait",
     "icon": "./assets/icon.png",

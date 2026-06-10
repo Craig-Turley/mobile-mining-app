@@ -32,8 +32,6 @@ export const EntryBottomSheetModal = forwardRef<BottomSheetModalType, Omit<Entry
     const { entries, isLoading, isError } = useLookup(token!);
     const snapPoints = useMemo(() => ["30%", "75%"], []);
 
-    console.log(entries && entries[0].kanji, isLoading, isError);
-
     const bgColor =
       useAppTheme().theme === "light"
         ? lightColors.surface

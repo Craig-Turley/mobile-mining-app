@@ -1,11 +1,16 @@
 import * as SQLite from "expo-sqlite";
 import * as FileSystem from "expo-file-system/legacy";
 
-const DB_NAME = "jmdict-v1.db";
 const SQLITE_DIR = `${FileSystem.documentDirectory}SQLite/`;
-const DB_PATH = `${SQLITE_DIR}${DB_NAME}`;
 
-const REMOTE_DB_URL = `http://localhost:8080/dicts/${DB_NAME}`;
+const JMDICT_DB_NAME = "jmdict-v1.db";
+const JMDICT_DB_PATH = `${SQLITE_DIR}${JMDICT_DB_NAME}`;
+
+const FILE_DB_NAME = "file-v1.db";
+const FILE_DB_PATH = `${SQLITE_DIR}${FILE_DB_NAME}`;
+
+// TODO: put this in env
+const REMOTE__JMDICT_DB_URL = `http://localhost:8080/dicts/${JMDICT_DB_NAME}`;
 
 export async function ensureLookupDbInstalled(
   onProgress?: (progress: number) => void
@@ -18,13 +23,13 @@ export async function ensureLookupDbInstalled(
     });
   }
 
-  const existingDbInfo = await FileSystem.getInfoAsync(DB_PATH);
+  const existingDbInfo = await FileSystem.getInfoAsync(JMDICT_DB_PATH);
 
   if (existingDbInfo.exists) {
-    return DB_PATH;
+    return JMDICT_DB_PATH;
   }
 
-  const tempPath = `${DB_PATH}.download`;
+  const tempPath = `${JMDICT_DB_PATH}.download`;
 
   const oldTempInfo = await FileSystem.getInfoAsync(tempPath);
   if (oldTempInfo.exists) {
@@ -32,7 +37,7 @@ export async function ensureLookupDbInstalled(
   }
 
   const download = FileSystem.createDownloadResumable(
-    REMOTE_DB_URL,
+    REMOTE__JMDICT_DB_URL,
     tempPath,
     {},
     (downloadProgress) => {
@@ -53,19 +58,28 @@ export async function ensureLookupDbInstalled(
 
   await FileSystem.moveAsync({
     from: tempPath,
-    to: DB_PATH,
+    to: JMDICT_DB_PATH,
   });
 
-  return DB_PATH;
+  return JMDICT_DB_PATH;
 }
 
 export async function openLookupDb() {
-  const db = await SQLite.openDatabaseAsync(DB_NAME);
+  const db = await SQLite.openDatabaseAsync(JMDICT_DB_NAME);
 
   await db.execAsync(`
     PRAGMA query_only = ON;
     PRAGMA temp_store = MEMORY;
   `);
+
+  return db;
+}
+
+export async function openFileDb() {
+  const db = await SQLite.openDatabaseAsync(FILE_DB_NAME);
+
+  // any permissions go here
+  // await db.execAsync(``);
 
   return db;
 }
