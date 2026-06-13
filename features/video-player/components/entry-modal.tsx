@@ -56,6 +56,7 @@ export const EntryBottomSheetModal = forwardRef<BottomSheetModalType, Omit<Entry
               className="w-full"
               render={(e: Entry, i: number) => (
                 <View>
+                  <Text className="text-white">{token.base_form}</Text>
                   <Text className="text-white">{e.id}</Text>
                 </View>
               )}

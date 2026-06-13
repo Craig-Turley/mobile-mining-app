@@ -12,6 +12,8 @@ import type { SQLiteDatabase } from "expo-sqlite";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 import { openFileDb } from "@/lib/sqlite";
+import { createLocalId } from "@/utils/id";
+import { saveFile } from "@/lib/file-system";
 
 type InsertFileEntry =
   | ImagePicker.ImagePickerAsset
@@ -20,7 +22,7 @@ type InsertFileEntry =
 type FileEntry = {
   id: number;
   name: string;
-  uri: string;
+  relative_path: string;
 };
 
 type VideoFileEntry = FileEntry & {
@@ -58,16 +60,16 @@ export function FileProvider({ children }: FileProviderProps) {
           PRAGMA foreign_keys = ON;
 
           CREATE TABLE IF NOT EXISTS subtitles (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id INTEGER PRIMARY KEY,
             name TEXT NOT NULL,
-            uri TEXT NOT NULL,
+            relative_path TEXT NOT NULL,
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
           );
 
           CREATE TABLE IF NOT EXISTS videos (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id INTEGER PRIMARY KEY,
             name TEXT NOT NULL,
-            uri TEXT NOT NULL,
+            relative_path TEXT NOT NULL,
             subtitle_id INTEGER,
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (subtitle_id) REFERENCES subtitles(id)
@@ -95,13 +97,13 @@ export function FileProvider({ children }: FileProviderProps) {
     };
   }, []);
 
-  const getFiles = useCallback(async (): Promise<VideoFileEntry[]> => {
+  const getVideos = useCallback(async (): Promise<VideoFileEntry[]> => {
     if (!fileDb) {
       throw new Error("File database is not ready");
     }
 
     return fileDb.getAllAsync<VideoFileEntry>(
-      "SELECT id, name, uri, subtitle_id FROM videos"
+      "SELECT id, name, relative_path, subtitle_id FROM videos"
     );
   }, [fileDb]);
 
@@ -112,7 +114,7 @@ export function FileProvider({ children }: FileProviderProps) {
       }
 
       return fileDb.getFirstAsync<VideoFileEntry>(
-        "SELECT id, name, uri, subtitle_id FROM videos WHERE id = ?",
+        "SELECT id, name, relative_path, subtitle_id FROM videos WHERE id = ?",
         [id]
       );
     },
@@ -126,7 +128,7 @@ export function FileProvider({ children }: FileProviderProps) {
       }
 
       return fileDb.getFirstAsync<SubtitleFileEntry>(
-        "SELECT id, name, uri FROM subtitles WHERE id = ?",
+        "SELECT id, name, relative_path FROM subtitles WHERE id = ?",
         [id]
       );
     },
@@ -139,18 +141,21 @@ export function FileProvider({ children }: FileProviderProps) {
         throw new Error("File database is not ready");
       }
 
+      const id = createLocalId();
       const name = getFileName(file);
       const subtitleId = null;
 
-      const result = await fileDb.runAsync(
-        "INSERT INTO videos (name, uri, subtitle_id) VALUES (?, ?, ?)",
-        [name, file.uri, subtitleId]
+      const result = saveFile({ id, name, uri: file.uri }, "videos", "mp4");
+
+      await fileDb.runAsync(
+        "INSERT INTO videos (id, name, relative_path, subtitle_id) VALUES (?, ?, ?, ?)",
+        [id, name, result.localPath, subtitleId]
       );
 
       return {
-        id: result.lastInsertRowId,
+        id,
         name,
-        uri: file.uri,
+        relative_path: result.localPath,
         subtitle_id: subtitleId,
       };
     },
@@ -166,18 +171,21 @@ export function FileProvider({ children }: FileProviderProps) {
         throw new Error("File database is not ready");
       }
 
+      const id = createLocalId();
       const name = getFileName(file);
 
       let subtitle: SubtitleFileEntry | null = null;
 
       await fileDb.withTransactionAsync(async () => {
-        const result = await fileDb.runAsync(
-          "INSERT INTO subtitles (name, uri) VALUES (?, ?)",
-          [name, file.uri]
+        const result = saveFile({ id, name, uri: file.uri }, "subtitles", "srt");
+
+        console.log("saved file", result);
+        await fileDb.runAsync(
+          "INSERT INTO subtitles (id, name, relative_path) VALUES (?, ?, ?)",
+          [id, name, result.localPath]
         );
 
-        const subtitleId = result.lastInsertRowId;
-
+        const subtitleId = id;
         const updateResult = await fileDb.runAsync(
           "UPDATE videos SET subtitle_id = ? WHERE id = ?",
           [subtitleId, videoId]
@@ -190,7 +198,7 @@ export function FileProvider({ children }: FileProviderProps) {
         subtitle = {
           id: subtitleId,
           name,
-          uri: file.uri,
+          relative_path: result.localPath,
         };
       });
 
@@ -207,7 +215,7 @@ export function FileProvider({ children }: FileProviderProps) {
     if (!fileDb) return null;
 
     return {
-      getVideos: getFiles,
+      getVideos,
       getVideoData,
       getSubtitleData,
       insertVideo,
@@ -215,7 +223,7 @@ export function FileProvider({ children }: FileProviderProps) {
     };
   }, [
     fileDb,
-    getFiles,
+    getVideos,
     getVideoData,
     getSubtitleData,
     insertVideo,
@@ -227,6 +235,14 @@ export function FileProvider({ children }: FileProviderProps) {
       <View style={{ padding: 16 }}>
         <Text>Failed to load file database.</Text>
         <Text>{String(error)}</Text>
+      </View>
+    );
+  }
+
+  if (!fileDb || !value) {
+    return (
+      <View style={{ padding: 16 }}>
+        <Text>Loading file database...</Text>
       </View>
     );
   }

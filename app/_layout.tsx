@@ -9,15 +9,15 @@ import { FileProvider } from '@/contexts/file-sqlite';
 export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <FileProvider>
-        <DictionaryProvider>
+      <DictionaryProvider>
+        <FileProvider>
           <AppThemeProvider>
             <SafeAreaProvider>
               <AppTabs />
             </SafeAreaProvider>
           </AppThemeProvider>
-        </DictionaryProvider>
-      </FileProvider>
-    </GestureHandlerRootView>
+        </FileProvider>
+      </DictionaryProvider>
+    </GestureHandlerRootView >
   );
 }

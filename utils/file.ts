@@ -6,7 +6,6 @@ export default async function getFile({ src }: { src: "file" | "photos" }) {
 
   if (src === "file") {
     result = await DocumentPicker.getDocumentAsync({
-      type: "video/*",
       copyToCacheDirectory: true,
       multiple: false,
     });

@@ -1,14 +1,10 @@
 import { useAppTheme } from "@/theme/theme-provider";
 import { Stack } from "expo-router";
-import * as DocumentPicker from "expo-document-picker";
-import * as ImagePicker from "expo-image-picker";
-import { useVideoPlayerContext } from "../contexts/video-screen-context";
 import getFile from "@/utils/file";
 import { useFileDb } from "@/contexts/file-sqlite";
 
 export function VideoLoaderToolbar() {
   const { colors } = useAppTheme();
-  const { setVideoUri } = useVideoPlayerContext();
   const { insertVideo } = useFileDb();
 
   const uploadHelper = async (src: "file" | "photos") => {
@@ -23,6 +19,7 @@ export function VideoLoaderToolbar() {
       console.log(result);
     } catch (e) {
       console.log("errored on insertion of file", e);
+      alert("There was an error saving your video. Please check permissions and try again");
     }
   };
 

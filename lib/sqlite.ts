@@ -1,13 +1,13 @@
 import * as SQLite from "expo-sqlite";
-import * as FileSystem from "expo-file-system/legacy";
+import { Directory, File, Paths } from "expo-file-system";
 
-const SQLITE_DIR = `${FileSystem.documentDirectory}SQLite/`;
+const SQLITE_DIR = new Directory(Paths.document, "SQLite");
 
 const JMDICT_DB_NAME = "jmdict-v1.db";
-const JMDICT_DB_PATH = `${SQLITE_DIR}${JMDICT_DB_NAME}`;
+const JMDICT_DB_FILE = new File(SQLITE_DIR, JMDICT_DB_NAME);
 
 const FILE_DB_NAME = "file-v1.db";
-const FILE_DB_PATH = `${SQLITE_DIR}${FILE_DB_NAME}`;
+const FILE_DB_FILE = new File(SQLITE_DIR, FILE_DB_NAME);
 
 // TODO: put this in env
 const REMOTE__JMDICT_DB_URL = `http://localhost:8080/dicts/${JMDICT_DB_NAME}`;
@@ -15,53 +15,39 @@ const REMOTE__JMDICT_DB_URL = `http://localhost:8080/dicts/${JMDICT_DB_NAME}`;
 export async function ensureLookupDbInstalled(
   onProgress?: (progress: number) => void
 ) {
-  const sqliteDirInfo = await FileSystem.getInfoAsync(SQLITE_DIR);
-
-  if (!sqliteDirInfo.exists) {
-    await FileSystem.makeDirectoryAsync(SQLITE_DIR, {
+  if (!SQLITE_DIR.exists) {
+    SQLITE_DIR.create({
       intermediates: true,
+      idempotent: true,
     });
   }
 
-  const existingDbInfo = await FileSystem.getInfoAsync(JMDICT_DB_PATH);
-
-  if (existingDbInfo.exists) {
-    return JMDICT_DB_PATH;
+  if (JMDICT_DB_FILE.exists) {
+    return JMDICT_DB_FILE.uri;
   }
 
-  const tempPath = `${JMDICT_DB_PATH}.download`;
+  const tempFile = new File(SQLITE_DIR, `${JMDICT_DB_NAME}.download`);
 
-  const oldTempInfo = await FileSystem.getInfoAsync(tempPath);
-  if (oldTempInfo.exists) {
-    await FileSystem.deleteAsync(tempPath, { idempotent: true });
+  if (tempFile.exists) {
+    tempFile.delete();
   }
 
-  const download = FileSystem.createDownloadResumable(
+  onProgress?.(0);
+
+  const result = await File.downloadFileAsync(
     REMOTE__JMDICT_DB_URL,
-    tempPath,
-    {},
-    (downloadProgress) => {
-      const total = downloadProgress.totalBytesExpectedToWrite;
-      const written = downloadProgress.totalBytesWritten;
-
-      if (total > 0) {
-        onProgress?.(written / total);
-      }
-    }
+    tempFile
   );
 
-  const result = await download.downloadAsync();
-
-  if (!result?.uri) {
+  if (!result.exists) {
     throw new Error("Database download failed.");
   }
 
-  await FileSystem.moveAsync({
-    from: tempPath,
-    to: JMDICT_DB_PATH,
-  });
+  tempFile.move(JMDICT_DB_FILE);
 
-  return JMDICT_DB_PATH;
+  onProgress?.(1);
+
+  return JMDICT_DB_FILE.uri;
 }
 
 export async function openLookupDb() {
