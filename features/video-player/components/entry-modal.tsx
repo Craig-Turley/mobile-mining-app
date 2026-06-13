@@ -37,6 +37,9 @@ export const EntryBottomSheetModal = forwardRef<BottomSheetModalType, Omit<Entry
         ? lightColors.surface
         : darkColors.surface;
 
+    const e = entries != null && entries?.length > 0 ? entries[0] : null;
+    console.log(e?.sense[0]);
+
     return (
       <BottomSheetModal
         ref={ref}
@@ -50,28 +53,30 @@ export const EntryBottomSheetModal = forwardRef<BottomSheetModalType, Omit<Entry
         {...props}
       >
         <BottomSheetView className="p-4">
-          {token && !isLoading && entries != null ? (
-            <CarouselContainer
-              data={entries}
-              className="w-full"
-              render={(e: Entry, i: number) => (
-                <View>
-                  <Text className="text-white">{token.base_form}</Text>
-                  <Text className="text-white">{e.id}</Text>
-                </View>
-              )}
-            >
-              {entries.length > 1 &&
-                <View className="w-full justify-between align-center flex-row">
-                  <CarouselPrevious />
-                  <CarouselHeader />
-                  <CarouselNext />
-                </View>
-              }
-              <CarouselContent />
-            </CarouselContainer>
+          {isLoading ? (
+            <Text className="text-foreground">Loading...</Text>
+          ) : token && entries != null && e != null ? (
+            <View className="flex-1 gap-2">
+              <View className="w-full flex-1 flex-row gap-2 items-end">
+                <Text className="text-4xl text-foreground">
+                  {token.base_form}
+                </Text>
+
+                <Text className="text-2xl text-mutedForeground">
+                  {e.kana[0].text}
+                </Text>
+              </View>
+
+              <View className="flex-row gap-2 items-start">
+                <Text className="text-foreground font-semibold">•</Text>
+
+                <Text className="text-foreground font-semibold flex-1">
+                  {e.sense[0].gloss.flatMap(s => s.text).join(", ")}
+                </Text>
+              </View>
+            </View>
           ) : (
-            <Text>No token selected.</Text>
+            <Text className="text-foreground">No token selected.</Text>
           )}
         </BottomSheetView>
       </BottomSheetModal >

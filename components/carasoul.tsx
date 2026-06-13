@@ -167,7 +167,11 @@ export function CarouselContent({
 
   return (
     <View className={cn('w-full', className)} {...rest}>
-      {currentItem !== undefined ? render(currentItem, currentPage) : null}
+      {currentItem !== undefined ? render(currentItem, currentPage) :
+        <View>
+          <Text className="text-foreground">Null on carasoul</Text>
+        </View>
+      }
     </View>
   );
 }

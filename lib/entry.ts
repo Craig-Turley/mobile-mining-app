@@ -13,9 +13,9 @@
 
 export type Entry = {
   id: number
-  kanji: JMdictKanji
-  kana: JMdictKana
-  sense: JMdictSense
+  kanji: JMdictKanji[]
+  kana: JMdictKana[]
+  sense: JMdictSense[]
 }
 
 export type DBEntry = {
