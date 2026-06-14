@@ -51,7 +51,9 @@ export async function ensureLookupDbInstalled(
 }
 
 export async function openLookupDb() {
-  const db = await SQLite.openDatabaseAsync(JMDICT_DB_NAME);
+  const db = await SQLite.openDatabaseAsync(JMDICT_DB_NAME, {
+    enableChangeListener: true,
+  });
 
   await db.execAsync(`
     PRAGMA query_only = ON;
@@ -62,7 +64,9 @@ export async function openLookupDb() {
 }
 
 export async function openFileDb() {
-  const db = await SQLite.openDatabaseAsync(FILE_DB_NAME);
+  const db = await SQLite.openDatabaseAsync(FILE_DB_NAME, {
+    enableChangeListener: true,
+  });
 
   // any permissions go here
   // await db.execAsync(``);

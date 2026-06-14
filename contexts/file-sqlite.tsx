@@ -25,11 +25,11 @@ type FileEntry = {
   relative_path: string;
 };
 
-type VideoFileEntry = FileEntry & {
+export type VideoFileEntry = FileEntry & {
   subtitle_id: number | null;
 };
 
-type SubtitleFileEntry = FileEntry;
+export type SubtitleFileEntry = FileEntry;
 
 type FileDbContextValue = {
   getVideos: () => Promise<VideoFileEntry[]>;

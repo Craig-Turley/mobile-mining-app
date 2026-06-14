@@ -12,6 +12,7 @@ type UseDbFuncOptions = {
 };
 
 export function useDbFunc<TData>(
+  tables: string[],
   fn: () => Promise<TData>,
   deps: React.DependencyList,
   options: UseDbFuncOptions = {}

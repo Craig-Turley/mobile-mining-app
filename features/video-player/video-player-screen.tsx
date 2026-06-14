@@ -5,7 +5,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import SubtitlesPlayer from './components/subtitles-player';
 import { useVideoPlayer } from 'expo-video';
 import { EntryModalProvider } from './contexts/entry-modal-context';
-import { useTabBar } from '@/contexts/tab-bar-context';
 
 interface ScreenContentProps extends PropsWithChildren {
 }

@@ -38,7 +38,6 @@ export const EntryBottomSheetModal = forwardRef<BottomSheetModalType, Omit<Entry
         : darkColors.surface;
 
     const e = entries != null && entries?.length > 0 ? entries[0] : null;
-    console.log(e?.sense[0]);
 
     return (
       <BottomSheetModal
