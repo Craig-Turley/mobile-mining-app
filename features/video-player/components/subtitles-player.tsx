@@ -30,6 +30,7 @@ export default function SubtitlesPlayer({ videoId, subtitlesId, player }: Subtit
     const file = await getFile({ src: "file" });
     if (file == undefined) return;
     try {
+      console.log("inserting file", videoId, file.uri);
       insertSubtitle(videoId, file);
       return;
     } catch (e) {
@@ -39,8 +40,19 @@ export default function SubtitlesPlayer({ videoId, subtitlesId, player }: Subtit
   };
 
   useEffect(() => {
+    let cancelled = false;
+
     const loadSubtitles = async () => {
+      console.log("getting for", subtitlesId);
+
+      setError(null);
+      setSubtitles([]);
+      setActiveSubtitleIndex(-1);
+
       const fileInformation = await getSubtitleData(subtitlesId);
+
+      if (cancelled) return;
+
       if (fileInformation == null) {
         setError("unassociated_file");
         return;
@@ -49,7 +61,7 @@ export default function SubtitlesPlayer({ videoId, subtitlesId, player }: Subtit
       const dir = new Directory(Paths.document);
 
       if (!dir.exists) {
-        console.log("Documents directory does not exist");
+        setError("missing_file");
         return;
       }
 
@@ -57,11 +69,19 @@ export default function SubtitlesPlayer({ videoId, subtitlesId, player }: Subtit
       const text = await file.text();
       const parsed = parseSubtitles(text);
 
+      if (cancelled) return;
+
+      setError(null);
       setSubtitles(parsed);
+      setActiveSubtitleIndex(-1);
     };
 
     loadSubtitles();
-  }, []);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [subtitlesId]);
 
   useEffect(() => {
     if (activeSubtitleIndex < 0) return;

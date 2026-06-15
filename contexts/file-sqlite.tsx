@@ -2,18 +2,19 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
-  useState,
   type ReactNode,
 } from "react";
-import { Text, View } from "react-native";
-import type { SQLiteDatabase } from "expo-sqlite";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
-import { openFileDb } from "@/lib/sqlite";
+import { eq } from "drizzle-orm";
+import { useMigrations } from "drizzle-orm/expo-sqlite/migrator";
+
 import { createLocalId } from "@/utils/id";
 import { saveFile } from "@/lib/file-system";
+import { filesDb } from "@/db/files/client";
+import { subtitles, videos } from "@/db/files/schema";
+import filesMigrations from "../drizzle/files/migrations";
 
 type InsertFileEntry =
   | ImagePicker.ImagePickerAsset
@@ -46,111 +47,72 @@ type FileProviderProps = {
 };
 
 export function FileProvider({ children }: FileProviderProps) {
-  const [fileDb, setFileDb] = useState<SQLiteDatabase | null>(null);
-  const [error, setError] = useState<unknown>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function setup() {
-      try {
-        const db = await openFileDb();
-
-        await db.execAsync(`
-          PRAGMA foreign_keys = ON;
-
-          CREATE TABLE IF NOT EXISTS subtitles (
-            id INTEGER PRIMARY KEY,
-            name TEXT NOT NULL,
-            relative_path TEXT NOT NULL,
-            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-          );
-
-          CREATE TABLE IF NOT EXISTS videos (
-            id INTEGER PRIMARY KEY,
-            name TEXT NOT NULL,
-            relative_path TEXT NOT NULL,
-            subtitle_id INTEGER,
-            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (subtitle_id) REFERENCES subtitles(id)
-              ON DELETE SET NULL
-          );
-
-          CREATE INDEX IF NOT EXISTS idx_videos_subtitle_id
-            ON videos(subtitle_id);
-        `);
-
-        if (!cancelled) {
-          setFileDb(db);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError(err);
-        }
-      }
-    }
-
-    setup();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  // const filesMigrationState = useMigrations(filesDb, filesMigrations);
 
   const getVideos = useCallback(async (): Promise<VideoFileEntry[]> => {
-    if (!fileDb) {
-      throw new Error("File database is not ready");
-    }
-
-    return fileDb.getAllAsync<VideoFileEntry>(
-      "SELECT id, name, relative_path, subtitle_id FROM videos"
-    );
-  }, [fileDb]);
+    return filesDb
+      .select({
+        id: videos.id,
+        name: videos.name,
+        relative_path: videos.relativePath,
+        subtitle_id: videos.subtitleId,
+      })
+      .from(videos);
+  }, []);
 
   const getVideoData = useCallback(
     async (id: number): Promise<VideoFileEntry | null> => {
-      if (!fileDb) {
-        throw new Error("File database is not ready");
-      }
+      const rows = await filesDb
+        .select({
+          id: videos.id,
+          name: videos.name,
+          relative_path: videos.relativePath,
+          subtitle_id: videos.subtitleId,
+        })
+        .from(videos)
+        .where(eq(videos.id, id))
+        .limit(1);
 
-      return fileDb.getFirstAsync<VideoFileEntry>(
-        "SELECT id, name, relative_path, subtitle_id FROM videos WHERE id = ?",
-        [id]
-      );
+      return rows[0] ?? null;
     },
-    [fileDb]
+    []
   );
 
   const getSubtitleData = useCallback(
     async (id: number): Promise<SubtitleFileEntry | null> => {
-      if (!fileDb) {
-        throw new Error("File database is not ready");
-      }
+      const rows = await filesDb
+        .select({
+          id: subtitles.id,
+          name: subtitles.name,
+          relative_path: subtitles.relativePath,
+        })
+        .from(subtitles)
+        .where(eq(subtitles.id, id))
+        .limit(1);
 
-      return fileDb.getFirstAsync<SubtitleFileEntry>(
-        "SELECT id, name, relative_path FROM subtitles WHERE id = ?",
-        [id]
-      );
+      return rows[0] ?? null;
     },
-    [fileDb]
+    []
   );
 
   const insertVideo = useCallback(
     async (file: InsertFileEntry): Promise<VideoFileEntry> => {
-      if (!fileDb) {
-        throw new Error("File database is not ready");
-      }
-
       const id = createLocalId();
       const name = getFileName(file);
       const subtitleId = null;
 
-      const result = saveFile({ id, name, uri: file.uri }, "videos", "mp4");
-
-      await fileDb.runAsync(
-        "INSERT INTO videos (id, name, relative_path, subtitle_id) VALUES (?, ?, ?, ?)",
-        [id, name, result.localPath, subtitleId]
+      const result = saveFile(
+        { id, name, uri: file.uri },
+        "videos",
+        "mp4"
       );
+
+      await filesDb.insert(videos).values({
+        id,
+        name,
+        relativePath: result.localPath,
+        subtitleId,
+      });
 
       return {
         id,
@@ -159,7 +121,7 @@ export function FileProvider({ children }: FileProviderProps) {
         subtitle_id: subtitleId,
       };
     },
-    [fileDb]
+    []
   );
 
   const insertSubtitle = useCallback(
@@ -167,85 +129,87 @@ export function FileProvider({ children }: FileProviderProps) {
       videoId: number,
       file: InsertFileEntry
     ): Promise<SubtitleFileEntry> => {
-      if (!fileDb) {
-        throw new Error("File database is not ready");
-      }
-
       const id = createLocalId();
       const name = getFileName(file);
 
-      let subtitle: SubtitleFileEntry | null = null;
-
-      await fileDb.withTransactionAsync(async () => {
-        const result = saveFile({ id, name, uri: file.uri }, "subtitles", "srt");
-
-        console.log("saved file", result);
-        await fileDb.runAsync(
-          "INSERT INTO subtitles (id, name, relative_path) VALUES (?, ?, ?)",
-          [id, name, result.localPath]
+      return filesDb.transaction(async (tx) => {
+        const result = saveFile(
+          { id, name, uri: file.uri },
+          "subtitles",
+          "srt"
         );
 
-        const subtitleId = id;
-        const updateResult = await fileDb.runAsync(
-          "UPDATE videos SET subtitle_id = ? WHERE id = ?",
-          [subtitleId, videoId]
-        );
+        await tx.insert(subtitles).values({
+          id,
+          name,
+          relativePath: result.localPath,
+        });
 
-        if (updateResult.changes === 0) {
+        tx.select({ id: subtitles.id }).from(subtitles).where(eq(subtitles.id, id)).then((d) => {
+          console.log("result", d);
+        })
+
+        const updatedVideos = await tx
+          .update(videos)
+          .set({
+            subtitleId: id,
+          })
+          .where(eq(videos.id, videoId))
+          .returning({
+            id: videos.id,
+          });
+
+        if (updatedVideos.length === 0) {
           throw new Error(`Video with id ${videoId} was not found`);
         }
 
-        subtitle = {
-          id: subtitleId,
+        console.log(updatedVideos[0]);
+
+        return {
+          id,
           name,
           relative_path: result.localPath,
         };
       });
-
-      if (!subtitle) {
-        throw new Error("Failed to insert subtitle");
-      }
-
-      return subtitle;
     },
-    [fileDb]
+    []
   );
 
-  const value = useMemo<FileDbContextValue | null>(() => {
-    if (!fileDb) return null;
-
-    return {
+  const value = useMemo<FileDbContextValue>(
+    () => ({
       getVideos,
       getVideoData,
       getSubtitleData,
       insertVideo,
       insertSubtitle,
-    };
-  }, [
-    fileDb,
-    getVideos,
-    getVideoData,
-    getSubtitleData,
-    insertVideo,
-    insertSubtitle,
-  ]);
+    }),
+    [
+      getVideos,
+      getVideoData,
+      getSubtitleData,
+      insertVideo,
+      insertSubtitle,
+    ]
+  );
 
-  if (error) {
-    return (
-      <View style={{ padding: 16 }}>
-        <Text>Failed to load file database.</Text>
-        <Text>{String(error)}</Text>
-      </View>
-    );
-  }
-
-  if (!fileDb || !value) {
-    return (
-      <View style={{ padding: 16 }}>
-        <Text>Loading file database...</Text>
-      </View>
-    );
-  }
+  // if (filesMigrationState.error) {
+  //   return (
+  //     <SafeAreaView edges={["top", "bottom", "left", "right"]}>
+  //       <Text className="text-foreground">Database setup failed.</Text>
+  //       <Text className="text-foreground">
+  //         {filesMigrationState.error.message}
+  //       </Text>
+  //     </SafeAreaView>
+  //   );
+  // }
+  //
+  // if (!filesMigrationState.success) {
+  //   return (
+  //     <SafeAreaView edges={["top", "bottom", "left", "right"]}>
+  //       <Text className="text-foreground">Preparing databases...</Text>
+  //     </SafeAreaView>
+  //   );
+  // }
 
   return (
     <FileDbContext.Provider value={value}>

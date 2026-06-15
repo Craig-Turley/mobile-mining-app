@@ -1,3 +1,4 @@
+import { addDatabaseChangeListener } from "expo-sqlite";
 import { useEffect, useState } from "react";
 
 type UseDbFuncResult<TData> = {
@@ -12,7 +13,6 @@ type UseDbFuncOptions = {
 };
 
 export function useDbFunc<TData>(
-  tables: string[],
   fn: () => Promise<TData>,
   deps: React.DependencyList,
   options: UseDbFuncOptions = {}

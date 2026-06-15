@@ -1,27 +1,32 @@
 import React, { PropsWithChildren } from 'react';
-import { ScrollView, View, Text, Pressable, Button, ViewProps } from 'react-native';
+import { View, Text, Pressable, ViewProps } from 'react-native';
 import { VideoLoaderToolbar } from './components/video-loader-toolbar';
-import { useFileDb, VideoFileEntry } from '@/contexts/file-sqlite';
-import { useDbFunc } from './hooks/use-dbfunc';
+import { VideoFileEntry } from '@/contexts/file-sqlite';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/theme-provider';
 import { FlatList } from 'react-native-gesture-handler';
+import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
+
+import { filesDb } from '@/db/files/client';
+import { videos } from '@/db/files/schema';
 
 interface ScreenContentProps extends PropsWithChildren {
 }
 
 export const VideoLibraryScreen: React.FC<ScreenContentProps> = ({ children }) => {
-  const { getVideos } = useFileDb();
-
-  const {
-    data: videos,
-    isLoading,
-    isError,
-  } = useDbFunc(
-    () => getVideos(),
-    [getVideos]
+  const { data, error } = useLiveQuery(
+    filesDb
+      .select({
+        id: videos.id,
+        name: videos.name,
+        relative_path: videos.relativePath,
+        subtitle_id: videos.subtitleId,
+      })
+      .from(videos)
   );
+
+  const isError = error != undefined;
 
   return (
     <View className="flex-1 bg-background">
@@ -35,7 +40,7 @@ export const VideoLibraryScreen: React.FC<ScreenContentProps> = ({ children }) =
           </View>
           :
           <FlatList
-            data={videos}
+            data={data}
             renderItem={v => <VideoRow video={v.item} />}
             keyExtractor={v => String(v.id)}
             ItemSeparatorComponent={() => <View style={{ height: 16 }} />}

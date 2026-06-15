@@ -3,10 +3,10 @@ import { Directory, File, Paths } from "expo-file-system";
 
 const SQLITE_DIR = new Directory(Paths.document, "SQLite");
 
-const JMDICT_DB_NAME = "jmdict-v1.db";
+export const JMDICT_DB_NAME = "jmdict-v1.db";
 const JMDICT_DB_FILE = new File(SQLITE_DIR, JMDICT_DB_NAME);
 
-const FILE_DB_NAME = "file-v1.db";
+export const FILE_DB_NAME = "file-v1.db";
 const FILE_DB_FILE = new File(SQLITE_DIR, FILE_DB_NAME);
 
 // TODO: put this in env
