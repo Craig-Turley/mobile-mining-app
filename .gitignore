@@ -12,8 +12,6 @@ web-build/
 
 
 assets/jitendex.db
-dictionary_scripts/dictionaries/*
-
 
 ios
 android

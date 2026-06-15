@@ -4,38 +4,53 @@ import { parseSubtitles, SubtitleCue } from "@/utils/subtitles";
 import Subtitle from "./subtitle";
 import { useEventListener } from "expo";
 import { VideoPlayer } from "expo-video";
-import { useFileDb } from "@/contexts/file-sqlite";
 import { Directory, File, Paths } from "expo-file-system";
 import getFile from "@/utils/file";
+import { useInsertSubtitle, useSubtitleData } from "@/lib/db-hooks";
 
 export interface SubtitlePlayerProps extends PropsWithChildren {
   videoId: number;
-  subtitlesId: number,
+  subtitlesId: number | null,
   player: VideoPlayer,
 }
 
 type SubtitleError = "unassociated_file" | "upload_error" | "missing_file";
 
-export default function SubtitlesPlayer({ videoId, subtitlesId, player }: SubtitlePlayerProps) {
-  const { getSubtitleData, insertSubtitle } = useFileDb();
+export default function SubtitlesPlayer({
+  videoId,
+  subtitlesId,
+  player,
+}: SubtitlePlayerProps) {
+  const insertSubtitle = useInsertSubtitle();
+
+  const { data, error: subtitleQueryError } = useSubtitleData(subtitlesId);
+  const subtitleFile = data?.[0] ?? null;
+
+  const isSubtitleLoading =
+    subtitlesId != null &&
+    data === undefined &&
+    subtitleQueryError === undefined;
 
   const [error, setError] = useState<SubtitleError | null>(null);
-
   const [subtitles, setSubtitles] = useState<SubtitleCue[]>([]);
-  const subtitleListRef = useRef<FlatList<SubtitleCue> | null>(null);
-
   const [activeSubtitleIndex, setActiveSubtitleIndex] = useState<number>(-1);
+
+  const subtitleListRef = useRef<FlatList<SubtitleCue> | null>(null);
+  const subtitlesRef = useRef<SubtitleCue[]>([]);
+
+  useEffect(() => {
+    subtitlesRef.current = subtitles;
+  }, [subtitles]);
 
   const uploadSubtitle = async () => {
     const file = await getFile({ src: "file" });
     if (file == undefined) return;
+
     try {
-      console.log("inserting file", videoId, file.uri);
-      insertSubtitle(videoId, file);
-      return;
+      setError(null);
+      await insertSubtitle(videoId, file);
     } catch (e) {
       setError("upload_error");
-      return;
     }
   };
 
@@ -43,17 +58,28 @@ export default function SubtitlesPlayer({ videoId, subtitlesId, player }: Subtit
     let cancelled = false;
 
     const loadSubtitles = async () => {
-      console.log("getting for", subtitlesId);
-
       setError(null);
       setSubtitles([]);
       setActiveSubtitleIndex(-1);
 
-      const fileInformation = await getSubtitleData(subtitlesId);
+      if (subtitlesId == null) {
+        setError("unassociated_file");
+        return;
+      }
 
-      if (cancelled) return;
+      if (subtitleQueryError) {
+        setError("missing_file");
+        return;
+      }
 
-      if (fileInformation == null) {
+      // Important: live query has not returned yet.
+      // Do not mark this as unassociated yet.
+      if (data === undefined) {
+        return;
+      }
+
+      // Query finished, but no subtitle row was found.
+      if (!subtitleFile) {
         setError("unassociated_file");
         return;
       }
@@ -65,15 +91,20 @@ export default function SubtitlesPlayer({ videoId, subtitlesId, player }: Subtit
         return;
       }
 
-      const file = new File(Paths.document, fileInformation.relative_path);
-      const text = await file.text();
-      const parsed = parseSubtitles(text);
+      try {
+        const file = new File(Paths.document, subtitleFile.relative_path);
+        const text = await file.text();
+        const parsed = parseSubtitles(text);
 
-      if (cancelled) return;
+        if (cancelled) return;
 
-      setError(null);
-      setSubtitles(parsed);
-      setActiveSubtitleIndex(-1);
+        setError(null);
+        setSubtitles(parsed);
+        setActiveSubtitleIndex(-1);
+      } catch (e) {
+        if (cancelled) return;
+        setError("missing_file");
+      }
     };
 
     loadSubtitles();
@@ -81,7 +112,13 @@ export default function SubtitlesPlayer({ videoId, subtitlesId, player }: Subtit
     return () => {
       cancelled = true;
     };
-  }, [subtitlesId]);
+  }, [
+    subtitlesId,
+    data,
+    subtitleFile?.id,
+    subtitleFile?.relative_path,
+    subtitleQueryError,
+  ]);
 
   useEffect(() => {
     if (activeSubtitleIndex < 0) return;
@@ -93,11 +130,12 @@ export default function SubtitlesPlayer({ videoId, subtitlesId, player }: Subtit
     });
   }, [activeSubtitleIndex]);
 
-  useEventListener(player, 'timeUpdate', event => {
+  useEventListener(player, "timeUpdate", event => {
     const currentTime = event.currentTime;
+    const currentSubtitles = subtitlesRef.current;
 
     setActiveSubtitleIndex(prev => {
-      const next = subtitles.findIndex(
+      const next = currentSubtitles.findIndex(
         cue => cue.start <= currentTime && currentTime <= cue.end
       );
 
@@ -107,7 +145,14 @@ export default function SubtitlesPlayer({ videoId, subtitlesId, player }: Subtit
     });
   });
 
-  // TODO: style this
+  if (isSubtitleLoading) {
+    return (
+      <View className="flex-1 items-center justify-center bg-background p-2">
+        <Text className="text-foreground">Loading subtitles...</Text>
+      </View>
+    );
+  }
+
   switch (error) {
     case "unassociated_file":
       return (
@@ -115,10 +160,8 @@ export default function SubtitlesPlayer({ videoId, subtitlesId, player }: Subtit
           <Text className="text-foreground text-2xl">
             No subtitle file is associated with this video.
           </Text>
-          <Button
-            title="Upload"
-            onPress={uploadSubtitle}
-          />
+
+          <Button title="Upload" onPress={uploadSubtitle} />
         </View>
       );
 
@@ -146,11 +189,18 @@ export default function SubtitlesPlayer({ videoId, subtitlesId, player }: Subtit
           <FlatList
             ref={subtitleListRef}
             data={subtitles}
-            keyExtractor={(item) => `${item.id}`}
+            extraData={activeSubtitleIndex}
+            keyExtractor={item => `${subtitlesId}-${item.id}`}
             renderItem={({ item, index }) => (
-              <Subtitle cue={item} active={activeSubtitleIndex != -1 && activeSubtitleIndex == index} />
+              <Subtitle
+                cue={item}
+                active={
+                  activeSubtitleIndex !== -1 &&
+                  activeSubtitleIndex === index
+                }
+              />
             )}
-            onScrollToIndexFailed={(info) => {
+            onScrollToIndexFailed={info => {
               subtitleListRef.current?.scrollToOffset({
                 offset: info.averageItemLength * info.index,
                 animated: true,

@@ -2,9 +2,8 @@ import { VideoPlayer as ExpoVideoPlayer, VideoView } from 'expo-video';
 import { cssInterop } from 'nativewind';
 import { View, Text } from 'react-native';
 import { PropsWithChildren, useEffect } from 'react';
-import { useFileDb } from '@/contexts/file-sqlite';
-import { useDbFunc } from '../hooks/use-dbfunc';
 import { buildFullPath } from '@/lib/file-system';
+import { useVideoData } from '@/lib/db-hooks';
 
 cssInterop(VideoView, {
   className: "style",
@@ -16,18 +15,19 @@ export interface VideoPlayerProps extends PropsWithChildren {
 }
 
 export default function VideoPlayer({ videoId, player }: VideoPlayerProps) {
-  const { getVideoData } = useFileDb();
-  const { data, isLoading, isError } = useDbFunc(
-    () => getVideoData(Number(videoId)),
-    [getVideoData],
-  );
+  const { data, error } = useVideoData(Number(videoId));
+
+  const isLoading = data === undefined && error === undefined;
+  const isError = error !== undefined;
+  const video = data?.[0] ?? null;
+  const isNotFound = !isLoading && !isError && video === null;
 
   useEffect(() => {
-    if (!isLoading && data != null) {
-      const path = buildFullPath(data.relative_path)
-      player.replace(path);
-    }
-  }, [isLoading]);
+    if (isLoading || isError || !video) return;
+
+    const path = buildFullPath(video.relative_path);
+    player.replace(path);
+  }, [isLoading, isError, video?.id, video?.relative_path, player]);
 
   if (isError) {
     return (
@@ -45,6 +45,13 @@ export default function VideoPlayer({ videoId, player }: VideoPlayerProps) {
     );
   }
 
+  if (isNotFound) {
+    return (
+      <View>
+        <Text className="text-foreground">Video not found</Text>
+      </View>
+    );
+  }
 
   return (
     <View>

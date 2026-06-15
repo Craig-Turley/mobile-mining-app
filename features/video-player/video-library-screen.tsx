@@ -6,25 +6,13 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/theme-provider';
 import { FlatList } from 'react-native-gesture-handler';
-import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
-
-import { filesDb } from '@/db/files/client';
-import { videos } from '@/db/files/schema';
+import { useVideos } from '@/lib/db-hooks';
 
 interface ScreenContentProps extends PropsWithChildren {
 }
 
 export const VideoLibraryScreen: React.FC<ScreenContentProps> = ({ children }) => {
-  const { data, error } = useLiveQuery(
-    filesDb
-      .select({
-        id: videos.id,
-        name: videos.name,
-        relative_path: videos.relativePath,
-        subtitle_id: videos.subtitleId,
-      })
-      .from(videos)
-  );
+  const { data, error } = useVideos();
 
   const isError = error != undefined;
 
