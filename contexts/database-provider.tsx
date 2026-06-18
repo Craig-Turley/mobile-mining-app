@@ -13,7 +13,7 @@ type Props = {
 };
 
 export function DatabaseProvider({ children }: Props) {
-  const filesMigrationState = useMigrations(filesDb, filesMigrations);
+  // const filesMigrationState = useMigrations(filesDb, filesMigrations);
   const [error, setError] = useState<unknown>(null);
 
   useEffect(() => {
@@ -45,22 +45,22 @@ export function DatabaseProvider({ children }: Props) {
     );
   }
 
-  if (filesMigrationState.error) {
-    return (
-      <SafeAreaView edges={['top', 'bottom', 'left', 'right']}>
-        <Text className='text-foreground'>Database setup failed.</Text>
-        <Text className='text-foreground'>{filesMigrationState.error?.message}</Text>
-      </SafeAreaView>
-    );
-  }
-
-  if (!filesMigrationState.success) {
-    return (
-      <SafeAreaView edges={['top', 'bottom', 'left', 'right']}>
-        <Text className='text-foreground'>Preparing databases...</Text>
-      </SafeAreaView>
-    );
-  }
+  // if (filesMigrationState.error) {
+  //   return (
+  //     <SafeAreaView edges={['top', 'bottom', 'left', 'right']}>
+  //       <Text className='text-foreground'>Database setup failed.</Text>
+  //       <Text className='text-foreground'>{filesMigrationState.error?.message}</Text>
+  //     </SafeAreaView>
+  //   );
+  // }
+  //
+  // if (!filesMigrationState.success) {
+  //   return (
+  //     <SafeAreaView edges={['top', 'bottom', 'left', 'right']}>
+  //       <Text className='text-foreground'>Preparing databases...</Text>
+  //     </SafeAreaView>
+  //   );
+  // }
 
   return <>{children}</>;
 }

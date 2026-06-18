@@ -1,4 +1,4 @@
-import { View, Text, FlatList, Button } from "react-native";
+import { View, Text, FlatList, Button, Pressable } from "react-native";
 import { PropsWithChildren, useEffect, useRef, useState } from "react";
 import { parseSubtitles, SubtitleCue } from "@/utils/subtitles";
 import Subtitle from "./subtitle";
@@ -148,12 +148,19 @@ export default function SubtitlesPlayer({
   switch (error) {
     case "unassociated_file":
       return (
-        <View className="flex-1 flex-col gap-2 items-center justify-center bg-background p-2">
-          <Text className="text-foreground text-2xl">
+        <View className="flex-1 flex-col gap-6 items-center justify-center bg-background p-2">
+          <Text className="text-foreground text-2xl text-center p-3">
             No subtitle file is associated with this video.
           </Text>
 
-          <Button title="Upload" onPress={uploadSubtitle} />
+          <Pressable
+            onPress={uploadSubtitle}
+            className="rounded-lg bg-primary px-6 py-3 active:opacity-80"
+          >
+            <Text className="text-foreground text-base font-semibold text-center">
+              Upload
+            </Text>
+          </Pressable>
         </View>
       );
 
