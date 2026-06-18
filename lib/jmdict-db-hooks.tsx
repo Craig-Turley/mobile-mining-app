@@ -2,8 +2,9 @@ import { jmdictDb } from "@/db/jmdict/client";
 import { Token } from "@kuzulabz/expo-kagome";
 import { and, eq, or, sql } from "drizzle-orm";
 import { jmdictSchema } from "@/db/jmdict/client";
+import { Entry } from "./entry";
 
-export const useLookup = async (token: Token) => {
+export const useLookup = async (token: Token): Promise<Entry[]> => {
   if (!jmdictDb) {
     throw new Error("Lookup database is not ready");
   }

@@ -71,26 +71,9 @@ export type JMdictGloss = {
   type: JMdictGlossType | null;
 }
 
-export const JITENDEX_GET_QUERY = `
-  SELECT id, expression, reading, definition_tags, rules, score, sequence, term_tags, definitions_json 
-  FROM entries
-  WHERE expression = ? OR reading = ?
-  LIMIT 25;
-`;
-
-export const JMDICT_GET_QUERY = `
-  SELECT DISTINCT e.*
-    FROM lookup l
-  JOIN entries e
-    ON e.id = l.entry_id
-  WHERE(l.expression = ? AND l.reading = ?)
-     OR l.expression = ?
-    OR l.reading = ?
-      ORDER BY
-  CASE
-      WHEN l.expression = ? AND l.reading = ? THEN 0
-      WHEN l.expression = ? THEN 1
-      WHEN l.reading = ? THEN 2
-      ELSE 3
-  END;
-`
+// export const JITENDEX_GET_QUERY = `
+//   SELECT id, expression, reading, definition_tags, rules, score, sequence, term_tags, definitions_json 
+//   FROM entries
+//   WHERE expression = ? OR reading = ?
+//   LIMIT 25;
+// `;

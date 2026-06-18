@@ -1,8 +1,5 @@
 import { Directory, Paths, File } from "expo-file-system";
 
-export const VIDEOS_PATH = "videos";
-export const SUBTITLES_PATH = "subtitles";
-
 export type FilePath = "videos" | "subtitles";
 
 type FileData = {
@@ -41,14 +38,3 @@ export function saveFile(
     localPath: `${filePath}/${destinationName}`,
   };
 }
-
-export function getSavedFile(relativePath: string) {
-  const file = new File(Paths.document, relativePath);
-
-  if (!file.exists) {
-    return null;
-  }
-
-  return file;
-}
-

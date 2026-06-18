@@ -1,7 +1,7 @@
 import { openDatabaseSync } from 'expo-sqlite';
 import { drizzle } from 'drizzle-orm/expo-sqlite';
 import * as schema from './schema';
-import { FILE_DB_NAME } from '@/lib/sqlite';
+export const FILE_DB_NAME = "file-v1.db";
 
 const sqlite = openDatabaseSync(FILE_DB_NAME, {
   enableChangeListener: true,
