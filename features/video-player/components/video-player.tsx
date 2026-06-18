@@ -3,7 +3,7 @@ import { cssInterop } from 'nativewind';
 import { View, Text } from 'react-native';
 import { PropsWithChildren, useEffect } from 'react';
 import { buildFullPath } from '@/lib/file-system';
-import { useVideoData } from '@/lib/db-hooks';
+import { useVideoData } from '@/lib/file-db-hooks';
 
 cssInterop(VideoView, {
   className: "style",
@@ -15,9 +15,8 @@ export interface VideoPlayerProps extends PropsWithChildren {
 }
 
 export default function VideoPlayer({ videoId, player }: VideoPlayerProps) {
-  const { data, error } = useVideoData(Number(videoId));
+  const { data, error, isLoading } = useVideoData(Number(videoId));
 
-  const isLoading = data === undefined && error === undefined;
   const isError = error !== undefined;
   const video = data?.[0] ?? null;
   const isNotFound = !isLoading && !isError && video === null;

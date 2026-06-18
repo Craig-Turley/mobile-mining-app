@@ -1,4 +1,3 @@
-import { addDatabaseChangeListener } from "expo-sqlite";
 import { useEffect, useState } from "react";
 
 type UseDbFuncResult<TData> = {

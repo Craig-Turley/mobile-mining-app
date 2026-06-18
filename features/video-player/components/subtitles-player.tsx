@@ -6,7 +6,7 @@ import { useEventListener } from "expo";
 import { VideoPlayer } from "expo-video";
 import { Directory, File, Paths } from "expo-file-system";
 import getFile from "@/utils/file";
-import { useInsertSubtitle, useSubtitleData } from "@/lib/db-hooks";
+import { useInsertSubtitle, useSubtitleData } from "@/lib/file-db-hooks";
 
 export interface SubtitlePlayerProps extends PropsWithChildren {
   videoId: number;
@@ -23,13 +23,8 @@ export default function SubtitlesPlayer({
 }: SubtitlePlayerProps) {
   const insertSubtitle = useInsertSubtitle();
 
-  const { data, error: subtitleQueryError } = useSubtitleData(subtitlesId);
+  const { data, error: subtitleQueryError, isLoading: isSubtitleLoading } = useSubtitleData(subtitlesId);
   const subtitleFile = data?.[0] ?? null;
-
-  const isSubtitleLoading =
-    subtitlesId != null &&
-    data === undefined &&
-    subtitleQueryError === undefined;
 
   const [error, setError] = useState<SubtitleError | null>(null);
   const [subtitles, setSubtitles] = useState<SubtitleCue[]>([]);
@@ -72,13 +67,10 @@ export default function SubtitlesPlayer({
         return;
       }
 
-      // Important: live query has not returned yet.
-      // Do not mark this as unassociated yet.
       if (data === undefined) {
         return;
       }
 
-      // Query finished, but no subtitle row was found.
       if (!subtitleFile) {
         setError("unassociated_file");
         return;

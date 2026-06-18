@@ -25,7 +25,7 @@ export type VideoFileEntry = FileEntry & {
 export type SubtitleFileEntry = FileEntry;
 
 export function useVideos() {
-  return useLiveQuery(
+  const query = useLiveQuery(
     filesDb
       .select({
         id: videos.id,
@@ -35,10 +35,15 @@ export function useVideos() {
       })
       .from(videos)
   );
+
+  return {
+    ...query,
+    isLoading: !query.updatedAt,
+  };
 }
 
 export function useVideoData(id: number | null | undefined) {
-  return useLiveQuery(
+  const query = useLiveQuery(
     filesDb
       .select({
         id: videos.id,
@@ -50,10 +55,15 @@ export function useVideoData(id: number | null | undefined) {
       .where(eq(videos.id, id ?? -1))
       .limit(1)
   );
+
+  return {
+    ...query,
+    isLoading: !query.updatedAt,
+  };
 }
 
 export function useSubtitleData(id: number | null | undefined) {
-  return useLiveQuery(
+  const query = useLiveQuery(
     filesDb
       .select({
         id: subtitles.id,
@@ -64,6 +74,11 @@ export function useSubtitleData(id: number | null | undefined) {
       .where(eq(subtitles.id, id ?? -1))
       .limit(1)
   );
+
+  return {
+    ...query,
+    isLoading: !query.updatedAt,
+  };
 }
 
 export function useInsertVideo() {

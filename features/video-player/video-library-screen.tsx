@@ -6,7 +6,7 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/theme-provider';
 import { FlatList } from 'react-native-gesture-handler';
-import { useVideos } from '@/lib/db-hooks';
+import { useVideos } from '@/lib/file-db-hooks';
 
 interface ScreenContentProps extends PropsWithChildren {
 }
