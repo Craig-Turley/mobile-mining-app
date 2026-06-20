@@ -6,7 +6,7 @@ import { filesDb } from '@/db/files/client';
 import filesMigrations from '../drizzle/files/migrations';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ensureLookupDbInstalled } from "@/lib/sqlite";
+import { ensureLookupDbInstalled } from '@/db/utils';
 
 type Props = {
   children: ReactNode;

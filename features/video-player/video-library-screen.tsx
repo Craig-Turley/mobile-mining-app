@@ -29,9 +29,12 @@ export const VideoLibraryScreen: React.FC<ScreenContentProps> = ({ children }) =
           :
           <FlatList
             data={data}
+            contentContainerStyle={{
+              paddingBottom: 74, // TODO: find a way to get access to AppTabs height
+              gap: 12,
+            }}
             renderItem={v => <VideoRow video={v.item} />}
             keyExtractor={v => String(v.id)}
-            ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
           />
         }
       </View>
@@ -49,7 +52,7 @@ const VideoRow = ({ video }: VideoRowProps) => {
   return (
     <View className="bg-surface rounded-2xl p-2.5">
       <Pressable
-        className="gap-2 items-start"
+        className="gap-2 items-start pb-3"
         onPress={() => {
           router.push({
             pathname: "/video-player",
