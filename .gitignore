@@ -1,5 +1,6 @@
 node_modules/
 .expo/
+.expo-debug/
 dist/
 npm-debug.*
 *.jks
@@ -12,6 +13,7 @@ web-build/
 
 
 assets/jitendex.db
+packages/
 
 ios
 android

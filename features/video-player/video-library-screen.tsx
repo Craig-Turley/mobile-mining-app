@@ -1,7 +1,6 @@
 import React, { PropsWithChildren } from 'react';
 import { View, Text, Pressable, ViewProps } from 'react-native';
 import { VideoLoaderToolbar } from './components/video-loader-toolbar';
-import { VideoFileEntry } from '@/contexts/file-sqlite';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/theme-provider';
@@ -33,7 +32,11 @@ export const VideoLibraryScreen: React.FC<ScreenContentProps> = ({ children }) =
               paddingBottom: 74, // TODO: find a way to get access to AppTabs height
               gap: 12,
             }}
-            renderItem={v => <VideoRow video={v.item} />}
+            renderItem={v => <VideoRow
+              videoId={v.item.id}
+              videoSubtitleId={v.item.subtitle_id}
+              videoName={v.item.name}
+            />}
             keyExtractor={v => String(v.id)}
           />
         }
@@ -43,10 +46,12 @@ export const VideoLibraryScreen: React.FC<ScreenContentProps> = ({ children }) =
 };
 
 interface VideoRowProps extends ViewProps {
-  video: VideoFileEntry;
+  videoId: number;
+  videoSubtitleId: number | null;
+  videoName: string;
 }
 
-const VideoRow = ({ video }: VideoRowProps) => {
+const VideoRow = ({ videoId, videoSubtitleId, videoName }: VideoRowProps) => {
   const { colors } = useAppTheme();
 
   return (
@@ -57,8 +62,8 @@ const VideoRow = ({ video }: VideoRowProps) => {
           router.push({
             pathname: "/video-player",
             params: {
-              videoId: video.id,
-              subtitlesId: video.subtitle_id,
+              videoId: videoId,
+              subtitlesId: videoSubtitleId,
             },
           });
         }}
@@ -68,7 +73,7 @@ const VideoRow = ({ video }: VideoRowProps) => {
           numberOfLines={1}
           ellipsizeMode="tail"
         >
-          {video.name}
+          {videoName}
         </Text>
 
         <View className="flex-row items-center gap-1 rounded-full border border-primary px-1.5 py-0.5">
@@ -80,36 +85,10 @@ const VideoRow = ({ video }: VideoRowProps) => {
           />
 
           <Text className="text-primary text-[9px] uppercase ">
-            {video.subtitle_id ? "Captions" : "No Captions"}
+            {videoSubtitleId ? "Captions" : "No Captions"}
           </Text>
         </View>
       </Pressable>
     </View>
   );
 }
-
-// function SubtitleBadge() {
-//   if (subtitle.status === "attached") {
-//     return (
-//       <span className="inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-primary">
-//         <Captions className="h-2.5 w-2.5" />
-//         {subtitle.lang} · {subtitle.format}
-//       </span>
-//     );
-//   }
-//   if (subtitle.status === "auto") {
-//     return (
-//       <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/40 bg-amber-400/10 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-amber-300">
-//         <Captions className="h-2.5 w-2.5" />
-//         Auto · {subtitle.confidence}%
-//       </span>
-//     );
-//   }
-//   return (
-//     <span className="inline-flex items-center gap-1 rounded-full border border-border bg-surface px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
-//       <CaptionsOff className="h-2.5 w-2.5" />
-//       No subs
-//     </span>
-//   );
-// }
-//

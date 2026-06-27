@@ -12,7 +12,6 @@ import { darkColors, lightColors } from "@/theme/colors";
 import { useAppTheme } from "@/theme/theme-provider";
 import { useLookup } from "@/lib/jmdict-db-hooks";
 import { useDbFunc } from "../hooks/use-dbfunc";
-import { boolean } from "drizzle-orm/singlestore-core";
 
 interface EntryModalProps extends BottomSheetModalProps {
   token: Token | null;
