@@ -1,15 +1,15 @@
-import { Directory, Paths, File } from "expo-file-system";
+import { Directory, Paths, File } from 'expo-file-system';
 
-export type FilePath = "videos" | "subtitles";
+export type FilePath = 'videos' | 'subtitles';
 
 type FileData = {
   id: number;
   uri: string;
   name?: string;
-}
+};
 
-function getExtension(fallback: string, name?: string,) {
-  return name?.split(".").pop() || fallback;
+function getExtension(fallback: string, name?: string) {
+  return name?.split('.').pop() || fallback;
 }
 
 export function buildFullPath(relativePath: string) {
@@ -17,11 +17,7 @@ export function buildFullPath(relativePath: string) {
   return file.uri;
 }
 
-export function saveFile(
-  file: FileData,
-  filePath: FilePath,
-  extensionFallback: string
-) {
+export function saveFile(file: FileData, filePath: FilePath, extensionFallback: string) {
   const directory = new Directory(Paths.document, filePath);
   directory.create({ intermediates: true, idempotent: true });
 

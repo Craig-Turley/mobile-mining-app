@@ -1,16 +1,16 @@
-import { useAppTheme } from "@/theme/theme-provider";
-import { Stack } from "expo-router";
-import getFile from "@/utils/file";
-import { useInsertVideo } from "@/lib/file-db-hooks";
+import { useAppTheme } from '@/theme/theme-provider';
+import { Stack } from 'expo-router';
+import getFile from '@/utils/file';
+import { useInsertVideo } from '@/lib/file-db-hooks';
 
 export function VideoLoaderToolbar() {
   const { colors } = useAppTheme();
   const insertVideo = useInsertVideo();
 
-  const uploadHelper = async (src: "file" | "photos") => {
+  const uploadHelper = async (src: 'file' | 'photos') => {
     const file = await getFile({ src });
     if (file == undefined) {
-      console.log("undefined file on upload");
+      console.log('undefined file on upload');
       return;
     }
 
@@ -18,8 +18,8 @@ export function VideoLoaderToolbar() {
       const result = await insertVideo(file);
       console.log(result);
     } catch (e) {
-      console.log("errored on insertion of file", e);
-      alert("There was an error saving your video. Please check permissions and try again");
+      console.log('errored on insertion of file', e);
+      alert('There was an error saving your video. Please check permissions and try again');
     }
   };
 
@@ -27,7 +27,7 @@ export function VideoLoaderToolbar() {
     <>
       <Stack.Screen
         options={{
-          title: "ライブラリ",
+          title: 'ライブラリ',
           headerLargeTitle: false,
           headerTitleStyle: {
             color: colors.foreground,
@@ -37,26 +37,18 @@ export function VideoLoaderToolbar() {
             backgroundColor: colors.background,
           },
           headerSearchBarOptions: {
-            placeholder: "Search...",
+            placeholder: 'Search...',
             hideWhenScrolling: false,
           },
         }}
       />
 
       <Stack.Toolbar placement="right">
-        <Stack.Toolbar.Menu
-          icon="plus"
-        >
-          <Stack.Toolbar.MenuAction
-            icon="folder"
-            onPress={() => uploadHelper("file")}
-          >
+        <Stack.Toolbar.Menu icon="plus">
+          <Stack.Toolbar.MenuAction icon="folder" onPress={() => uploadHelper('file')}>
             Files
           </Stack.Toolbar.MenuAction>
-          <Stack.Toolbar.MenuAction
-            icon="photo"
-            onPress={() => uploadHelper("photos")}
-          >
+          <Stack.Toolbar.MenuAction icon="photo" onPress={() => uploadHelper('photos')}>
             Photos
           </Stack.Toolbar.MenuAction>
         </Stack.Toolbar.Menu>

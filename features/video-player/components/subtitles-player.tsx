@@ -1,29 +1,29 @@
-import { View, Text, FlatList, Button, Pressable } from "react-native";
-import { PropsWithChildren, useEffect, useRef, useState } from "react";
-import { parseSubtitles, SubtitleCue } from "@/utils/subtitles";
-import Subtitle from "./subtitle";
-import { useEventListener } from "expo";
-import { VideoPlayer } from "expo-video";
-import { Directory, File, Paths } from "expo-file-system";
-import getFile from "@/utils/file";
-import { useInsertSubtitle, useSubtitleData } from "@/lib/file-db-hooks";
+import { View, Text, FlatList, Button, Pressable } from 'react-native';
+import { PropsWithChildren, useEffect, useRef, useState } from 'react';
+import { parseSubtitles, SubtitleCue } from '@/utils/subtitles';
+import Subtitle from './subtitle';
+import { useEventListener } from 'expo';
+import { VideoPlayer } from 'expo-video';
+import { Directory, File, Paths } from 'expo-file-system';
+import getFile from '@/utils/file';
+import { useInsertSubtitle, useSubtitleData } from '@/lib/file-db-hooks';
 
 export interface SubtitlePlayerProps extends PropsWithChildren {
   videoId: number;
-  subtitlesId: number | null,
-  player: VideoPlayer,
+  subtitlesId: number | null;
+  player: VideoPlayer;
 }
 
-type SubtitleError = "unassociated_file" | "upload_error" | "missing_file";
+type SubtitleError = 'unassociated_file' | 'upload_error' | 'missing_file';
 
-export default function SubtitlesPlayer({
-  videoId,
-  subtitlesId,
-  player,
-}: SubtitlePlayerProps) {
+export default function SubtitlesPlayer({ videoId, subtitlesId, player }: SubtitlePlayerProps) {
   const insertSubtitle = useInsertSubtitle();
 
-  const { data, error: subtitleQueryError, isLoading: isSubtitleLoading } = useSubtitleData(subtitlesId);
+  const {
+    data,
+    error: subtitleQueryError,
+    isLoading: isSubtitleLoading,
+  } = useSubtitleData(subtitlesId);
   const subtitleFile = data?.[0] ?? null;
 
   const [error, setError] = useState<SubtitleError | null>(null);
@@ -38,14 +38,14 @@ export default function SubtitlesPlayer({
   }, [subtitles]);
 
   const uploadSubtitle = async () => {
-    const file = await getFile({ src: "file" });
+    const file = await getFile({ src: 'file' });
     if (file == undefined) return;
 
     try {
       setError(null);
       await insertSubtitle(videoId, file);
     } catch (e) {
-      setError("upload_error");
+      setError('upload_error');
     }
   };
 
@@ -58,12 +58,12 @@ export default function SubtitlesPlayer({
       setActiveSubtitleIndex(-1);
 
       if (subtitlesId == null) {
-        setError("unassociated_file");
+        setError('unassociated_file');
         return;
       }
 
       if (subtitleQueryError) {
-        setError("missing_file");
+        setError('missing_file');
         return;
       }
 
@@ -72,14 +72,14 @@ export default function SubtitlesPlayer({
       }
 
       if (!subtitleFile) {
-        setError("unassociated_file");
+        setError('unassociated_file');
         return;
       }
 
       const dir = new Directory(Paths.document);
 
       if (!dir.exists) {
-        setError("missing_file");
+        setError('missing_file');
         return;
       }
 
@@ -95,7 +95,7 @@ export default function SubtitlesPlayer({
         setActiveSubtitleIndex(-1);
       } catch (e) {
         if (cancelled) return;
-        setError("missing_file");
+        setError('missing_file');
       }
     };
 
@@ -104,13 +104,7 @@ export default function SubtitlesPlayer({
     return () => {
       cancelled = true;
     };
-  }, [
-    subtitlesId,
-    data,
-    subtitleFile?.id,
-    subtitleFile?.relative_path,
-    subtitleQueryError,
-  ]);
+  }, [subtitlesId, data, subtitleFile?.id, subtitleFile?.relative_path, subtitleQueryError]);
 
   useEffect(() => {
     if (activeSubtitleIndex < 0) return;
@@ -122,13 +116,13 @@ export default function SubtitlesPlayer({
     });
   }, [activeSubtitleIndex]);
 
-  useEventListener(player, "timeUpdate", event => {
+  useEventListener(player, 'timeUpdate', (event) => {
     const currentTime = event.currentTime;
     const currentSubtitles = subtitlesRef.current;
 
-    setActiveSubtitleIndex(prev => {
+    setActiveSubtitleIndex((prev) => {
       const next = currentSubtitles.findIndex(
-        cue => cue.start <= currentTime && currentTime <= cue.end
+        (cue) => cue.start <= currentTime && currentTime <= cue.end
       );
 
       if (next === -1 || next === prev) return prev;
@@ -146,39 +140,32 @@ export default function SubtitlesPlayer({
   }
 
   switch (error) {
-    case "unassociated_file":
+    case 'unassociated_file':
       return (
-        <View className="flex-1 flex-col gap-6 items-center justify-center bg-background p-2">
-          <Text className="text-foreground text-2xl text-center p-3">
+        <View className="flex-1 flex-col items-center justify-center gap-6 bg-background p-2">
+          <Text className="p-3 text-center text-2xl text-foreground">
             No subtitle file is associated with this video.
           </Text>
 
           <Pressable
             onPress={uploadSubtitle}
-            className="rounded-lg bg-primary px-6 py-3 active:opacity-80"
-          >
-            <Text className="text-foreground text-base font-semibold text-center">
-              Upload
-            </Text>
+            className="rounded-lg bg-primary px-6 py-3 active:opacity-80">
+            <Text className="text-center text-base font-semibold text-foreground">Upload</Text>
           </Pressable>
         </View>
       );
 
-    case "missing_file":
+    case 'missing_file':
       return (
         <View className="flex-1 items-center justify-center bg-background p-2">
-          <Text className="text-foreground">
-            There was an error retrieving the file.
-          </Text>
+          <Text className="text-foreground">There was an error retrieving the file.</Text>
         </View>
       );
 
-    case "upload_error":
+    case 'upload_error':
       return (
         <View className="flex-1 items-center justify-center bg-background p-2">
-          <Text className="text-foreground">
-            There was an error uploading the file.
-          </Text>
+          <Text className="text-foreground">There was an error uploading the file.</Text>
         </View>
       );
 
@@ -189,17 +176,14 @@ export default function SubtitlesPlayer({
             ref={subtitleListRef}
             data={subtitles}
             extraData={activeSubtitleIndex}
-            keyExtractor={item => `${subtitlesId}-${item.id}`}
+            keyExtractor={(item) => `${subtitlesId}-${item.id}`}
             renderItem={({ item, index }) => (
               <Subtitle
                 cue={item}
-                active={
-                  activeSubtitleIndex !== -1 &&
-                  activeSubtitleIndex === index
-                }
+                active={activeSubtitleIndex !== -1 && activeSubtitleIndex === index}
               />
             )}
-            onScrollToIndexFailed={info => {
+            onScrollToIndexFailed={(info) => {
               subtitleListRef.current?.scrollToOffset({
                 offset: info.averageItemLength * info.index,
                 animated: true,

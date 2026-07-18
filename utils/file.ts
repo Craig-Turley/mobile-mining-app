@@ -1,17 +1,17 @@
-import * as DocumentPicker from "expo-document-picker";
-import * as ImagePicker from "expo-image-picker";
+import * as DocumentPicker from 'expo-document-picker';
+import * as ImagePicker from 'expo-image-picker';
 
-export default async function getFile({ src }: { src: "file" | "photos" }) {
+export default async function getFile({ src }: { src: 'file' | 'photos' }) {
   let result;
 
-  if (src === "file") {
+  if (src === 'file') {
     result = await DocumentPicker.getDocumentAsync({
       copyToCacheDirectory: true,
       multiple: false,
     });
-  } else if (src === "photos") {
+  } else if (src === 'photos') {
     result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["videos"],
+      mediaTypes: ['videos'],
       allowsMultipleSelection: false,
       quality: 1,
     });

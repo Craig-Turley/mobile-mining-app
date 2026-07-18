@@ -1,18 +1,6 @@
 import { cn } from '@/utils/cn';
-import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-} from 'react';
-import {
-  Pressable,
-  PressableProps,
-  View,
-  ViewProps,
-  Text
-} from 'react-native';
+import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import { Pressable, PressableProps, View, ViewProps, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 interface CarouselContextValue<T> {
@@ -27,9 +15,7 @@ interface CarouselContextValue<T> {
   canGoPrevious: boolean;
 }
 
-const CarouselContext = createContext<CarouselContextValue<unknown> | null>(
-  null
-);
+const CarouselContext = createContext<CarouselContextValue<unknown> | null>(null);
 
 function useCarousel<T = unknown>() {
   const context = useContext(CarouselContext);
@@ -98,15 +84,7 @@ export function CarouselContainer<T>({
       canGoNext: currentPage < totalPages - 1,
       canGoPrevious: currentPage > 0,
     }),
-    [
-      currentPage,
-      totalPages,
-      data,
-      render,
-      goToPage,
-      nextPage,
-      previousPage,
-    ]
+    [currentPage, totalPages, data, render, goToPage, nextPage, previousPage]
   );
 
   return (
@@ -118,12 +96,9 @@ export function CarouselContainer<T>({
   );
 }
 
-export interface CarouselToggleProps extends PressableProps { }
+export interface CarouselToggleProps extends PressableProps {}
 
-export function CarouselPrevious({
-  className,
-  ...rest
-}: CarouselToggleProps) {
+export function CarouselPrevious({ className, ...rest }: CarouselToggleProps) {
   const { previousPage, canGoPrevious } = useCarousel();
 
   return (
@@ -131,17 +106,13 @@ export function CarouselPrevious({
       className={cn('justify-center', className)}
       onPress={previousPage}
       disabled={!canGoPrevious}
-      {...rest}
-    >
+      {...rest}>
       <Ionicons className="color-primary" name="chevron-back" size={24} />
     </Pressable>
   );
 }
 
-export function CarouselNext({
-  className,
-  ...rest
-}: CarouselToggleProps) {
+export function CarouselNext({ className, ...rest }: CarouselToggleProps) {
   const { nextPage, canGoNext } = useCarousel();
 
   return (
@@ -149,29 +120,27 @@ export function CarouselNext({
       className={cn('justify-center', className)}
       onPress={nextPage}
       disabled={!canGoNext}
-      {...rest}
-    >
+      {...rest}>
       <Ionicons className="color-primary" name="chevron-forward" size={24} />
     </Pressable>
   );
 }
 
-export interface CarouselContentProps extends ViewProps { }
+export interface CarouselContentProps extends ViewProps {}
 
-export function CarouselContent({
-  className,
-  ...rest
-}: CarouselContentProps) {
+export function CarouselContent({ className, ...rest }: CarouselContentProps) {
   const { currentPage, data, render } = useCarousel();
   const currentItem = data[currentPage];
 
   return (
     <View className={cn('w-full', className)} {...rest}>
-      {currentItem !== undefined ? render(currentItem, currentPage) :
+      {currentItem !== undefined ? (
+        render(currentItem, currentPage)
+      ) : (
         <View>
           <Text className="text-foreground">Null on carasoul</Text>
         </View>
-      }
+      )}
     </View>
   );
 }

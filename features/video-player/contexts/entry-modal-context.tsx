@@ -1,4 +1,4 @@
-import { Token } from "@kuzulabz/expo-kagome";
+import { Token } from '@kuzulabz/expo-kagome';
 import React, {
   createContext,
   useContext,
@@ -7,20 +7,20 @@ import React, {
   type ReactNode,
   useEffect,
   useCallback,
-} from "react";
+} from 'react';
 import {
   BottomSheetModalProvider,
   type BottomSheetModal as BottomSheetModalType,
-} from "@gorhom/bottom-sheet";
-import { EntryBottomSheetModal } from "../components/entry-modal";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
+} from '@gorhom/bottom-sheet';
+import { EntryBottomSheetModal } from '../components/entry-modal';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 type EntryModalContextType = {
   setToken: (t: Token) => void;
 };
 
 const EntryModalContext = createContext<EntryModalContextType>({
-  setToken: () => { },
+  setToken: () => {},
 });
 
 type EntryModalProviderProps = {
@@ -43,15 +43,10 @@ export function EntryModalProvider({ children }: EntryModalProviderProps) {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-
       <BottomSheetModalProvider>
         <EntryModalContext.Provider value={{ setToken }}>
           {children}
-          <EntryBottomSheetModal
-            ref={bottomSheetRef}
-            token={token}
-          >
-          </EntryBottomSheetModal>
+          <EntryBottomSheetModal ref={bottomSheetRef} token={token}></EntryBottomSheetModal>
         </EntryModalContext.Provider>
       </BottomSheetModalProvider>
     </GestureHandlerRootView>
@@ -62,9 +57,7 @@ export function useEntryModal() {
   const context = useContext(EntryModalContext);
 
   if (!context) {
-    throw new Error(
-      "useEntryModalContext must be used inside a EntryModalProvider"
-    );
+    throw new Error('useEntryModalContext must be used inside a EntryModalProvider');
   }
 
   return context;

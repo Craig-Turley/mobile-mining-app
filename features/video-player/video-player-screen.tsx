@@ -9,8 +9,7 @@ import { ActivityIndicator, Text } from 'react-native';
 import { useVideoData } from '@/lib/file-db-hooks';
 import { VideoScreenProvider } from './contexts/video-screen-context';
 
-interface ScreenContentProps extends PropsWithChildren {
-}
+interface ScreenContentProps extends PropsWithChildren {}
 
 export const VideoPlayerScreen: React.FC<ScreenContentProps> = ({ children }) => {
   const { videoId } = useLocalSearchParams<{ videoId: string }>();
@@ -19,7 +18,7 @@ export const VideoPlayerScreen: React.FC<ScreenContentProps> = ({ children }) =>
 
   const { data, error, isLoading } = useVideoData(numericVideoId);
 
-  const player = useVideoPlayer(null, player => {
+  const player = useVideoPlayer(null, (player) => {
     player.timeUpdateEventInterval = 0.25;
     player.play();
   });
@@ -33,16 +32,14 @@ export const VideoPlayerScreen: React.FC<ScreenContentProps> = ({ children }) =>
       <Stack.Screen
         options={{
           headerTransparent: true,
-          title: "",
+          headerBackButtonDisplayMode: 'minimal',
+          title: '',
         }}
       />
 
       <VideoScreenProvider>
         <EntryModalProvider>
-          <SafeAreaView
-            edges={["top", "right", "left"]}
-            className="flex-1 bg-background"
-          >
+          <SafeAreaView edges={['top', 'right', 'left']} className="flex-1 bg-background">
             {isLoading ? (
               <ActivityIndicator size="large" color="#999999" />
             ) : isError ? (
@@ -51,13 +48,10 @@ export const VideoPlayerScreen: React.FC<ScreenContentProps> = ({ children }) =>
               <Text className="text-foreground">Video not found.</Text>
             ) : (
               <>
-                <VideoPlayer
-                  player={player}
-                  videoId={numericVideoId}
-                />
+                <VideoPlayer player={player} videoId={numericVideoId} />
 
                 <SubtitlesPlayer
-                  key={`${video.id}-${video.subtitle_id ?? "none"}`}
+                  key={`${video.id}-${video.subtitle_id ?? 'none'}`}
                   player={player}
                   videoId={numericVideoId}
                   subtitlesId={video.subtitle_id}

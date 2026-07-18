@@ -15,6 +15,6 @@ export default function App() {
           </DatabaseProvider>
         </SafeAreaProvider>
       </AppThemeProvider>
-    </GestureHandlerRootView >
+    </GestureHandlerRootView>
   );
 }

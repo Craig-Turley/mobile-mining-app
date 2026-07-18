@@ -8,4 +8,3 @@ export default defineConfig({
     url: './dictionary_scripts/dictionaries/jmdict-v1.db',
   },
 });
-

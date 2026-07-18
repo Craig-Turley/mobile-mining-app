@@ -1,15 +1,15 @@
-import { PropsWithChildren, useEffect, useState } from "react";
-import { View, Text, LayoutChangeEvent, Pressable } from "react-native";
-import { secondsToTime, SubtitleCue } from "@/utils/subtitles";
-import { cn } from "@/utils/cn";
-import { getTokens, Token } from "@kuzulabz/expo-kagome";
-import { getPosTag, katakanaToHiragana } from "@/utils/tokenizer";
-import { useVideoPlayerContext } from "../contexts/video-screen-context";
-import { useEntryModal } from "../contexts/entry-modal-context";
+import { PropsWithChildren, useEffect, useState } from 'react';
+import { View, Text, LayoutChangeEvent, Pressable } from 'react-native';
+import { secondsToTime, SubtitleCue } from '@/utils/subtitles';
+import { cn } from '@/utils/cn';
+import { getTokens, Token } from '@kuzulabz/expo-kagome';
+import { getPosTag, katakanaToHiragana } from '@/utils/tokenizer';
+import { useVideoPlayerContext } from '../contexts/video-screen-context';
+import { useEntryModal } from '../contexts/entry-modal-context';
 
 export interface SubtitleProps extends PropsWithChildren {
   cue: SubtitleCue;
-  active?: boolean
+  active?: boolean;
   onLayout?: (event: LayoutChangeEvent) => void;
 }
 
@@ -18,8 +18,8 @@ export default function Subtitle({ cue, active, onLayout }: SubtitleProps) {
   const [tokens, setTokens] = useState<Token[]>([]);
   const { setToken } = useEntryModal();
 
-  // NOTE: the flatlist that holds these components takes care of the rendering when 
-  // it needs to be mounted so we're not hammering the cpu with unnessarcy tokenize calls 
+  // NOTE: the flatlist that holds these components takes care of the rendering when
+  // it needs to be mounted so we're not hammering the cpu with unnessarcy tokenize calls
   // (i think)
   useEffect(() => {
     tokenize();
@@ -33,57 +33,47 @@ export default function Subtitle({ cue, active, onLayout }: SubtitleProps) {
       return;
     }
 
-    tokenList.forEach(t => t.reading = katakanaToHiragana(t.reading));
+    tokenList.forEach((t) => (t.reading = katakanaToHiragana(t.reading)));
     setTokens(tokenList);
   };
 
   const renderToken = (token: Token, index: number) => (
-    <Text
-      key={index}
-      className={`${getTokenColor(token)}`}
-      onPress={() => setToken(token)}
-    >
+    <Text key={index} className={`${getTokenColor(token)}`} onPress={() => setToken(token)}>
       {token.surface_form}
-    </Text >
+    </Text>
   );
 
   const getTokenColor = (token: Token): string => {
     switch (getPosTag(token)) {
-      case "noun":
-        return "text-posNoun";
-      case "verb":
-        return "text-posVerb";
-      case "adj":
-        return "text-posAdj";
-      case "adv":
-      case "particle":
-      case "other":
+      case 'noun':
+        return 'text-posNoun';
+      case 'verb':
+        return 'text-posVerb';
+      case 'adj':
+        return 'text-posAdj';
+      case 'adv':
+      case 'particle':
+      case 'other':
     }
 
-    return "";
+    return '';
   };
 
   return (
-    <Pressable
-      onPress={() => setTimeStamp(cue.start)}
-    >
+    <Pressable onPress={() => setTimeStamp(cue.start)}>
       <View
         className={cn(
-          "rounded-lg p-2 py-4 my-3 border-muted border-4 border-solid w-full gap-1",
-          active ? "border-primary" : ""
-        )
-        }
-        onLayout={onLayout}
-      >
+          'my-3 w-full gap-1 rounded-lg border-4 border-solid border-muted p-2 py-4',
+          active ? 'border-primary' : ''
+        )}
+        onLayout={onLayout}>
         <Text className="text-primary">
           {secondsToTime(cue.start)} - {secondsToTime(cue.end)}
         </Text>
-        <Text
-          className="text-foreground text-2xl flex-row flex-wrap"
-        >
+        <Text className="flex-row flex-wrap text-2xl text-foreground">
           {tokens != null ? tokens.map(renderToken) : cue.text}
         </Text>
-      </View >
+      </View>
     </Pressable>
   );
 }

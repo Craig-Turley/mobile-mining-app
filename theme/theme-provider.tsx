@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useMemo, useState } from "react";
-import { View } from "react-native";
-import { ColorTokens, darkColors, lightColors, type ThemeName } from "./colors";
-import { createThemeVars } from "./theme-vars";
+import React, { createContext, useContext, useMemo, useState } from 'react';
+import { View } from 'react-native';
+import { ColorTokens, darkColors, lightColors, type ThemeName } from './colors';
+import { createThemeVars } from './theme-vars';
 
 type ThemeContextValue = {
   theme: ThemeName;
@@ -13,10 +13,10 @@ type ThemeContextValue = {
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function AppThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<ThemeName>("dark");
+  const [theme, setTheme] = useState<ThemeName>('dark');
 
   const themeVars = useMemo(() => {
-    return createThemeVars(theme === "dark" ? darkColors : lightColors);
+    return createThemeVars(theme === 'dark' ? darkColors : lightColors);
   }, [theme]);
 
   const value = useMemo<ThemeContextValue>(
@@ -24,9 +24,9 @@ export function AppThemeProvider({ children }: { children: React.ReactNode }) {
       theme,
       setTheme,
       toggleTheme: () => {
-        setTheme((current) => (current === "dark" ? "light" : "dark"));
+        setTheme((current) => (current === 'dark' ? 'light' : 'dark'));
       },
-      colors: theme === "dark" ? darkColors : lightColors,
+      colors: theme === 'dark' ? darkColors : lightColors,
     }),
     [theme]
   );
@@ -44,7 +44,7 @@ export function useAppTheme() {
   const context = useContext(ThemeContext);
 
   if (!context) {
-    throw new Error("useAppTheme must be used inside AppThemeProvider");
+    throw new Error('useAppTheme must be used inside AppThemeProvider');
   }
 
   return context;

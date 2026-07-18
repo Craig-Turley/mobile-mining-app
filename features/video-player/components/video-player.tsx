@@ -6,12 +6,12 @@ import { buildFullPath } from '@/lib/file-system';
 import { useVideoData } from '@/lib/file-db-hooks';
 
 cssInterop(VideoView, {
-  className: "style",
+  className: 'style',
 });
 
 export interface VideoPlayerProps extends PropsWithChildren {
-  videoId: number,
-  player: ExpoVideoPlayer,
+  videoId: number;
+  player: ExpoVideoPlayer;
 }
 
 export default function VideoPlayer({ videoId, player }: VideoPlayerProps) {
@@ -55,7 +55,7 @@ export default function VideoPlayer({ videoId, player }: VideoPlayerProps) {
   return (
     <View>
       <VideoView
-        className="w-full aspect-video"
+        className="aspect-video w-full"
         player={player}
         fullscreenOptions={{ enable: true }}
         allowsPictureInPicture

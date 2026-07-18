@@ -1,23 +1,23 @@
-import { Token } from "@kuzulabz/expo-kagome";
+import { Token } from '@kuzulabz/expo-kagome';
 
-type PosTag = "noun" | "verb" | "adj" | "adv" | "particle" | "other";
+type PosTag = 'noun' | 'verb' | 'adj' | 'adv' | 'particle' | 'other';
 
 export const getPosTag = (token: Token): PosTag => {
   const pos = token.pos?.[0];
 
   switch (pos) {
-    case "名詞":
-      return "noun";
-    case "動詞":
-      return "verb";
-    case "形容詞":
-      return "adj";
-    case "副詞":
-      return "adv";
-    case "助詞":
-      return "particle";
+    case '名詞':
+      return 'noun';
+    case '動詞':
+      return 'verb';
+    case '形容詞':
+      return 'adj';
+    case '副詞':
+      return 'adv';
+    case '助詞':
+      return 'particle';
     default:
-      return "other";
+      return 'other';
   }
 };
 

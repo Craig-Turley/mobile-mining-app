@@ -1,8 +1,16 @@
 import * as SQLite from 'expo-sqlite';
-import JSZip from "jszip";
+import JSZip from 'jszip';
 import { Directory, File, Paths } from 'expo-file-system';
-import { Package, PackageDatabase, PackageZip, Deck, Model, MediaReader, SaveAs } from 'genanki-ts'
-import { createAnkiAudio, createAnkiImage } from '@/packages/genanki-ts/dist/genanki/media-helpers';
+import {
+  Package,
+  PackageDatabase,
+  PackageZip,
+  Deck,
+  Model,
+  MediaReader,
+  SaveAs,
+  RequirementMode,
+} from 'genanki-ts';
 
 const css = `
 .card {
@@ -64,15 +72,10 @@ hr#answer {
 }
 `;
 
-export function createExpoDatabaseAdapter(
-  sqliteDb: SQLite.SQLiteDatabase,
-): PackageDatabase {
+export function createExpoDatabaseAdapter(sqliteDb: SQLite.SQLiteDatabase): PackageDatabase {
   return {
     async run(sql, values = []) {
-      const result = await sqliteDb.runAsync(
-        sql,
-        [...values] as SQLite.SQLiteBindValue[],
-      );
+      const result = await sqliteDb.runAsync(sql, [...values] as SQLite.SQLiteBindValue[]);
 
       return {
         changes: result.changes,
@@ -85,9 +88,7 @@ export function createExpoDatabaseAdapter(
 
       return {
         async run(values = []) {
-          const result = await statement.executeAsync(
-            [...values] as SQLite.SQLiteBindValue[],
-          );
+          const result = await statement.executeAsync([...values] as SQLite.SQLiteBindValue[]);
 
           return {
             changes: result.changes,
@@ -115,10 +116,7 @@ export function createExpoDatabaseAdapter(
   };
 }
 
-export type ExpoPackageZip = PackageZip<
-  Uint8Array,
-  "uint8array"
->;
+export type ExpoPackageZip = PackageZip<Uint8Array, 'uint8array'>;
 
 export function createExpoZipAdapter(): ExpoPackageZip {
   const zip = new JSZip();
@@ -150,29 +148,17 @@ export interface ExpoSaveAsOptions {
   overwrite?: boolean;
 }
 
-export function createExpoSaveAsAdapter(
-  options: ExpoSaveAsOptions = {},
-): SaveAs<Uint8Array> {
-  const {
-    directory = Paths.document,
-    overwrite = true,
-  } = options;
+export function createExpoSaveAsAdapter(options: ExpoSaveAsOptions = {}): SaveAs<Uint8Array> {
+  const { directory = Paths.document, overwrite = true } = options;
 
-  return async (
-    data: Uint8Array,
-    filename: string,
-  ): Promise<void> => {
-    const normalizedFilename = filename.endsWith(".apkg")
-      ? filename
-      : `${filename}.apkg`;
+  return async (data: Uint8Array, filename: string): Promise<void> => {
+    const normalizedFilename = filename.endsWith('.apkg') ? filename : `${filename}.apkg`;
 
     const file = new File(directory, normalizedFilename);
 
     if (file.exists) {
       if (!overwrite) {
-        throw new Error(
-          `A file already exists at ${file.uri}`,
-        );
+        throw new Error(`A file already exists at ${file.uri}`);
       }
 
       file.delete();
@@ -186,3 +172,8 @@ export function createExpoSaveAsAdapter(
   };
 }
 
+export function generateModelId(): number {
+  return (1 << 30) + Math.floor(Math.random() * (1 << 30));
+}
+
+// export const RequirmentModes = (typeof RequirmentMode)[number];

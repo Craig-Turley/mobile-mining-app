@@ -1,11 +1,11 @@
-import { jmdictDb , jmdictSchema } from "@/db/jmdict/client";
-import { Token } from "@kuzulabz/expo-kagome";
-import { and, eq, or, sql } from "drizzle-orm";
-import { Entry } from "./entry";
+import { jmdictDb, jmdictSchema } from '@/db/jmdict/client';
+import { Token } from '@kuzulabz/expo-kagome';
+import { and, eq, or, sql } from 'drizzle-orm';
+import { Entry } from './entry';
 
-export const useLookup = async (token: Token): Promise<Entry[]> => {
+export const lookupToken = async (token: Token): Promise<Entry[]> => {
   if (!jmdictDb) {
-    throw new Error("Lookup database is not ready");
+    throw new Error('Lookup database is not ready');
   }
 
   const entries = jmdictSchema.entries;
@@ -25,15 +25,11 @@ export const useLookup = async (token: Token): Promise<Entry[]> => {
     .innerJoin(entries, eq(entries.id, lookup.entryId))
     .where(
       or(
-        and(
-          eq(lookup.expression, base_form),
-          eq(lookup.reading, reading)
-        ),
+        and(eq(lookup.expression, base_form), eq(lookup.reading, reading)),
         eq(lookup.expression, base_form),
         eq(lookup.reading, reading)
       )
-    )
-    .orderBy(sql`
+    ).orderBy(sql`
       CASE
         WHEN ${lookup.expression} = ${base_form}
          AND ${lookup.reading} = ${reading}
