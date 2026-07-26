@@ -7,7 +7,7 @@ import { useAppTheme } from '@/theme/theme-provider';
 import { FlatList } from 'react-native-gesture-handler';
 import { useVideos } from '@/lib/file-db-hooks';
 
-interface ScreenContentProps extends PropsWithChildren {}
+interface ScreenContentProps extends PropsWithChildren { }
 
 export const VideoLibraryScreen: React.FC<ScreenContentProps> = ({ children }) => {
   const { data, error } = useVideos();

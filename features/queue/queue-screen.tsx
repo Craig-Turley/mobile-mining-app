@@ -13,6 +13,7 @@ import { getDecks } from '@/db/repositories/decks.repository';
 import { getModels } from '@/db/repositories/models.repository';
 import * as Sharing from 'expo-sharing';
 import { clearQueue } from '@/db/repositories/queue.repository';
+import { getAppDefaults } from '@/db/repositories/defaults.repository';
 
 interface QueueScreenProps { }
 
@@ -51,11 +52,12 @@ export const QueueScreen: React.FC<QueueScreenProps> = () => {
               label="Export"
               onPress={async () => {
                 try {
+                  const defaults = await getAppDefaults();
                   const decks = await getDecks();
                   const models = await getModels();
 
                   const deck = prepareDeckForExport(
-                    decks[0],
+                    decks.find(d => d.applicationId == defaults?.deckApplicationId) || decks[0],
                     models,
                     queuedItems,
                   );

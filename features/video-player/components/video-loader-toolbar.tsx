@@ -26,7 +26,7 @@ export function VideoLoaderToolbar() {
     <>
       <Stack.Screen
         options={{
-          title: 'ライブラリ',
+          title: 'Library',
           headerLargeTitle: false,
           headerTitleStyle: {
             color: colors.foreground,
@@ -35,10 +35,10 @@ export function VideoLoaderToolbar() {
           headerStyle: {
             backgroundColor: colors.background,
           },
-          headerSearchBarOptions: {
-            placeholder: 'Search...',
-            hideWhenScrolling: false,
-          },
+          // headerSearchBarOptions: {
+          //   placeholder: 'Search...',
+          //   hideWhenScrolling: false,
+          // },
         }}
       />
 

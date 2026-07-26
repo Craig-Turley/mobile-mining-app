@@ -1,9 +1,9 @@
 import '@/global.css';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppThemeProvider } from 'theme/theme-provider';
-import AppTabs from '@/components/app-tabs';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { DatabaseProvider } from '@/contexts/database-provider';
+import { Stack } from 'expo-router';
 
 export default function App() {
   return (
@@ -11,7 +11,14 @@ export default function App() {
       <AppThemeProvider>
         <SafeAreaProvider>
           <DatabaseProvider>
-            <AppTabs />
+            <Stack>
+              <Stack.Screen
+                name="(tabs)"
+                options={{
+                  headerShown: false,
+                }}
+              />
+            </Stack>
           </DatabaseProvider>
         </SafeAreaProvider>
       </AppThemeProvider>
