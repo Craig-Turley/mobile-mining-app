@@ -7,6 +7,10 @@ import { cn } from '@/utils/cn';
 import { cssInterop, remapProps } from 'nativewind';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { AnchoredMenu, AnchoredMenuItem, AnchoredMenuTrigger } from '@/components/ui/anchored-menu';
+import { useDefaults } from '@/lib/defaults-db-hooks';
+import { setDefaultModel } from '@/db/repositories/defaults.repository';
+import { deleteModel } from '@/db/repositories/models.repository';
 
 remapProps(FlatList, {
   className: 'style',
@@ -22,10 +26,11 @@ cssInterop(Ionicons, {
   },
 });
 
-interface ModelsScreenProps {}
+interface ModelsScreenProps { }
 
 export const ModelsScreen: React.FC<ModelsScreenProps> = () => {
   const { models, isLoading } = useModels();
+  const { defaults } = useDefaults();
 
   return (
     <View className="flex-1 bg-background">
@@ -40,7 +45,7 @@ export const ModelsScreen: React.FC<ModelsScreenProps> = () => {
           contentInsetAdjustmentBehavior="automatic"
           className="flex-1"
           contentContainerClassName="gap-3 p-3"
-          renderItem={({ item }) => <ModelRow storedModel={item} />}
+          renderItem={({ item }) => <ModelRow storedModel={item} isDefault={defaults?.modelApplicationId === item.applicationId} />}
           keyExtractor={(item) => String(item.applicationId)}
         />
       )}
@@ -51,65 +56,108 @@ export const ModelsScreen: React.FC<ModelsScreenProps> = () => {
 // const { editModelFormData } = useLocalSearchParams<{
 //   editModelFormData?: string;
 // }>();
-const ModelRow: React.FC<{ storedModel: StoredModel }> = ({ storedModel }) => {
-  const model = storedModel.model;
+const ModelRow: React.FC<{ storedModel: StoredModel, isDefault: boolean }> = ({
+  storedModel,
+  isDefault,
+}) => {
 
-  const fieldCount = model.flds?.length ?? 0;
-  const templateCount = model.tmpls?.length ?? 0;
+  const fieldCount = storedModel.model.flds?.length ?? 0;
+  const templateCount = storedModel.model.tmpls?.length ?? 0;
+
+  const editModel = () => {
+    router.push({
+      pathname: '/model-create',
+      params: {
+        editModelFormData: JSON.stringify(storedModel),
+      },
+    });
+  };
 
   return (
-    <Pressable
-      onPress={() => {
-        router.push({
-          pathname: '/model-create',
-          params: {
-            editModelFormData: JSON.stringify(storedModel),
-          },
-        });
-      }}
+    <View
       className={cn(
         'w-full flex-row items-start gap-3 rounded-2xl',
-        'border border-border bg-surface p-4',
-        'active:bg-background/40'
-      )}>
-      {/* Accent dot */}
-      <View className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-primary" />
+        'border border-border bg-surface p-4'
+      )}
+    >
+      <Pressable
+        onPress={editModel}
+        className="min-w-0 flex-1 flex-row items-start gap-3"
+      >
+        <View className="min-w-0 flex-1">
+          <View className="flex-row items-center gap-2">
+            <Text
+              className="shrink font-semibold text-foreground"
+              numberOfLines={1}
+            >
+              {storedModel.model.name}
+            </Text>
+            {isDefault ? (
+              <View className="bg-primary/15 shrink-0 rounded-full px-2 py-0.5">
+                <Text className="text-[9px] font-semibold text-primary">
+                  Default
+                </Text>
+              </View>
+            ) : null}
 
-      {/* Main content */}
-      <View className="min-w-0 flex-1">
-        <View className="flex-row items-center gap-2">
-          <Text className="shrink font-semibold text-foreground" numberOfLines={1}>
-            {model.name}
-          </Text>
+          </View>
 
-          {/* Optional tag */}
-          {model.type ? (
-            <View className="bg-primary/15 shrink-0 rounded-full px-2 py-0.5">
-              <Text className="text-[9px] font-semibold uppercase tracking-wider text-primary">
-                {model.type}
+          <View className="mt-2 flex-row flex-wrap items-center gap-x-3 gap-y-1">
+            <View className="flex-row items-center gap-1">
+              <Ionicons
+                name="layers-outline"
+                size={12}
+                className="text-mutedForeground"
+              />
+
+              <Text className="text-[11px] text-mutedForeground">
+                {fieldCount} field{fieldCount === 1 ? '' : 's'}
               </Text>
             </View>
-          ) : null}
-        </View>
 
-        <View className="mt-2 flex-row flex-wrap items-center gap-x-3 gap-y-1">
-          <View className="flex-row items-center gap-1">
-            <Ionicons name="layers-outline" size={12} className="text-mutedForeground" />
+            <View className="flex-row items-center gap-1">
+              <Ionicons
+                name="document-text-outline"
+                size={12}
+                className="text-mutedForeground"
+              />
 
-            <Text className="text-[11px] text-mutedForeground">
-              {fieldCount} field{fieldCount === 1 ? '' : 's'}
-            </Text>
-          </View>
-
-          <View className="flex-row items-center gap-1">
-            <Ionicons name="document-text-outline" size={12} className="text-mutedForeground" />
-
-            <Text className="text-[11px] text-mutedForeground">{templateCount} template</Text>
+              <Text className="text-[11px] text-mutedForeground">
+                {templateCount} template
+                {templateCount === 1 ? '' : 's'}
+              </Text>
+            </View>
           </View>
         </View>
+      </Pressable>
+
+      <View className="-mr-2 -mt-2 shrink-0">
+        <AnchoredMenu>
+          <AnchoredMenuTrigger
+            className="h-10 w-10"
+            accessibilityLabel={`Open actions for ${storedModel.model.name}`}
+          >
+            <Ionicons
+              name="ellipsis-vertical"
+              size={18}
+              className="text-mutedForeground"
+            />
+          </AnchoredMenuTrigger>
+
+          <AnchoredMenuItem
+            icon="checkmark-circle-outline"
+            label="Set as default"
+            onPress={() => setDefaultModel(storedModel.applicationId)}
+          />
+
+          <AnchoredMenuItem
+            icon="trash-outline"
+            label="Delete"
+            destructive
+            onPress={() => deleteModel(storedModel.applicationId)}
+          />
+        </AnchoredMenu>
       </View>
-
-      <Ionicons name="chevron-forward" size={16} className="mt-1 shrink-0 text-mutedForeground" />
-    </Pressable>
+    </View>
   );
 };

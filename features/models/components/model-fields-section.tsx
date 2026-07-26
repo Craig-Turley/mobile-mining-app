@@ -19,7 +19,7 @@ export default function ModelFieldsSection({
       <Text className="text-2xl font-bold text-foreground">Fields</Text>
 
       <View className="rounded-[10px] bg-surface">
-        {ModelFields.map((field, index) => {
+        {availableFields.map((field, index) => {
           const isLast = index === ModelFields.length - 1;
           const enabled = Boolean(currentFields.find((f) => f.name == field.name));
 

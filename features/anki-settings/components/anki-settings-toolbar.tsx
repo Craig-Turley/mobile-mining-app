@@ -1,5 +1,5 @@
 import { useAppTheme } from '@/theme/theme-provider';
-import { router, Stack } from 'expo-router';
+import { Stack } from 'expo-router';
 
 export function AnkiSettingsToolbar() {
   const { colors } = useAppTheme();

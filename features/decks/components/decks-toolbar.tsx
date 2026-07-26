@@ -1,8 +1,10 @@
 import { useAppTheme } from '@/theme/theme-provider';
-import { router, Stack } from 'expo-router';
+import { Stack } from 'expo-router';
+import { useNewDeckModal } from '../contexts/new-deck-modal-context';
 
 export function DecksToolbar() {
   const { colors } = useAppTheme();
+  const { open } = useNewDeckModal();
 
   return (
     <>
@@ -17,17 +19,15 @@ export function DecksToolbar() {
           headerStyle: {
             backgroundColor: colors.background,
           },
+          headerBackButtonDisplayMode: 'minimal',
         }}
       />
 
       <Stack.Toolbar placement="right">
         <Stack.Toolbar.Button
           icon="plus"
-          onPress={() => {
-            router.push({
-              pathname: '/model-create',
-            });
-          }}></Stack.Toolbar.Button>
+          onPress={() => { open() }}>
+        </Stack.Toolbar.Button>
       </Stack.Toolbar>
     </>
   );

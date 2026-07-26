@@ -54,6 +54,7 @@ export const darkColors = {
   popoverForeground: 'rgb(246, 245, 241)',
 
   primary: 'rgb(255, 116, 127)',
+  primaryMuted: 'rgba(255, 116, 127, 0.15)',
   primaryForeground: 'rgb(11, 13, 20)',
 
   secondary: 'rgb(38, 45, 66)',

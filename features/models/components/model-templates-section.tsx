@@ -8,7 +8,7 @@ import {
   modelFieldLabels,
   ModelFieldName,
 } from '@/lib/flash-card';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/theme-provider';
 import { createTemplateFormData, TemplateFormData } from '@/lib/model-form';
@@ -22,6 +22,7 @@ export interface ModelTemplatesSectionProps extends ViewProps {
 export default function ModelTemplatesSection({
   className,
   templates,
+  availableFields,
   setModelTemplates,
   ...rest
 }: ModelTemplatesSectionProps) {
@@ -37,14 +38,15 @@ export default function ModelTemplatesSection({
     const nextTemplates = templates.map((template, index) =>
       index === currentTemplateIdx
         ? {
-            ...template,
-            ...updates,
-          }
+          ...template,
+          ...updates,
+        }
         : template
     );
 
     setModelTemplates(nextTemplates);
   };
+
   const toggleCurrentTemplateField = (
     side: 'frontFields' | 'backFields',
     field: ModelFieldName
@@ -83,6 +85,19 @@ export default function ModelTemplatesSection({
 
     setCurrentTemplateIdx(Math.min(currentTemplateIdx, nextTemplates.length - 1));
   };
+
+  const availableFieldSet = useMemo(
+    () => new Set<ModelFieldName>(availableFields),
+    [availableFields]
+  );
+
+  const availableFrontFields = FrontSideModelFields.filter((field) =>
+    availableFieldSet.has(field.name)
+  );
+
+  const availableBackFields = BackSideModelFields.filter((field) =>
+    availableFieldSet.has(field.name)
+  );
 
   return (
     <View className={cn('flex-1 gap-4 overflow-hidden px-3', className)} {...rest}>
@@ -140,7 +155,7 @@ export default function ModelTemplatesSection({
         </View>
 
         <View className="mt-4 flex-row flex-wrap gap-2">
-          {FrontSideModelFields.map((field) => {
+          {availableFrontFields.map((field) => {
             const enabled = currentTemplate?.frontFields.includes(field.name) ?? false;
 
             return (
@@ -172,7 +187,7 @@ export default function ModelTemplatesSection({
         </View>
 
         <View className="mt-4 flex-row flex-wrap gap-2">
-          {BackSideModelFields.map((field) => {
+          {availableBackFields.map((field) => {
             const enabled = currentTemplate.backFields.includes(field.name) ?? false;
 
             return (

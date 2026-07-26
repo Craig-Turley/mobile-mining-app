@@ -1,14 +1,14 @@
 import { useAppTheme } from '@/theme/theme-provider';
-import { router, Stack } from 'expo-router';
+import { Stack } from 'expo-router';
 
-export function ModelsToolbar() {
+export function QueueToolbar() {
   const { colors } = useAppTheme();
 
   return (
     <>
       <Stack.Screen
         options={{
-          title: 'Models',
+          title: 'Queue Settings',
           headerLargeTitle: false,
           headerTitleStyle: {
             color: colors.foreground,
@@ -17,19 +17,8 @@ export function ModelsToolbar() {
           headerStyle: {
             backgroundColor: colors.background,
           },
-          headerBackButtonDisplayMode: 'minimal',
         }}
       />
-
-      <Stack.Toolbar placement="right">
-        <Stack.Toolbar.Button
-          icon="plus"
-          onPress={() => {
-            router.push({
-              pathname: '/model-create',
-            });
-          }}></Stack.Toolbar.Button>
-      </Stack.Toolbar>
     </>
   );
 }

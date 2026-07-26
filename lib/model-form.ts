@@ -1,5 +1,5 @@
 import { CardTemplate, Model, ModelField, ModelRequirement, RequirementMode } from 'genanki-ts';
-import { AllowedModelField, ModelElementsHTML, ModelFieldName } from './flash-card';
+import { AllowedModelField, DEFAULT_CSS, ModelElementsHTML, ModelFieldName } from './flash-card';
 
 export type ModelFormData = {
   applicationId?: number;
@@ -35,9 +35,12 @@ export function createTemplateFormData(index: number): TemplateFormData {
 function formatHTML(fields: ModelFieldName[]): string {
   const fieldsSet = new Set(fields);
 
-  return ModelElementsHTML.filter(({ name }) => fieldsSet.has(name))
+  const content = ModelElementsHTML
+    .filter(({ name }) => fieldsSet.has(name))
     .map(({ html }) => html)
     .join('\n');
+
+  return `<div class="card-content">${content}</div>`;
 }
 
 function buildTemplates(templateFormData: TemplateFormData[]): CardTemplate[] {
@@ -76,5 +79,6 @@ export function formDataToModel(formData: ModelFormData): Model<AllowedModelFiel
     flds: formData.fields,
     tmpls: buildTemplates(formData.templates),
     req: buildReqs(formData.templates, formData.fields),
+    css: DEFAULT_CSS,
   });
 }

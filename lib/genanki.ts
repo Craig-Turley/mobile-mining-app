@@ -11,66 +11,129 @@ import {
   SaveAs,
   RequirementMode,
 } from 'genanki-ts';
+import { AllowedModelField, ModelFieldName } from './flash-card';
+import { StoredDeck, StoredModel, StoredQueueItem } from '@/db/app/schema';
+import { Entry } from './entry';
 
-const css = `
-.card {
-  font-family: Arial, sans-serif;
-  font-size: 22px;
-  text-align: center;
-  color: #222;
-  background: #fff;
-  padding: 24px;
+const TEMPORARY_EXPORT_DB_NAME = 'temp.db';
+const TEMPORARY_ANKI_EXPORT_PATH = 'ANKI_APKG_TEMP';
+
+
+// const m = new Model<AllowedModelField[]>({
+//   name: "Test",
+//   id: 123456789,
+//   flds: [{ name: 'expression' }, { name: 'reading' }],
+//   tmpls: [{ name: "Card 1", qfmt: "{{Front}}", afmt: "{{FrontSide}}\n\n<hr id=answer>\n\n{{Back}}" }],
+//   req: [[0, "all", [0]]],
+// });
+//
+// const d = new Deck(1276438724687, "Test Deck");
+// d.addNote(m.note({ expression: "Please", meaning: "work" }))
+
+export function prepareDeckForExport(
+  storedDeck: StoredDeck,
+  storedModels: StoredModel[],
+  storedCard: StoredQueueItem[],
+): Deck<AllowedModelField[]> {
+  const deck = new Deck<AllowedModelField[]>(
+    storedDeck.deck.id,
+    storedDeck.deck.name,
+    storedDeck.deck.description,
+  );
+
+  const modelMap = new Map<number, Model<AllowedModelField[]>>();
+  storedModels.forEach(sm => modelMap.set(sm.applicationId, sm.model));
+
+  storedCard.forEach(sc => {
+    const m = modelMap.get(sc.modelApplicationId);
+    if (m == undefined) throw new Error("Queued card corresponds to unexisting model");
+    deck.addNote(m.note(entryToNoteFields(sc.entry, m)));
+  });
+
+  return deck;
 }
 
-.card-content {
-  max-width: 700px;
-  margin: 0 auto;
+function entryToNoteFields(
+  entry: Entry,
+  model: Model<AllowedModelField[]>,
+): Record<string, string> {
+  const noteFields: Record<string, string> = {};
+
+  for (const field of model.flds) {
+    const fieldName = field.name;
+
+    if (fieldName === 'FrontSide') {
+      continue;
+    }
+
+    const mapper = entryToModelMap[fieldName];
+    noteFields[fieldName] = mapper(entry);
+  }
+
+  return noteFields;
 }
 
-.front,
-.back,
-.image,
-.audio {
-  margin: 16px 0;
-}
+type MappableModelFieldName = Exclude<ModelFieldName, 'FrontSide'>;
 
-.front,
-.back {
-  font-size: 30px;
-  font-weight: 600;
-  line-height: 1.4;
-}
+type EntryToFieldName = (entry: Entry) => string;
 
-.image img {
-  display: block;
-  max-width: 100%;
-  max-height: 350px;
-  width: auto;
-  height: auto;
-  margin: 0 auto;
-  border-radius: 8px;
-}
+type EntryToModelMap = Record<
+  MappableModelFieldName,
+  EntryToFieldName
+>;
 
-.audio {
-  min-height: 24px;
-}
+export const entryToModelMap = {
+  expression: (entry) =>
+    entry.kanji.map((item) => item.text).join(', '),
 
-hr#answer {
-  border: 0;
-  border-top: 1px solid #bbb;
-  margin: 28px auto;
-  max-width: 500px;
-}
+  reading: (entry) =>
+    entry.kana.map((item) => item.text).join(', '),
 
-.nightMode .card {
-  color: #eee;
-  background: #222;
-}
+  meaning: (entry) =>
+    entry.sense
+      .flatMap((sense) => sense.gloss)
+      .map((gloss) => gloss.text)
+      .join(', '),
+} satisfies EntryToModelMap;
 
-.nightMode hr#answer {
-  border-top-color: #666;
+
+export async function exportToAnki(
+  deck: Deck<AllowedModelField[]>,
+): Promise<string> {
+  const tmpDb = SQLite.openDatabaseSync(
+    TEMPORARY_EXPORT_DB_NAME,
+  );
+
+  const directory = new Directory(
+    Paths.document,
+    TEMPORARY_ANKI_EXPORT_PATH,
+  );
+
+  if (!directory.exists) {
+    directory.create({
+      intermediates: true,
+      idempotent: true,
+    });
+  }
+
+  const pkg = new Package(
+    createExpoDatabaseAdapter(tmpDb),
+    createExpoZipAdapter(),
+    createExpoReaderAdapter(),
+    createExpoSaveAsAdapter({
+      directory: directory,
+      overwrite: true,
+    }),
+  );
+
+  pkg.addDeck(deck);
+
+  const outputFile = 'deck.apkg';
+  await pkg.writeToFile(outputFile);
+  await SQLite.deleteDatabaseAsync(TEMPORARY_EXPORT_DB_NAME);
+
+  return new File(directory, outputFile).uri;
 }
-`;
 
 export function createExpoDatabaseAdapter(sqliteDb: SQLite.SQLiteDatabase): PackageDatabase {
   return {
@@ -176,4 +239,6 @@ export function generateModelId(): number {
   return (1 << 30) + Math.floor(Math.random() * (1 << 30));
 }
 
-// export const RequirmentModes = (typeof RequirmentMode)[number];
+export function generateDeckId(): number {
+  return (1 << 30) + Math.floor(Math.random() * (1 << 30));
+}

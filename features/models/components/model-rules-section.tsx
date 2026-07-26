@@ -23,12 +23,12 @@ export default function ModelRulesSection({
       templates.map((template, index) =>
         index === templateIndex
           ? {
-              ...template,
-              rule: {
-                ...template.rule,
-                mode,
-              },
-            }
+            ...template,
+            rule: {
+              ...template.rule,
+              mode,
+            },
+          }
           : template
       )
     );
@@ -41,8 +41,9 @@ export default function ModelRulesSection({
           return template;
         }
 
-        const nextFields = [...template.rule.fields];
-        nextFields.includes(field) ? nextFields.filter((f) => f != field) : nextFields.push(field);
+        const nextFields = template.rule.fields.includes(field)
+          ? template.rule.fields.filter((currentField) => currentField !== field)
+          : [...template.rule.fields, field];
 
         return {
           ...template,

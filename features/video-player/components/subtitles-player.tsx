@@ -1,4 +1,4 @@
-import { View, Text, FlatList, Button, Pressable } from 'react-native';
+import { View, Text, FlatList, Pressable } from 'react-native';
 import { PropsWithChildren, useEffect, useRef, useState } from 'react';
 import { parseSubtitles, SubtitleCue } from '@/utils/subtitles';
 import Subtitle from './subtitle';
@@ -6,7 +6,8 @@ import { useEventListener } from 'expo';
 import { VideoPlayer } from 'expo-video';
 import { Directory, File, Paths } from 'expo-file-system';
 import getFile from '@/utils/file';
-import { useInsertSubtitle, useSubtitleData } from '@/lib/file-db-hooks';
+import { useSubtitleData } from '@/lib/file-db-hooks';
+import { insertSubtitle } from '@/db/repositories/files.repository';
 
 export interface SubtitlePlayerProps extends PropsWithChildren {
   videoId: number;
@@ -17,7 +18,6 @@ export interface SubtitlePlayerProps extends PropsWithChildren {
 type SubtitleError = 'unassociated_file' | 'upload_error' | 'missing_file';
 
 export default function SubtitlesPlayer({ videoId, subtitlesId, player }: SubtitlePlayerProps) {
-  const insertSubtitle = useInsertSubtitle();
 
   const {
     data,

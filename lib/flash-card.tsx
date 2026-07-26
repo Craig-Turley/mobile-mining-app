@@ -15,72 +15,50 @@
 import { type ModelField } from 'genanki-ts';
 
 export const DEFAULT_CSS = `
-.card {
-  font-family: Arial, sans-serif;
-  font-size: 22px;
-  text-align: center;
-  color: #222;
-  background: #fff;
-  padding: 24px;
-}
+  html,
+  body {
+    width: 100%;
+    margin: 0;
+  }
 
-.card-content {
-  max-width: 700px;
-  margin: 0 auto;
-}
+  .card-content {
+    display: flex;
+    flex-direction: column;
 
-.front,
-.back,
-.image,
-.audio {
-  margin: 16px 0;
-}
+    align-items: center;
+    justify-content: flex-start;
 
-.front,
-.back {
-  font-size: 30px;
-  font-weight: 600;
-  line-height: 1.4;
-}
+    text-align: center;
+    box-sizing: border-box;
+    padding: 24px;
+    gap: 12px;
+  }
 
-.image img {
-  display: block;
-  max-width: 100%;
-  max-height: 350px;
-  width: auto;
-  height: auto;
-  margin: 0 auto;
-  border-radius: 8px;
-}
+  .expression {
+    font-size: 50px;
+  }
 
-.audio {
-  min-height: 24px;
-}
+  .reading {
+    font-size: 25px;
+  }
 
-hr#answer {
-  border: 0;
-  border-top: 1px solid #bbb;
-  margin: 28px auto;
-  max-width: 500px;
-}
+  .meaning {
+    font-size: 20px;
+  }
 
-.nightMode .card {
-  color: #eee;
-  background: #222;
-}
-
-.nightMode hr#answer {
-  border-top-color: #666;
-}
+  #answer {
+    width: 100%;
+    margin: 12px 0;
+  }
 `;
 
 export const ModelFields = [
   { name: 'expression' },
   { name: 'reading' },
   { name: 'meaning' },
-  { name: 'partOfSpeech' },
-  { name: 'exampleSentence' },
-  { name: 'exampleTranslation' },
+  // { name: 'partOfSpeech' },
+  // { name: 'exampleSentence' },
+  // { name: 'exampleTranslation' },
   { name: 'FrontSide' },
 ] as const satisfies readonly ModelField[];
 export type ModelFieldName = (typeof ModelFields)[number]['name'];
@@ -93,18 +71,18 @@ export const FrontSideModelFields: AllowedModelField[] = [
   { name: 'expression' },
   { name: 'reading' },
   { name: 'meaning' },
-  { name: 'partOfSpeech' },
-  { name: 'exampleSentence' },
-  { name: 'exampleTranslation' },
+  // { name: 'partOfSpeech' },
+  // { name: 'exampleSentence' },
+  // { name: 'exampleTranslation' },
 ];
 
 export const BackSideModelFields: AllowedModelField[] = [
   { name: 'expression' },
   { name: 'reading' },
   { name: 'meaning' },
-  { name: 'partOfSpeech' },
-  { name: 'exampleSentence' },
-  { name: 'exampleTranslation' },
+  // { name: 'partOfSpeech' },
+  // { name: 'exampleSentence' },
+  // { name: 'exampleTranslation' },
   { name: 'FrontSide' },
 ];
 
@@ -113,39 +91,46 @@ export const modelFieldLabels = {
   expression: 'Expression',
   reading: 'Reading',
   meaning: 'Meaning',
-  partOfSpeech: 'Part of Speech',
-  exampleSentence: 'Example Sentence',
-  exampleTranslation: 'Example Translation',
+  // partOfSpeech: 'Part of Speech',
+  // exampleSentence: 'Example Sentence',
+  // exampleTranslation: 'Example Translation',
   FrontSide: 'Front Side',
 } satisfies ModelFieldLabels;
 
-export const ModelElementsHTML: { name: ModelFieldName; html: string }[] = [
-  {
-    name: 'FrontSide',
-    html: '<div>{{FrontSide}}<div>\n<hr id=answer>',
-  },
-  {
-    name: 'reading',
-    html: '<div style="font-size:25px">{{reading}}<div>',
-  },
-  {
-    name: 'expression',
-    html: '<div style="font-size:50px">{{expression}}<div>',
-  },
-  {
-    name: 'meaning',
-    html: '<div>{{meaning}}<div>',
-  },
-  {
-    name: 'partOfSpeech',
-    html: '<div>{{partOfSpeech}}<div>',
-  },
-  {
-    name: 'exampleSentence',
-    html: '<div>{{exmapleSentence}}<div>',
-  },
-  {
-    name: 'exampleTranslation',
-    html: '<div>{{exampleTranslation}}<div>',
-  },
-];
+export const ModelElementsHTML: {
+  name: ModelFieldName;
+  html: string;
+}[] = [
+    {
+      name: 'FrontSide',
+      html: `
+      {{FrontSide}}
+      <hr id="answer">
+    `,
+    },
+    {
+      name: 'reading',
+      html: '<div class="reading">{{reading}}</div>',
+    },
+    {
+      name: 'expression',
+      html: '<div class="expression">{{expression}}</div>',
+    },
+    {
+      name: 'meaning',
+      html: '<div class="meaning">{{meaning}}</div>',
+    },
+  ];
+
+// {
+//   name: 'partOfSpeech',
+//   html: '<div>{{partOfSpeech}}<div>',
+// },
+// {
+//   name: 'exampleSentence',
+//   html: '<div>{{exmapleSentence}}<div>',
+// },
+// {
+//   name: 'exampleTranslation',
+//   html: '<div>{{exampleTranslation}}<div>',
+// },

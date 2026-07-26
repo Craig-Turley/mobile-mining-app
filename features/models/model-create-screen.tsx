@@ -4,17 +4,17 @@ import { Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-nat
 import { Ionicons } from '@expo/vector-icons';
 import { cssInterop } from 'nativewind';
 import { useAppTheme } from '@/theme/theme-provider';
-import { ModelFieldName } from '@/lib/flash-card';
+import { AllowedModelField, ModelFieldName } from '@/lib/flash-card';
 import { ModelFields } from '@/lib/flash-card';
-import { formDataToModel, createTemplateFormData, ModelFormData } from '@/lib/model-form';
+import { createTemplateFormData, formDataToModel, ModelFormData } from '@/lib/model-form';
 import { generateModelId } from '@/lib/genanki';
+import { StoredModel } from '@/db/app/schema/models';
+import { useUpsertModel } from '@/lib/model-db-hooks';
 import ModelMetaDataSection from './components/model-meta-data-section';
 import ModelFieldsSection from './components/model-fields-section';
 import ModelTemplatesSection from './components/model-templates-section';
 import ModelRulesSection from './components/model-rules-section';
 import ModelCssSection from './components/model-css-section';
-import { StoredModel } from '@/db/app/schema/models';
-import { useUpsertModel } from '@/lib/model-db-hooks';
 
 cssInterop(Ionicons, {
   className: {
@@ -25,7 +25,7 @@ cssInterop(Ionicons, {
   },
 });
 
-interface ScreenContentProps {}
+interface ScreenContentProps { }
 
 export const ModelCreateScreen: React.FC<ScreenContentProps> = () => {
   const { editModelFormData } = useLocalSearchParams<{
@@ -110,25 +110,44 @@ export const ModelCreateScreen: React.FC<ScreenContentProps> = () => {
         contentContainerStyle={{ paddingBottom: 8, gap: 16 }}>
         <ModelMetaDataSection
           name={form.name}
-          setModelName={(name) =>
-            setForm({
-              ...form,
+          setModelName={(name) => {
+            setForm((currentForm) => ({
+              ...currentForm,
               name,
-            })
-          }
+            }));
+          }}
         />
         <ModelFieldsSection
-          availableFields={ModelFields}
+          availableFields={ModelFields.filter(field => field.name != "FrontSide")}
           currentFields={form.fields}
-          setModelFields={(fields) =>
-            setForm({
-              ...form,
+          setModelFields={(fields: AllowedModelField[]) => {
+            const allowedFieldNames = new Set<ModelFieldName>(
+              fields.map((field) => field.name)
+            );
+
+            setForm((currentForm) => ({
+              ...currentForm,
               fields,
-            })
-          }
+              templates: currentForm.templates.map((template) => ({
+                ...template,
+                frontFields: template.frontFields.filter((fieldName) =>
+                  allowedFieldNames.has(fieldName)
+                ),
+                backFields: template.backFields.filter((fieldName) =>
+                  allowedFieldNames.has(fieldName)
+                ),
+                rule: {
+                  ...template.rule,
+                  fields: template.rule.fields.filter((fieldName) =>
+                    allowedFieldNames.has(fieldName),
+                  )
+                }
+              })),
+            }));
+          }}
         />
         <ModelTemplatesSection
-          availableFields={availableFields}
+          availableFields={[...availableFields, "FrontSide"]}
           templates={form.templates}
           setModelTemplates={(templates) => {
             setForm((currentForm) => ({
@@ -140,12 +159,12 @@ export const ModelCreateScreen: React.FC<ScreenContentProps> = () => {
         <ModelRulesSection
           availableFields={availableFields}
           templates={form.templates}
-          setModelTemplates={(templates) =>
-            setForm({
-              ...form,
+          setModelTemplates={(templates) => {
+            setForm((currentForm) => ({
+              ...currentForm,
               templates,
-            })
-          }
+            }));
+          }}
         />
         <ModelCssSection />
       </ScrollView>

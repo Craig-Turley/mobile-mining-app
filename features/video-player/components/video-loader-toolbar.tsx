@@ -1,11 +1,10 @@
 import { useAppTheme } from '@/theme/theme-provider';
 import { Stack } from 'expo-router';
 import getFile from '@/utils/file';
-import { useInsertVideo } from '@/lib/file-db-hooks';
+import { insertVideo } from '@/db/repositories/files.repository';
 
 export function VideoLoaderToolbar() {
   const { colors } = useAppTheme();
-  const insertVideo = useInsertVideo();
 
   const uploadHelper = async (src: 'file' | 'photos') => {
     const file = await getFile({ src });

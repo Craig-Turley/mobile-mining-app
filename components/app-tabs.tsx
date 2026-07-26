@@ -8,6 +8,10 @@ export default function AppTabs() {
         <NativeTabs.Trigger.Label>Watch</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf="play.fill" drawable="custom_android_drawable" />
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="(queue)">
+        <NativeTabs.Trigger.Label>Queue</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="tray.full" drawable="custom_android_drawable" />
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="(anki-settings)">
         <NativeTabs.Trigger.Label>Anki</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf="gear" drawable="custom_android_drawable" />
