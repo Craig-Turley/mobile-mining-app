@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
-
-import { getAppDefaultsQuery } from '@/db/repositories/defaults.repository';
+import { getAppDefaultsQuery } from '@/db/features/defaults/defaults.queries';
 
 export function useDefaults() {
   const query = useMemo(() => getAppDefaultsQuery(), []);

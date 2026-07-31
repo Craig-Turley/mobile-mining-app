@@ -34,3 +34,8 @@ export function saveFile(file: FileData, filePath: FilePath, extensionFallback: 
     localPath: `${filePath}/${destinationName}`,
   };
 }
+
+export function deleteFile(filePath: string) {
+  const file = new File(Paths.document, filePath);
+  if (file.exists) file.delete();
+}

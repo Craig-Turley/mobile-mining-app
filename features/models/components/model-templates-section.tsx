@@ -38,9 +38,9 @@ export default function ModelTemplatesSection({
     const nextTemplates = templates.map((template, index) =>
       index === currentTemplateIdx
         ? {
-          ...template,
-          ...updates,
-        }
+            ...template,
+            ...updates,
+          }
         : template
     );
 

@@ -1,7 +1,7 @@
 import { useAppTheme } from '@/theme/theme-provider';
 import { Stack } from 'expo-router';
 import getFile from '@/utils/file';
-import { insertVideo } from '@/db/repositories/files.repository';
+import { insertVideo } from '@/db/features/files/files.queries';
 
 export function VideoLoaderToolbar() {
   const { colors } = useAppTheme();

@@ -1,15 +1,13 @@
-import { eq } from 'drizzle-orm';
+import { deleteFile, saveFile } from '@/lib/file-system';
+import { deleteSubtitleQuery, deleteVideoQuery } from './files.queries';
+import { createLocalId } from '@/utils/id';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
-
 import { appDb } from '@/db/app/client';
 import { subtitles, videos } from '@/db/app/schema';
-import { saveFile } from '@/lib/file-system';
-import { createLocalId } from '@/utils/id';
+import { eq } from 'drizzle-orm';
 
-export type InsertFileEntry =
-  | ImagePicker.ImagePickerAsset
-  | DocumentPicker.DocumentPickerAsset;
+export type InsertFileEntry = ImagePicker.ImagePickerAsset | DocumentPicker.DocumentPickerAsset;
 
 type FileEntry = {
   id: number;
@@ -23,63 +21,31 @@ export type VideoFileEntry = FileEntry & {
 
 export type SubtitleFileEntry = FileEntry;
 
-export const videosQuery = appDb
-  .select({
-    id: videos.id,
-    name: videos.name,
-    relative_path: videos.relativePath,
-    subtitle_id: videos.subtitleId,
-  })
-  .from(videos);
+// TODO: handle error case of db deletion but not file deletion
+export async function deleteVideo(videoId: number) {
+  const [video] = await deleteVideoQuery(videoId);
+  if (!video) {
+    return;
+  }
+  deleteFile(video.relativePath);
 
-export function videoByIdQuery(id: number | null | undefined) {
-  return appDb
-    .select({
-      id: videos.id,
-      name: videos.name,
-      relative_path: videos.relativePath,
-      subtitle_id: videos.subtitleId,
-    })
-    .from(videos)
-    .where(eq(videos.id, id ?? -1))
-    .limit(1);
+  if (video.subtitledId !== null) {
+    const [subtitle] = await deleteSubtitleQuery(video.subtitledId);
+    if (subtitle) {
+      deleteFile(subtitle.relativePath);
+    }
+  }
 }
 
-export function subtitleByIdQuery(id: number | null | undefined) {
-  return appDb
-    .select({
-      id: subtitles.id,
-      name: subtitles.name,
-      relative_path: subtitles.relativePath,
-    })
-    .from(subtitles)
-    .where(eq(subtitles.id, id ?? -1))
-    .limit(1);
+export async function deleteSubtitles(subtitleId: number) {
+  const [subtitle] = await deleteSubtitleQuery(subtitleId);
+  if (!subtitle) return;
+
+  deleteFile(subtitle.relativePath);
 }
 
-export async function getVideos(): Promise<VideoFileEntry[]> {
-  return videosQuery;
-}
-
-export async function getVideoById(
-  id: number
-): Promise<VideoFileEntry | null> {
-  const [video] = await videoByIdQuery(id);
-
-  return video ?? null;
-}
-
-export async function getSubtitleById(
-  id: number
-): Promise<SubtitleFileEntry | null> {
-  const [subtitle] = await subtitleByIdQuery(id);
-
-  return subtitle ?? null;
-}
-
-export async function insertVideo(
-  file: InsertFileEntry
-): Promise<VideoFileEntry> {
+// TODO: figure out the below functions
+export async function insertVideo(file: InsertFileEntry): Promise<VideoFileEntry> {
   const id = createLocalId();
   const name = getFileName(file);
   const subtitleId = null;

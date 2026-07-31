@@ -5,21 +5,17 @@ import { models } from './models';
 import { decks } from './decks';
 
 export const defaults = sqliteTable('defaults', {
-  applicationId: integer('application_id')
-    .primaryKey()
-    .default(1),
+  applicationId: integer('application_id').primaryKey().default(1),
 
-  modelApplicationId: integer('model_application_id')
-    .references(() => models.applicationId, {
-      onDelete: 'set null',
-      onUpdate: 'cascade',
-    }),
+  modelApplicationId: integer('model_application_id').references(() => models.applicationId, {
+    onDelete: 'set null',
+    onUpdate: 'cascade',
+  }),
 
-  deckApplicationId: integer('deck_application_id')
-    .references(() => decks.applicationId, {
-      onDelete: 'set null',
-      onUpdate: 'cascade',
-    }),
+  deckApplicationId: integer('deck_application_id').references(() => decks.applicationId, {
+    onDelete: 'set null',
+    onUpdate: 'cascade',
+  }),
 
   createdAt: text('created_at')
     .notNull()

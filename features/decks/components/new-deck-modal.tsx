@@ -15,10 +15,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DeckFormData, formDataToDeck } from '@/lib/deck-form';
 import { generateDeckId } from '@/lib/genanki';
 import { useNewDeckModal } from '../contexts/new-deck-modal-context';
-import { upsertDeck } from '@/db/repositories/decks.repository';
+import { useMutation } from '@/db/hooks/use-mutation';
+import { upsertDeckQuery } from '@/db/features/decks/decks.queries';
+import { NOPMutationMapper } from '@/db/hooks/use-app-live-query';
 
-interface NewDeckModalProps extends BottomSheetModalProps {
-}
+interface NewDeckModalProps extends BottomSheetModalProps {}
 
 cssInterop(BottomSheetView, {
   className: 'style',
@@ -32,24 +33,23 @@ cssInterop(BottomSheetModal, {
 function newDeckForm() {
   return {
     id: generateDeckId(),
-    name: "",
-    description: "",
-  }
+    name: '',
+    description: '',
+  };
 }
 
 export const NewDeckBottomSheetModal = forwardRef<
   BottomSheetModalType,
-  Omit<NewDeckModalProps, "children">
+  Omit<NewDeckModalProps, 'children'>
 >((props, ref) => {
-  const bgColor =
-    useAppTheme().theme === "light"
-      ? lightColors.surface
-      : darkColors.surface;
+  const bgColor = useAppTheme().theme === 'light' ? lightColors.surface : darkColors.surface;
 
   const insets = useSafeAreaInsets();
 
   const [form, setForm] = useState<DeckFormData>(newDeckForm());
   const { close } = useNewDeckModal();
+
+  const { mutate: saveDeck } = useMutation(upsertDeckQuery, NOPMutationMapper);
 
   return (
     <BottomSheetModal
@@ -61,23 +61,17 @@ export const NewDeckBottomSheetModal = forwardRef<
       backgroundStyle={{
         backgroundColor: bgColor,
       }}
-      {...props}
-    >
+      {...props}>
       <BottomSheetView
         className="px-4 pt-2"
         style={{
           paddingBottom: insets.bottom + 12,
-        }}
-      >
+        }}>
         <View className="mb-4 flex-row items-center justify-between">
           <View>
-            <Text className="uppercase tracking-[3px] text-primary">
-              New deck
-            </Text>
+            <Text className="uppercase tracking-[3px] text-primary">New deck</Text>
 
-            <Text className="mt-1 text-lg font-semibold text-foreground">
-              Configure deck
-            </Text>
+            <Text className="mt-1 text-lg font-semibold text-foreground">Configure deck</Text>
           </View>
 
           {/*
@@ -105,13 +99,11 @@ export const NewDeckBottomSheetModal = forwardRef<
 
         <View className="gap-4">
           <View className="gap-3">
-            <Text className="text-[10px] uppercase tracking-widest text-mutedForeground">
-              Name
-            </Text>
+            <Text className="text-[10px] uppercase tracking-widest text-mutedForeground">Name</Text>
 
             <TextInput
               value={form.name}
-              onChangeText={text => setForm(prev => ({ ...prev, name: text }))}
+              onChangeText={(text) => setForm((prev) => ({ ...prev, name: text }))}
               placeholder="e.g. Mining · JLPT"
               placeholderTextColor="#888"
               className="rounded-lg border border-border bg-surface text-lg text-foreground"
@@ -119,7 +111,8 @@ export const NewDeckBottomSheetModal = forwardRef<
             />
 
             <Text className="text-[10px] text-mutedForeground">
-              If you wish to import into a pre-existing deck, the name must match your Anki deck exactlty
+              If you wish to import into a pre-existing deck, the name must match your Anki deck
+              exactlty
             </Text>
           </View>
 
@@ -130,7 +123,7 @@ export const NewDeckBottomSheetModal = forwardRef<
 
             <TextInput
               value={form.description}
-              onChangeText={text => setForm(prev => ({ ...prev, description: text }))}
+              onChangeText={(text) => setForm((prev) => ({ ...prev, description: text }))}
               placeholder="e.g. Main deck for..."
               placeholderTextColor="#888"
               className="rounded-lg border border-border bg-surface text-lg text-foreground"
@@ -178,24 +171,17 @@ export const NewDeckBottomSheetModal = forwardRef<
             className="h-11 flex-row items-center justify-center gap-2 rounded-xl bg-primary active:opacity-90"
             accessibilityRole="button"
             onPress={async () => {
-              await upsertDeck({
+              saveDeck({
                 deckFormData: form,
                 deck: formDataToDeck(form),
-              })
+              });
 
               setForm(newDeckForm());
               close();
-            }}
-          >
-            <Ionicons
-              name="checkmark"
-              size={18}
-              className="text-primary-foreground"
-            />
+            }}>
+            <Ionicons name="checkmark" size={18} className="text-primary-foreground" />
 
-            <Text className="text-sm font-semibold text-primary-foreground">
-              Create deck
-            </Text>
+            <Text className="text-primary-foreground text-sm font-semibold">Create deck</Text>
           </Pressable>
         </View>
       </BottomSheetView>

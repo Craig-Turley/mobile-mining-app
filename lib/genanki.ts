@@ -18,7 +18,6 @@ import { Entry } from './entry';
 const TEMPORARY_EXPORT_DB_NAME = 'temp.db';
 const TEMPORARY_ANKI_EXPORT_PATH = 'ANKI_APKG_TEMP';
 
-
 // const m = new Model<AllowedModelField[]>({
 //   name: "Test",
 //   id: 123456789,
@@ -33,20 +32,20 @@ const TEMPORARY_ANKI_EXPORT_PATH = 'ANKI_APKG_TEMP';
 export function prepareDeckForExport(
   storedDeck: StoredDeck,
   storedModels: StoredModel[],
-  storedCard: StoredQueueItem[],
+  storedCard: StoredQueueItem[]
 ): Deck<AllowedModelField[]> {
   const deck = new Deck<AllowedModelField[]>(
     storedDeck.deck.id,
     storedDeck.deck.name,
-    storedDeck.deck.description,
+    storedDeck.deck.description
   );
 
   const modelMap = new Map<number, Model<AllowedModelField[]>>();
-  storedModels.forEach(sm => modelMap.set(sm.applicationId, sm.model));
+  storedModels.forEach((sm) => modelMap.set(sm.applicationId, sm.model));
 
-  storedCard.forEach(sc => {
+  storedCard.forEach((sc) => {
     const m = modelMap.get(sc.modelApplicationId);
-    if (m == undefined) throw new Error("Queued card corresponds to unexisting model");
+    if (m == undefined) throw new Error('Queued card corresponds to unexisting model');
     deck.addNote(m.note(entryToNoteFields(sc.entry, m)));
   });
 
@@ -55,7 +54,7 @@ export function prepareDeckForExport(
 
 function entryToNoteFields(
   entry: Entry,
-  model: Model<AllowedModelField[]>,
+  model: Model<AllowedModelField[]>
 ): Record<string, string> {
   const noteFields: Record<string, string> = {};
 
@@ -77,17 +76,12 @@ type MappableModelFieldName = Exclude<ModelFieldName, 'FrontSide'>;
 
 type EntryToFieldName = (entry: Entry) => string;
 
-type EntryToModelMap = Record<
-  MappableModelFieldName,
-  EntryToFieldName
->;
+type EntryToModelMap = Record<MappableModelFieldName, EntryToFieldName>;
 
 export const entryToModelMap = {
-  expression: (entry) =>
-    entry.kanji.map((item) => item.text).join(', '),
+  expression: (entry) => entry.kanji.map((item) => item.text).join(', '),
 
-  reading: (entry) =>
-    entry.kana.map((item) => item.text).join(', '),
+  reading: (entry) => entry.kana.map((item) => item.text).join(', '),
 
   meaning: (entry) =>
     entry.sense
@@ -96,18 +90,10 @@ export const entryToModelMap = {
       .join(', '),
 } satisfies EntryToModelMap;
 
+export async function exportToAnki(deck: Deck<AllowedModelField[]>): Promise<string> {
+  const tmpDb = SQLite.openDatabaseSync(TEMPORARY_EXPORT_DB_NAME);
 
-export async function exportToAnki(
-  deck: Deck<AllowedModelField[]>,
-): Promise<string> {
-  const tmpDb = SQLite.openDatabaseSync(
-    TEMPORARY_EXPORT_DB_NAME,
-  );
-
-  const directory = new Directory(
-    Paths.document,
-    TEMPORARY_ANKI_EXPORT_PATH,
-  );
+  const directory = new Directory(Paths.document, TEMPORARY_ANKI_EXPORT_PATH);
 
   if (!directory.exists) {
     directory.create({
@@ -123,7 +109,7 @@ export async function exportToAnki(
     createExpoSaveAsAdapter({
       directory: directory,
       overwrite: true,
-    }),
+    })
   );
 
   pkg.addDeck(deck);

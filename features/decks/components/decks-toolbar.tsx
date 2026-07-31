@@ -26,8 +26,9 @@ export function DecksToolbar() {
       <Stack.Toolbar placement="right">
         <Stack.Toolbar.Button
           icon="plus"
-          onPress={() => { open() }}>
-        </Stack.Toolbar.Button>
+          onPress={() => {
+            open();
+          }}></Stack.Toolbar.Button>
       </Stack.Toolbar>
     </>
   );

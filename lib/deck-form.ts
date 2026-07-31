@@ -1,5 +1,5 @@
-import { Deck } from "genanki-ts";
-import { AllowedModelField } from "./flash-card";
+import { Deck } from 'genanki-ts';
+import { AllowedModelField } from './flash-card';
 
 export type DeckFormData = {
   applicationId?: number;

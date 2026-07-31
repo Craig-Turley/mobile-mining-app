@@ -1,23 +1,11 @@
-import { useAppTheme } from "@/theme/theme-provider";
-import React, { forwardRef } from "react";
-import {
-  StyleSheet,
-  TextInput as RNTextInput,
-  type TextInputProps,
-} from "react-native";
+import { useAppTheme } from '@/theme/theme-provider';
+import React, { forwardRef } from 'react';
+import { StyleSheet, TextInput as RNTextInput, type TextInputProps } from 'react-native';
 
 type Props = TextInputProps;
 
 export const TextInput = forwardRef<RNTextInput, Props>(
-  (
-    {
-      style,
-      multiline = false,
-      placeholderTextColor,
-      ...props
-    },
-    ref,
-  ) => {
+  ({ style, multiline = false, placeholderTextColor, ...props }, ref) => {
     const { colors } = useAppTheme();
 
     return (
@@ -25,10 +13,8 @@ export const TextInput = forwardRef<RNTextInput, Props>(
         ref={ref}
         {...props}
         multiline={multiline}
-        textAlignVertical={multiline ? "top" : "center"}
-        placeholderTextColor={
-          placeholderTextColor ?? colors.mutedForeground
-        }
+        textAlignVertical={multiline ? 'top' : 'center'}
+        placeholderTextColor={placeholderTextColor ?? colors.mutedForeground}
         style={[
           styles.input,
           {
@@ -41,10 +27,10 @@ export const TextInput = forwardRef<RNTextInput, Props>(
         ]}
       />
     );
-  },
+  }
 );
 
-TextInput.displayName = "TextInput";
+TextInput.displayName = 'TextInput';
 
 const styles = StyleSheet.create({
   input: {
@@ -58,7 +44,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 20,
 
-    textAlignVertical: "center",
+    textAlignVertical: 'center',
   },
 
   multiline: {
@@ -66,6 +52,6 @@ const styles = StyleSheet.create({
     minHeight: 96,
     paddingTop: 12,
     paddingBottom: 12,
-    textAlignVertical: "top",
+    textAlignVertical: 'top',
   },
 });

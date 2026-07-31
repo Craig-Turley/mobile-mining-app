@@ -23,12 +23,12 @@ export default function ModelRulesSection({
       templates.map((template, index) =>
         index === templateIndex
           ? {
-            ...template,
-            rule: {
-              ...template.rule,
-              mode,
-            },
-          }
+              ...template,
+              rule: {
+                ...template.rule,
+                mode,
+              },
+            }
           : template
       )
     );

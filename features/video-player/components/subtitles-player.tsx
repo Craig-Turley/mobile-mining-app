@@ -6,8 +6,10 @@ import { useEventListener } from 'expo';
 import { VideoPlayer } from 'expo-video';
 import { Directory, File, Paths } from 'expo-file-system';
 import getFile from '@/utils/file';
-import { useSubtitleData } from '@/lib/file-db-hooks';
-import { insertSubtitle } from '@/db/repositories/files.repository';
+import { insertSubtitle } from '@/db/features/files/files.services';
+import { useAppLiveQuery } from '@/db/hooks/use-app-live-query';
+import { subtitleByIdQuery } from '@/db/features/files/files.queries';
+import { NOPQueryMapper } from '@/db/hooks/use-query';
 
 export interface SubtitlePlayerProps extends PropsWithChildren {
   videoId: number;
@@ -18,12 +20,12 @@ export interface SubtitlePlayerProps extends PropsWithChildren {
 type SubtitleError = 'unassociated_file' | 'upload_error' | 'missing_file';
 
 export default function SubtitlesPlayer({ videoId, subtitlesId, player }: SubtitlePlayerProps) {
-
   const {
     data,
     error: subtitleQueryError,
     isLoading: isSubtitleLoading,
-  } = useSubtitleData(subtitlesId);
+  } = useAppLiveQuery(subtitleByIdQuery(subtitlesId), NOPQueryMapper);
+
   const subtitleFile = data?.[0] ?? null;
 
   const [error, setError] = useState<SubtitleError | null>(null);

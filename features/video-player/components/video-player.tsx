@@ -3,7 +3,9 @@ import { cssInterop } from 'nativewind';
 import { View, Text } from 'react-native';
 import { PropsWithChildren, useEffect } from 'react';
 import { buildFullPath } from '@/lib/file-system';
-import { useVideoData } from '@/lib/file-db-hooks';
+import { useAppLiveQuery } from '@/db/hooks/use-app-live-query';
+import { videoByIdQuery } from '@/db/features/files/files.queries';
+import { NOPQueryMapper } from '@/db/hooks/use-query';
 
 cssInterop(VideoView, {
   className: 'style',
@@ -15,7 +17,10 @@ export interface VideoPlayerProps extends PropsWithChildren {
 }
 
 export default function VideoPlayer({ videoId, player }: VideoPlayerProps) {
-  const { data, error, isLoading } = useVideoData(Number(videoId));
+  const { data, error, isLoading } = useAppLiveQuery(
+    videoByIdQuery(Number(videoId)),
+    NOPQueryMapper
+  );
 
   const isError = error !== undefined;
   const video = data?.[0] ?? null;

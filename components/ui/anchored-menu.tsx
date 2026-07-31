@@ -1,19 +1,5 @@
-import React, {
-  isValidElement,
-  useCallback,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
-import {
-  Dimensions,
-  Modal,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-  type Insets,
-} from 'react-native';
+import React, { isValidElement, useCallback, useMemo, useRef, useState } from 'react';
+import { Dimensions, Modal, Pressable, StyleSheet, Text, View, type Insets } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
@@ -65,19 +51,14 @@ export function AnchoredMenu({
     right: SCREEN_PADDING,
   });
 
-  const childElements = useMemo(
-    () => React.Children.toArray(children),
-    [children]
-  );
+  const childElements = useMemo(() => React.Children.toArray(children), [children]);
 
   const trigger = childElements.find(
-    (child) =>
-      isValidElement(child) && child.type === AnchoredMenuTrigger
+    (child) => isValidElement(child) && child.type === AnchoredMenuTrigger
   ) as React.ReactElement<AnchoredMenuTriggerProps> | undefined;
 
   const items = childElements.filter(
-    (child) =>
-      isValidElement(child) && child.type === AnchoredMenuItem
+    (child) => isValidElement(child) && child.type === AnchoredMenuItem
   ) as React.ReactElement<AnchoredMenuItemProps>[];
 
   const closeMenu = useCallback(() => {
@@ -89,13 +70,11 @@ export function AnchoredMenu({
       return;
     }
 
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
-      (error: unknown) => {
-        if (__DEV__) {
-          console.warn('Menu haptic feedback is unavailable:', error);
-        }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch((error: unknown) => {
+      if (__DEV__) {
+        console.warn('Menu haptic feedback is unavailable:', error);
       }
-    );
+    });
   }, [enableHaptics]);
 
   const openMenu = useCallback(() => {
@@ -108,37 +87,24 @@ export function AnchoredMenu({
       const menuHeight = items.length * MENU_ITEM_HEIGHT;
       const desiredTop = y + height + MENU_GAP;
 
-      const shouldOpenAbove =
-        desiredTop + menuHeight > screen.height - SCREEN_PADDING;
+      const shouldOpenAbove = desiredTop + menuHeight > screen.height - SCREEN_PADDING;
 
       const top = shouldOpenAbove
-        ? Math.max(
-          SCREEN_PADDING,
-          y - menuHeight - MENU_GAP
-        )
+        ? Math.max(SCREEN_PADDING, y - menuHeight - MENU_GAP)
         : desiredTop;
 
       const desiredRight = screen.width - (x + width);
 
       const right = Math.max(
         SCREEN_PADDING,
-        Math.min(
-          desiredRight,
-          screen.width - menuWidth - SCREEN_PADDING
-        )
+        Math.min(desiredRight, screen.width - menuWidth - SCREEN_PADDING)
       );
 
       setPosition({ top, right });
       setVisible(true);
       playOpenHaptic();
     });
-  }, [
-    disabled,
-    items.length,
-    menuWidth,
-    playOpenHaptic,
-    visible,
-  ]);
+  }, [disabled, items.length, menuWidth, playOpenHaptic, visible]);
 
   const runAction = useCallback(
     (action: () => void) => {
@@ -153,9 +119,7 @@ export function AnchoredMenu({
 
   if (!trigger) {
     if (__DEV__) {
-      console.warn(
-        'AnchoredMenu requires an AnchoredMenuTrigger child.'
-      );
+      console.warn('AnchoredMenu requires an AnchoredMenuTrigger child.');
     }
 
     return null;
@@ -168,10 +132,7 @@ export function AnchoredMenu({
       <View ref={triggerRef} collapsable={false}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={
-            triggerProps.accessibilityLabel ??
-            accessibilityLabel
-          }
+          accessibilityLabel={triggerProps.accessibilityLabel ?? accessibilityLabel}
           accessibilityState={{ disabled }}
           disabled={disabled}
           hitSlop={triggerProps.hitSlop ?? 12}
@@ -183,8 +144,7 @@ export function AnchoredMenu({
             triggerProps.className ?? '',
           ]
             .filter(Boolean)
-            .join(' ')}
-        >
+            .join(' ')}>
           {triggerProps.children}
         </Pressable>
       </View>
@@ -195,8 +155,7 @@ export function AnchoredMenu({
         animationType="fade"
         presentationStyle="overFullScreen"
         statusBarTranslucent
-        onRequestClose={closeMenu}
-      >
+        onRequestClose={closeMenu}>
         <View style={styles.modalRoot}>
           <Pressable
             accessibilityRole="button"
@@ -216,8 +175,7 @@ export function AnchoredMenu({
                 right: position.right,
                 width: menuWidth,
               },
-            ]}
-          >
+            ]}>
             {items.map((item, index) => {
               const {
                 label,
@@ -229,9 +187,7 @@ export function AnchoredMenu({
 
               return (
                 <React.Fragment key={`${label}-${index}`}>
-                  {index > 0 ? (
-                    <View className="mx-3 h-px bg-border" />
-                  ) : null}
+                  {index > 0 ? <View className="mx-3 h-px bg-border" /> : null}
 
                   <Pressable
                     accessibilityRole="menuitem"
@@ -247,28 +203,20 @@ export function AnchoredMenu({
                       itemDisabled ? 'opacity-40' : '',
                     ]
                       .filter(Boolean)
-                      .join(' ')}
-                  >
+                      .join(' ')}>
                     {icon ? (
                       <Ionicons
                         name={icon}
                         size={18}
-                        className={
-                          destructive
-                            ? 'text-destructive'
-                            : 'text-foreground'
-                        }
+                        className={destructive ? 'text-destructive' : 'text-foreground'}
                       />
                     ) : null}
 
                     <Text
                       className={[
                         'flex-1 text-[15px] font-medium',
-                        destructive
-                          ? 'text-destructive'
-                          : 'text-foreground',
-                      ].join(' ')}
-                    >
+                        destructive ? 'text-destructive' : 'text-foreground',
+                      ].join(' ')}>
                       {label}
                     </Text>
                   </Pressable>
@@ -286,9 +234,7 @@ export function AnchoredMenu({
  * Marker component consumed by AnchoredMenu.
  * It is not rendered independently.
  */
-export function AnchoredMenuTrigger(
-  _props: AnchoredMenuTriggerProps
-) {
+export function AnchoredMenuTrigger(_props: AnchoredMenuTriggerProps) {
   return null;
 }
 
@@ -296,9 +242,7 @@ export function AnchoredMenuTrigger(
  * Marker component consumed by AnchoredMenu.
  * It is not rendered independently.
  */
-export function AnchoredMenuItem(
-  _props: AnchoredMenuItemProps
-) {
+export function AnchoredMenuItem(_props: AnchoredMenuItemProps) {
   return null;
 }
 

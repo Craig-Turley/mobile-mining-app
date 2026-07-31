@@ -28,14 +28,12 @@ function srtTimeToSeconds(time: string): number {
 export function parseSubtitles(srtText: string): SubtitleCue[] {
   const parsed = parser.fromSrt(srtText) as ParsedSrtCue[];
 
-  return parsed.map(
-    (cue): SubtitleCue => ({
-      id: Number(cue.id),
-      start: srtTimeToSeconds(cue.startTime),
-      end: srtTimeToSeconds(cue.endTime),
-      text: cue.text,
-    })
-  );
+  return parsed.map((cue): SubtitleCue => ({
+    id: Number(cue.id),
+    start: srtTimeToSeconds(cue.startTime),
+    end: srtTimeToSeconds(cue.endTime),
+    text: cue.text,
+  }));
 }
 
 export function secondsToTime(rawSeconds: number): string {

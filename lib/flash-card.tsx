@@ -101,26 +101,26 @@ export const ModelElementsHTML: {
   name: ModelFieldName;
   html: string;
 }[] = [
-    {
-      name: 'FrontSide',
-      html: `
+  {
+    name: 'FrontSide',
+    html: `
       {{FrontSide}}
       <hr id="answer">
     `,
-    },
-    {
-      name: 'reading',
-      html: '<div class="reading">{{reading}}</div>',
-    },
-    {
-      name: 'expression',
-      html: '<div class="expression">{{expression}}</div>',
-    },
-    {
-      name: 'meaning',
-      html: '<div class="meaning">{{meaning}}</div>',
-    },
-  ];
+  },
+  {
+    name: 'reading',
+    html: '<div class="reading">{{reading}}</div>',
+  },
+  {
+    name: 'expression',
+    html: '<div class="expression">{{expression}}</div>',
+  },
+  {
+    name: 'meaning',
+    html: '<div class="meaning">{{meaning}}</div>',
+  },
+];
 
 // {
 //   name: 'partOfSpeech',

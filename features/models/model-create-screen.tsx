@@ -9,12 +9,14 @@ import { ModelFields } from '@/lib/flash-card';
 import { createTemplateFormData, formDataToModel, ModelFormData } from '@/lib/model-form';
 import { generateModelId } from '@/lib/genanki';
 import { StoredModel } from '@/db/app/schema/models';
-import { useUpsertModel } from '@/lib/model-db-hooks';
 import ModelMetaDataSection from './components/model-meta-data-section';
 import ModelFieldsSection from './components/model-fields-section';
 import ModelTemplatesSection from './components/model-templates-section';
 import ModelRulesSection from './components/model-rules-section';
 import ModelCssSection from './components/model-css-section';
+import { useMutation } from '@/db/hooks/use-mutation';
+import { upsertModelQuery } from '@/db/features/models/models.queries';
+import { NOPMutationMapper } from '@/db/hooks/use-app-live-query';
 
 cssInterop(Ionicons, {
   className: {
@@ -25,16 +27,16 @@ cssInterop(Ionicons, {
   },
 });
 
-interface ScreenContentProps { }
+interface ScreenContentProps {}
 
 export const ModelCreateScreen: React.FC<ScreenContentProps> = () => {
   const { editModelFormData } = useLocalSearchParams<{
     editModelFormData?: string;
   }>();
 
+  // TODO: use the useMutation loading variables
   const [isUpserting, setIsUpserting] = useState<boolean>(false);
-
-  const upsertModel = useUpsertModel();
+  const { mutate: upsertModel } = useMutation(upsertModelQuery, NOPMutationMapper);
   const parsedEditModelFormData = useMemo(() => {
     if (editModelFormData === undefined) return undefined;
 
@@ -118,12 +120,10 @@ export const ModelCreateScreen: React.FC<ScreenContentProps> = () => {
           }}
         />
         <ModelFieldsSection
-          availableFields={ModelFields.filter(field => field.name != "FrontSide")}
+          availableFields={ModelFields.filter((field) => field.name != 'FrontSide')}
           currentFields={form.fields}
           setModelFields={(fields: AllowedModelField[]) => {
-            const allowedFieldNames = new Set<ModelFieldName>(
-              fields.map((field) => field.name)
-            );
+            const allowedFieldNames = new Set<ModelFieldName>(fields.map((field) => field.name));
 
             setForm((currentForm) => ({
               ...currentForm,
@@ -139,15 +139,15 @@ export const ModelCreateScreen: React.FC<ScreenContentProps> = () => {
                 rule: {
                   ...template.rule,
                   fields: template.rule.fields.filter((fieldName) =>
-                    allowedFieldNames.has(fieldName),
-                  )
-                }
+                    allowedFieldNames.has(fieldName)
+                  ),
+                },
               })),
             }));
           }}
         />
         <ModelTemplatesSection
-          availableFields={[...availableFields, "FrontSide"]}
+          availableFields={[...availableFields, 'FrontSide']}
           templates={form.templates}
           setModelTemplates={(templates) => {
             setForm((currentForm) => ({

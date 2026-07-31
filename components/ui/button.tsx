@@ -1,21 +1,9 @@
 import React from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  PressableProps,
-  Text,
-  TextProps,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Pressable, PressableProps, Text, TextProps, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { cn } from '@/utils/cn';
 
-export type ButtonVariant =
-  | 'primary'
-  | 'secondary'
-  | 'outline'
-  | 'ghost'
-  | 'destructive';
+export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive';
 
 export type ButtonSize = 'sm' | 'md' | 'lg' | 'icon';
 
@@ -80,26 +68,19 @@ export function Button({
   ...pressableProps
 }: ButtonProps) {
   const isDisabled = disabled || loading;
-  const resolvedIconSize =
-    iconSize ?? (size === 'sm' ? 16 : size === 'lg' ? 20 : 18);
+  const resolvedIconSize = iconSize ?? (size === 'sm' ? 16 : size === 'lg' ? 20 : 18);
 
   const content = label ?? children;
   const iconColorClassName = textVariants[variant];
 
   const iconElement = icon ? (
-    <Ionicons
-      name={icon}
-      size={resolvedIconSize}
-      className={iconColorClassName}
-    />
+    <Ionicons name={icon} size={resolvedIconSize} className={iconColorClassName} />
   ) : null;
 
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={
-        accessibilityLabel ?? (typeof label === 'string' ? label : undefined)
-      }
+      accessibilityLabel={accessibilityLabel ?? (typeof label === 'string' ? label : undefined)}
       accessibilityState={{
         disabled: isDisabled,
         busy: loading,
@@ -112,8 +93,7 @@ export function Button({
         isDisabled && 'opacity-50',
         className
       )}
-      {...pressableProps}
-    >
+      {...pressableProps}>
       {loading ? (
         <ActivityIndicator />
       ) : (
@@ -129,8 +109,7 @@ export function Button({
                 textSizeVariants[size],
                 textClassName,
                 textProps?.className
-              )}
-            >
+              )}>
               {content}
             </Text>
           ) : (

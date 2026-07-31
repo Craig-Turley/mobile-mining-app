@@ -6,8 +6,10 @@ import SubtitlesPlayer from './components/subtitles-player';
 import { useVideoPlayer } from 'expo-video';
 import { EntryModalProvider } from './contexts/entry-modal-context';
 import { ActivityIndicator, Text } from 'react-native';
-import { useVideoData } from '@/lib/file-db-hooks';
 import { VideoScreenProvider } from './contexts/video-screen-context';
+import { useAppLiveQuery } from '@/db/hooks/use-app-live-query';
+import { videoByIdQuery } from '@/db/features/files/files.queries';
+import { NOPQueryMapper } from '@/db/hooks/use-query';
 
 interface ScreenContentProps extends PropsWithChildren {}
 
@@ -16,7 +18,10 @@ export const VideoPlayerScreen: React.FC<ScreenContentProps> = ({ children }) =>
 
   const numericVideoId = Number(videoId);
 
-  const { data, error, isLoading } = useVideoData(numericVideoId);
+  const { data, error, isLoading } = useAppLiveQuery(
+    videoByIdQuery(numericVideoId),
+    NOPQueryMapper
+  );
 
   const player = useVideoPlayer(null, (player) => {
     player.timeUpdateEventInterval = 0.25;

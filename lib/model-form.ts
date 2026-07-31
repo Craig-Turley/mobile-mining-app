@@ -35,8 +35,7 @@ export function createTemplateFormData(index: number): TemplateFormData {
 function formatHTML(fields: ModelFieldName[]): string {
   const fieldsSet = new Set(fields);
 
-  const content = ModelElementsHTML
-    .filter(({ name }) => fieldsSet.has(name))
+  const content = ModelElementsHTML.filter(({ name }) => fieldsSet.has(name))
     .map(({ html }) => html)
     .join('\n');
 

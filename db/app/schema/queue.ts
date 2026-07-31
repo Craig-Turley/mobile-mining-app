@@ -5,8 +5,7 @@ import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import { models } from './models';
 
 export const queue = sqliteTable('queue', {
-  applicationId: integer('application_id')
-    .primaryKey({ autoIncrement: true }),
+  applicationId: integer('application_id').primaryKey({ autoIncrement: true }),
 
   entry: text('entry', {
     mode: 'json',

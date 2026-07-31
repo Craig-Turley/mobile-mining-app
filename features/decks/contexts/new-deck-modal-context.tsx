@@ -5,29 +5,23 @@ import React, {
   useMemo,
   useRef,
   type ReactNode,
-} from "react";
-import {
-  BottomSheetModalProvider,
-  type BottomSheetModal,
-} from "@gorhom/bottom-sheet";
+} from 'react';
+import { BottomSheetModalProvider, type BottomSheetModal } from '@gorhom/bottom-sheet';
 
-import { NewDeckBottomSheetModal } from "../components/new-deck-modal";
+import { NewDeckBottomSheetModal } from '../components/new-deck-modal';
 
 type NewDeckModalContextValue = {
   open: () => void;
   close: () => void;
 };
 
-const NewDeckModalContext =
-  createContext<NewDeckModalContextValue | undefined>(undefined);
+const NewDeckModalContext = createContext<NewDeckModalContextValue | undefined>(undefined);
 
 type NewDeckModalProviderProps = {
   children: ReactNode;
 };
 
-export function NewDeckModalProvider({
-  children,
-}: NewDeckModalProviderProps) {
+export function NewDeckModalProvider({ children }: NewDeckModalProviderProps) {
   const bottomSheetRef = useRef<BottomSheetModal>(null);
 
   const open = useCallback(() => {
@@ -43,7 +37,7 @@ export function NewDeckModalProvider({
       open,
       close,
     }),
-    [open, close],
+    [open, close]
   );
 
   return (
@@ -60,9 +54,7 @@ export function useNewDeckModal() {
   const context = useContext(NewDeckModalContext);
 
   if (!context) {
-    throw new Error(
-      "useNewDeckModal must be used inside NewDeckModalProvider",
-    );
+    throw new Error('useNewDeckModal must be used inside NewDeckModalProvider');
   }
 
   return context;
