@@ -2,7 +2,7 @@ import { asc, eq, sql } from 'drizzle-orm';
 import { appDb } from '@/db/app/client';
 import { models } from '@/db/app/schema/models';
 import { queue, type StoredQueueItem } from '@/db/app/schema/queue';
-import { type Entry } from '@/lib/entry';
+import { type Entry } from '@/types/entry';
 
 export type InsertIntoQueueInput = {
   modelApplicationId: number;

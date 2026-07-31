@@ -1,7 +1,7 @@
 import { jmdictDb, jmdictSchema } from '@/db/jmdict/client';
 import { Token } from '@kuzulabz/expo-kagome';
 import { and, eq, or, sql } from 'drizzle-orm';
-import { Entry } from './entry';
+import { Entry } from '@/types/entry';
 
 export const lookupToken = async (token: Token): Promise<Entry[]> => {
   if (!jmdictDb) {

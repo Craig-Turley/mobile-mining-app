@@ -5,12 +5,11 @@ import { cn } from '@/utils/cn';
 import { cssInterop, remapProps } from 'nativewind';
 import { Ionicons } from '@expo/vector-icons';
 import { NewDeckModalProvider } from './contexts/new-deck-modal-context';
-import { useDefaults } from '@/lib/defaults-db-hooks';
 import { StoredDeck } from '@/db/app/schema';
 import { AnchoredMenu, AnchoredMenuItem, AnchoredMenuTrigger } from '@/components/ui/anchored-menu';
 import { allDecksQuery, deleteDeckQuery } from '@/db/features/decks/decks.queries';
 import { NOPMutationMapper, useAppLiveQuery } from '@/db/hooks/use-app-live-query';
-import { setDefaultDeckQuery } from '@/db/features/defaults/defaults.queries';
+import { getAppDefaultsQuery, setDefaultDeckQuery } from '@/db/features/defaults/defaults.queries';
 
 remapProps(FlatList, {
   className: 'style',
@@ -33,7 +32,11 @@ export const DecksScreen: React.FC<DecksScreenProps> = () => {
     allDecksQuery(),
     NOPMutationMapper
   );
-  const { defaults } = useDefaults();
+
+  const { data: defaults } = useAppLiveQuery(
+    getAppDefaultsQuery(),
+    rows => rows[0] ?? null,
+  );
 
   return (
     <NewDeckModalProvider>

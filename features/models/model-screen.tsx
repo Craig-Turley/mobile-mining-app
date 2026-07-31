@@ -8,7 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { AnchoredMenu, AnchoredMenuItem, AnchoredMenuTrigger } from '@/components/ui/anchored-menu';
 import { useDefaults } from '@/lib/defaults-db-hooks';
-import { setDefaultModelQuery } from '@/db/features/defaults/defaults.queries';
+import { getAppDefaultsQuery, setDefaultModelQuery } from '@/db/features/defaults/defaults.queries';
 import { useAppLiveQuery } from '@/db/hooks/use-app-live-query';
 import { allModelsQuery, deleteModelQuery } from '@/db/features/models/models.queries';
 import { NOPQueryMapper } from '@/db/hooks/use-query';
@@ -31,7 +31,10 @@ interface ModelsScreenProps { }
 
 export const ModelsScreen: React.FC<ModelsScreenProps> = () => {
   const { data: models, isLoading } = useAppLiveQuery(allModelsQuery(), NOPQueryMapper);
-  const { defaults } = useDefaults();
+  const { data: defaults } = useAppLiveQuery(
+    getAppDefaultsQuery(),
+    rows => rows[0] ?? null,
+  );
 
   return (
     <View className="flex-1 bg-background">

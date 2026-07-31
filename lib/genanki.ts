@@ -13,7 +13,7 @@ import {
 } from 'genanki-ts';
 import { AllowedModelField, ModelFieldName } from './flash-card';
 import { StoredDeck, StoredModel, StoredQueueItem } from '@/db/app/schema';
-import { Entry } from './entry';
+import { Entry } from '@/types/entry';
 
 const TEMPORARY_EXPORT_DB_NAME = 'temp.db';
 const TEMPORARY_ANKI_EXPORT_PATH = 'ANKI_APKG_TEMP';

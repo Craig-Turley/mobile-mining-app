@@ -1,5 +1,4 @@
-import { sqliteTable, AnySQLiteColumn, foreignKey, integer, text } from 'drizzle-orm/sqlite-core';
-import { sql } from 'drizzle-orm';
+import { sqliteTable, integer, text } from 'drizzle-orm/sqlite-core';
 
 export const lookup = sqliteTable('lookup', {
   entryId: integer('entry_id')

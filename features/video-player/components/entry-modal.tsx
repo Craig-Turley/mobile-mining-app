@@ -11,14 +11,17 @@ import { Text, View } from 'react-native';
 import { forwardRef, useCallback, useMemo, useState } from 'react';
 import { cssInterop } from 'nativewind';
 import { useAppTheme } from '@/theme/theme-provider';
-import { lookupToken } from '@/lib/jmdict';
-import { useDbFunc } from '@/lib/use-dbfunc';
 import Button from '@/components/ui/button';
 import { Ionicons } from '@expo/vector-icons';
 import { useDefaults } from '@/lib/defaults-db-hooks';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { insertIntoQueueQuery } from '@/db/features/queue/queue.queries';
 import { CustomAddModal } from './custom-add-modal';
+import { useQuery } from '@/db/hooks/use-query';
+import { lookupTokenQuery } from '@/db/features/jmdict/jmdict.queries';
+import { mapStoredEntryToEntry } from '@/types/entry/entry.mapper';
+import { useAppLiveQuery } from '@/db/hooks/use-app-live-query';
+import { getAppDefaultsQuery } from '@/db/features/defaults/defaults.queries';
 
 interface EntryModalProps extends BottomSheetModalProps {
   token: Token | null;
@@ -37,8 +40,17 @@ export const EntryBottomSheetModal = forwardRef<
   BottomSheetModalType,
   Omit<EntryModalProps, 'children'>
 >(({ token, ...props }, ref) => {
-  const { data: entries, isLoading } = useDbFunc(() => lookupToken(token!), [token]);
-  const { defaults, isLoading: isDefaultsLoading, error: defaultsError } = useDefaults();
+  const { data: entries, isLoading } = useQuery(
+    () => lookupTokenQuery(token!),
+    mapStoredEntryToEntry,
+    [token]
+  );
+
+  const { data: defaults, isLoading: isDefaultsLoading, error: defaultsError } = useAppLiveQuery(
+    getAppDefaultsQuery(),
+    rows => rows[0] ?? null,
+  );
+
   const snapPoints = useMemo(() => ['35%'], []);
   const { colors } = useAppTheme();
 
