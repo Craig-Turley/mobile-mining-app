@@ -4,9 +4,14 @@ import { Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-nat
 import { Ionicons } from '@expo/vector-icons';
 import { cssInterop } from 'nativewind';
 import { useAppTheme } from '@/theme/theme-provider';
-import { AllowedModelField, ModelFieldName } from '@/lib/flash-card';
-import { ModelFields } from '@/lib/flash-card';
-import { createTemplateFormData, formDataToModel, ModelFormData } from '@/lib/model-form';
+import {
+  ModelFields,
+  AllowedModelField,
+  ModelFieldName,
+  createTemplateFormData,
+  formDataToModel,
+} from '@/lib/anki-settings';
+import { ModelFormData } from '@/lib/anki-settings';
 import { generateModelId } from '@/lib/genanki';
 import { StoredModel } from '@/db/app/schema/models';
 import ModelMetaDataSection from './components/model-meta-data-section';
@@ -27,7 +32,7 @@ cssInterop(Ionicons, {
   },
 });
 
-interface ScreenContentProps {}
+interface ScreenContentProps { }
 
 export const ModelCreateScreen: React.FC<ScreenContentProps> = () => {
   const { editModelFormData } = useLocalSearchParams<{
@@ -53,7 +58,7 @@ export const ModelCreateScreen: React.FC<ScreenContentProps> = () => {
     name: parsedEditModelFormData ? parsedEditModelFormData.modelFormData.name : 'Name',
     fields: parsedEditModelFormData
       ? parsedEditModelFormData.modelFormData.fields
-      : [...ModelFields],
+      : ModelFields.map(({ name }) => ({ name })),
     templates: parsedEditModelFormData
       ? parsedEditModelFormData.modelFormData.templates
       : [createTemplateFormData(0)],
@@ -120,7 +125,7 @@ export const ModelCreateScreen: React.FC<ScreenContentProps> = () => {
           }}
         />
         <ModelFieldsSection
-          availableFields={ModelFields.filter((field) => field.name != 'FrontSide')}
+          availableFields={ModelFields}
           currentFields={form.fields}
           setModelFields={(fields: AllowedModelField[]) => {
             const allowedFieldNames = new Set<ModelFieldName>(fields.map((field) => field.name));
@@ -166,7 +171,7 @@ export const ModelCreateScreen: React.FC<ScreenContentProps> = () => {
             }));
           }}
         />
-        <ModelCssSection />
+        {/*<ModelCssSection />*/}
       </ScrollView>
     </>
   );

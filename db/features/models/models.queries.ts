@@ -1,9 +1,9 @@
-import { eq, sql } from 'drizzle-orm';
+import { eq, inArray, sql } from 'drizzle-orm';
 import { Model } from 'genanki-ts';
 import { appDb } from '@/db/app/client';
 import { models } from '@/db/app/schema/models';
 import { type AllowedModelField } from '@/lib/flash-card';
-import { type ModelFormData } from '@/lib/model-form';
+import { type ModelFormData } from '@/lib/anki-settings';
 
 export type UpsertModelInput = {
   applicationId?: number;
@@ -13,6 +13,10 @@ export type UpsertModelInput = {
 
 export function allModelsQuery() {
   return appDb.select().from(models);
+}
+
+export function getModelsByIdsQuery(applicationIds: number[]) {
+  return appDb.select().from(models).where(inArray(models.applicationId, applicationIds))
 }
 
 export function modelByApplicationQuery(applicationId: number) {

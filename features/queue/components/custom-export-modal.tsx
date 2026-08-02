@@ -4,14 +4,7 @@ import { NOPQueryMapper, useQuery } from '@/db/hooks/use-query';
 import { useAppTheme } from '@/theme/theme-provider';
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useMemo, useState } from 'react';
-import {
-  ActivityIndicator,
-  Modal,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 
 interface CustomExportModalProps {
   visible: boolean;
@@ -32,11 +25,7 @@ export function CustomExportModal({
 }: CustomExportModalProps) {
   const { colors } = useAppTheme();
 
-  const { data: decks, isLoading } = useQuery(
-    allDecksQuery,
-    NOPQueryMapper,
-    []
-  );
+  const { data: decks, isLoading } = useQuery(allDecksQuery, NOPQueryMapper, []);
 
   const [selectedDeckId, setSelectedDeckId] = useState<number | null>(
     initialDeckApplicationId ?? null
@@ -49,10 +38,7 @@ export function CustomExportModal({
 
     const initialDeckExists =
       initialDeckApplicationId != null &&
-      decks.some(
-        (model) =>
-          model.applicationId === initialDeckApplicationId
-      );
+      decks.some((model) => model.applicationId === initialDeckApplicationId);
 
     if (initialDeckExists) {
       setSelectedDeckId(initialDeckApplicationId);
@@ -106,9 +92,7 @@ export function CustomExportModal({
           className="overflow-hidden rounded-3xl border border-border bg-surface">
           <View className="flex-row items-center justify-between border-b border-border px-5 py-4">
             <View className="flex-1">
-              <Text className="text-xl font-bold text-foreground">
-                Export
-              </Text>
+              <Text className="text-xl font-bold text-foreground">Export</Text>
 
               <Text className="mt-1 text-sm text-mutedForeground">
                 Select the deck you want to export to.
@@ -122,34 +106,22 @@ export function CustomExportModal({
               disabled={isSubmitting}
               className="ml-4 h-10 w-10 items-center justify-center rounded-full bg-muted"
               onPress={handleClose}>
-              <Ionicons
-                name="close"
-                size={22}
-                color={colors.foreground}
-              />
+              <Ionicons name="close" size={22} color={colors.foreground} />
             </Pressable>
           </View>
 
           <View className="px-5 py-5">
-            <Text className="mb-2 text-sm font-semibold text-foreground">
-              Deck
-            </Text>
+            <Text className="mb-2 text-sm font-semibold text-foreground">Deck</Text>
 
             {isLoading ? (
               <View className="items-center justify-center rounded-2xl border border-border bg-background py-8">
                 <ActivityIndicator color={colors.foreground} />
 
-                <Text className="mt-3 text-sm text-mutedForeground">
-                  Loading models…
-                </Text>
+                <Text className="mt-3 text-sm text-mutedForeground">Loading models…</Text>
               </View>
             ) : decks == null || decks.length === 0 ? (
               <View className="items-center rounded-2xl border border-border bg-background px-4 py-8">
-                <Ionicons
-                  name="warning-outline"
-                  size={26}
-                  color={colors.foreground}
-                />
+                <Ionicons name="warning-outline" size={26} color={colors.foreground} />
 
                 <Text className="mt-3 text-center font-semibold text-foreground">
                   No models are available
@@ -164,12 +136,9 @@ export function CustomExportModal({
                 <ScrollView
                   nestedScrollEnabled
                   keyboardShouldPersistTaps="handled"
-                  showsVerticalScrollIndicator={
-                    decks.length > 4
-                  }>
+                  showsVerticalScrollIndicator={decks.length > 4}>
                   {decks.map((deck, index) => {
-                    const isSelected =
-                      deck.applicationId === selectedDeckId;
+                    const isSelected = deck.applicationId === selectedDeckId;
 
                     return (
                       <Pressable
@@ -178,30 +147,22 @@ export function CustomExportModal({
                         accessibilityState={{
                           selected: isSelected,
                         }}
-                        className={`min-h-14 flex-row items-center px-4 py-3 ${index !== decks.length - 1
-                          ? 'border-b border-border'
-                          : ''
-                          }`}
+                        className={`min-h-14 flex-row items-center px-4 py-3 ${
+                          index !== decks.length - 1 ? 'border-b border-border' : ''
+                        }`}
                         onPress={() => {
-                          handleSelectDeck(
-                            deck.applicationId
-                          );
+                          handleSelectDeck(deck.applicationId);
                         }}>
                         <Text
                           numberOfLines={2}
-                          className={`flex-1 text-base ${isSelected
-                            ? 'font-semibold text-primary'
-                            : 'text-foreground'
-                            }`}>
+                          className={`flex-1 text-base ${
+                            isSelected ? 'font-semibold text-primary' : 'text-foreground'
+                          }`}>
                           {deck.deckFormData.name}
                         </Text>
 
                         {isSelected && (
-                          <Ionicons
-                            name="checkmark"
-                            size={21}
-                            color={colors.primary}
-                          />
+                          <Ionicons name="checkmark" size={21} color={colors.primary} />
                         )}
                       </Pressable>
                     );
@@ -237,7 +198,7 @@ export function CustomExportModal({
           </View>
 
           {isSubmitting && (
-            <View className="absolute inset-0 items-center justify-center bg-surface/70">
+            <View className="bg-surface/70 absolute inset-0 items-center justify-center">
               <ActivityIndicator color={colors.foreground} />
             </View>
           )}

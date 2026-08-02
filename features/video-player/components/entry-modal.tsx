@@ -13,13 +13,12 @@ import { cssInterop } from 'nativewind';
 import { useAppTheme } from '@/theme/theme-provider';
 import Button from '@/components/ui/button';
 import { Ionicons } from '@expo/vector-icons';
-import { useDefaults } from '@/lib/defaults-db-hooks';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { insertIntoQueueQuery } from '@/db/features/queue/queue.queries';
 import { CustomAddModal } from './custom-add-modal';
 import { useQuery } from '@/db/hooks/use-query';
 import { lookupTokenQuery } from '@/db/features/jmdict/jmdict.queries';
-import { mapStoredEntryToEntry } from '@/types/entry/entry.mapper';
+import { mapStoredEntryToEntry } from '@/lib/entry/entry.mapper';
 import { useAppLiveQuery } from '@/db/hooks/use-app-live-query';
 import { getAppDefaultsQuery } from '@/db/features/defaults/defaults.queries';
 
@@ -46,10 +45,11 @@ export const EntryBottomSheetModal = forwardRef<
     [token]
   );
 
-  const { data: defaults, isLoading: isDefaultsLoading, error: defaultsError } = useAppLiveQuery(
-    getAppDefaultsQuery(),
-    rows => rows[0] ?? null,
-  );
+  const {
+    data: defaults,
+    isLoading: isDefaultsLoading,
+    error: defaultsError,
+  } = useAppLiveQuery(getAppDefaultsQuery(), (rows) => rows[0] ?? null);
 
   const snapPoints = useMemo(() => ['35%'], []);
   const { colors } = useAppTheme();
@@ -73,7 +73,7 @@ export const EntryBottomSheetModal = forwardRef<
             <View className="flex-1">
               <Button
                 label="Add"
-                className='rounded-full'
+                className="rounded-full"
                 variant="secondary"
                 onPress={() => setIsCustomAddOpen(true)}
               />
@@ -82,7 +82,7 @@ export const EntryBottomSheetModal = forwardRef<
             <View className="flex-1">
               <Button
                 label="Quick Add"
-                className='rounded-full'
+                className="rounded-full"
                 onPress={() => {
                   if (defaults?.modelApplicationId != null && e != null) {
                     insertIntoQueueQuery({
@@ -178,8 +178,5 @@ export const EntryBottomSheetModal = forwardRef<
         onSubmit={handleCustomAdd}
       />
     </>
-
   );
 });
-
-

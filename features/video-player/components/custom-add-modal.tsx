@@ -4,14 +4,7 @@ import { NOPQueryMapper, useQuery } from '@/db/hooks/use-query';
 import { useAppTheme } from '@/theme/theme-provider';
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useMemo, useState } from 'react';
-import {
-  ActivityIndicator,
-  Modal,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 
 interface CustomAddModalProps {
   visible: boolean;
@@ -32,11 +25,7 @@ export function CustomAddModal({
 }: CustomAddModalProps) {
   const { colors } = useAppTheme();
 
-  const { data: models, isLoading } = useQuery(
-    allModelsQuery,
-    NOPQueryMapper,
-    []
-  );
+  const { data: models, isLoading } = useQuery(allModelsQuery, NOPQueryMapper, []);
 
   const [selectedModelId, setSelectedModelId] = useState<number | null>(
     initialModelApplicationId ?? null
@@ -45,10 +34,7 @@ export function CustomAddModal({
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const selectedModel = useMemo(
-    () =>
-      models?.find(
-        (model) => model.applicationId === selectedModelId
-      ) ?? null,
+    () => models?.find((model) => model.applicationId === selectedModelId) ?? null,
     [models, selectedModelId]
   );
 
@@ -59,10 +45,7 @@ export function CustomAddModal({
 
     const initialModelExists =
       initialModelApplicationId != null &&
-      models.some(
-        (model) =>
-          model.applicationId === initialModelApplicationId
-      );
+      models.some((model) => model.applicationId === initialModelApplicationId);
 
     if (initialModelExists) {
       setSelectedModelId(initialModelApplicationId);
@@ -124,9 +107,7 @@ export function CustomAddModal({
           className="overflow-hidden rounded-3xl border border-border bg-surface">
           <View className="flex-row items-center justify-between border-b border-border px-5 py-4">
             <View className="flex-1">
-              <Text className="text-xl font-bold text-foreground">
-                Add entry
-              </Text>
+              <Text className="text-xl font-bold text-foreground">Add entry</Text>
 
               <Text className="mt-1 text-sm text-mutedForeground">
                 Select the model you want to use.
@@ -140,34 +121,22 @@ export function CustomAddModal({
               disabled={isSubmitting}
               className="ml-4 h-10 w-10 items-center justify-center rounded-full bg-muted"
               onPress={handleClose}>
-              <Ionicons
-                name="close"
-                size={22}
-                color={colors.foreground}
-              />
+              <Ionicons name="close" size={22} color={colors.foreground} />
             </Pressable>
           </View>
 
           <View className="px-5 py-5">
-            <Text className="mb-2 text-sm font-semibold text-foreground">
-              Model
-            </Text>
+            <Text className="mb-2 text-sm font-semibold text-foreground">Model</Text>
 
             {isLoading ? (
               <View className="items-center justify-center rounded-2xl border border-border bg-background py-8">
                 <ActivityIndicator color={colors.foreground} />
 
-                <Text className="mt-3 text-sm text-mutedForeground">
-                  Loading models…
-                </Text>
+                <Text className="mt-3 text-sm text-mutedForeground">Loading models…</Text>
               </View>
             ) : models == null || models.length === 0 ? (
               <View className="items-center rounded-2xl border border-border bg-background px-4 py-8">
-                <Ionicons
-                  name="warning-outline"
-                  size={26}
-                  color={colors.foreground}
-                />
+                <Ionicons name="warning-outline" size={26} color={colors.foreground} />
 
                 <Text className="mt-3 text-center font-semibold text-foreground">
                   No models are available
@@ -182,12 +151,9 @@ export function CustomAddModal({
                 <ScrollView
                   nestedScrollEnabled
                   keyboardShouldPersistTaps="handled"
-                  showsVerticalScrollIndicator={
-                    models.length > 4
-                  }>
+                  showsVerticalScrollIndicator={models.length > 4}>
                   {models.map((model, index) => {
-                    const isSelected =
-                      model.applicationId === selectedModelId;
+                    const isSelected = model.applicationId === selectedModelId;
 
                     return (
                       <Pressable
@@ -196,30 +162,22 @@ export function CustomAddModal({
                         accessibilityState={{
                           selected: isSelected,
                         }}
-                        className={`min-h-14 flex-row items-center px-4 py-3 ${index !== models.length - 1
-                          ? 'border-b border-border'
-                          : ''
-                          }`}
+                        className={`min-h-14 flex-row items-center px-4 py-3 ${
+                          index !== models.length - 1 ? 'border-b border-border' : ''
+                        }`}
                         onPress={() => {
-                          handleSelectModel(
-                            model.applicationId
-                          );
+                          handleSelectModel(model.applicationId);
                         }}>
                         <Text
                           numberOfLines={2}
-                          className={`flex-1 text-base ${isSelected
-                            ? 'font-semibold text-primary'
-                            : 'text-foreground'
-                            }`}>
+                          className={`flex-1 text-base ${
+                            isSelected ? 'font-semibold text-primary' : 'text-foreground'
+                          }`}>
                           {model.modelFormData.name}
                         </Text>
 
                         {isSelected && (
-                          <Ionicons
-                            name="checkmark"
-                            size={21}
-                            color={colors.primary}
-                          />
+                          <Ionicons name="checkmark" size={21} color={colors.primary} />
                         )}
                       </Pressable>
                     );
@@ -255,7 +213,7 @@ export function CustomAddModal({
           </View>
 
           {isSubmitting && (
-            <View className="absolute inset-0 items-center justify-center bg-surface/70">
+            <View className="bg-surface/70 absolute inset-0 items-center justify-center">
               <ActivityIndicator color={colors.foreground} />
             </View>
           )}

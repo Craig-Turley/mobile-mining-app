@@ -1,5 +1,4 @@
 import { JMDICT_DB_NAME } from './jmdict/client';
-// import * as SQLite from "expo-sqlite";
 import { Directory, File, Paths } from 'expo-file-system';
 
 const SQLITE_DIR = new Directory(Paths.document, 'SQLite');

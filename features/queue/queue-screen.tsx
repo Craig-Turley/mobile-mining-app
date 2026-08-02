@@ -7,10 +7,8 @@ import { cssInterop } from 'nativewind';
 import { QueueItemWithModel, StoredModel } from '@/db/app/schema';
 import Button from '@/components/ui/button';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { exportToAnki, prepareDeckForExport } from '@/lib/genanki';
-import { allModelsQuery } from '@/db/features/models/models.queries';
-import * as Sharing from 'expo-sharing';
-import { allDecksQuery } from '@/db/features/decks/decks.queries';
+import { getModelsByIdsQuery } from '@/db/features/models/models.queries';
+import { deckByApplicationIdQuery } from '@/db/features/decks/decks.queries';
 import { getAppDefaultsQuery } from '@/db/features/defaults/defaults.queries';
 import { Model } from '@/packages/genanki-ts/dist';
 import { AllowedModelField } from '@/lib/flash-card';
@@ -19,6 +17,8 @@ import { useAppLiveQuery } from '@/db/hooks/use-app-live-query';
 import { allQueueItemsQuery, clearQueueQuery, deleteFromQueueQuery } from '@/db/features/queue/queue.queries';
 import { AnchoredMenu, AnchoredMenuItem, AnchoredMenuTrigger } from '@/components/ui/anchored-menu';
 import { CustomExportModal } from './components/custom-export-modal';
+import { exportToAnki, prepareDeckForExport } from '@/lib/genanki/index';
+import { shareFile, AnkiSharingOptions } from '@/lib/sharing/sharing';
 
 interface QueueScreenProps { }
 
@@ -65,30 +65,14 @@ export const QueueScreen: React.FC<QueueScreenProps> = () => {
 
   const exportFunc = async (deckId: number) => {
     try {
-      const decks = await allDecksQuery();
-      const models = await allModelsQuery().then((m) => m.map(hydrateStoredModel));
-      const selectedDeck = decks.find((d) => d.applicationId == deckId);
+      const selectedDeck = await deckByApplicationIdQuery(deckId);
+      if (!selectedDeck) throw new Error("selected deck not found");
+      const models = await getModelsByIdsQuery(queuedItems.map(q => q.modelApplicationId)).then((m) => m.map(hydrateStoredModel));
 
-      if (!selectedDeck) { throw new Error("selected deck not found") }
+      const preparedDeck = prepareDeckForExport(selectedDeck, models, queuedItems);
+      const fileUri = await exportToAnki(preparedDeck);
 
-      const deck = prepareDeckForExport(
-        selectedDeck,
-        models,
-        queuedItems
-      );
-
-      const fileUri = await exportToAnki(deck);
-      const sharingAvailable = await Sharing.isAvailableAsync();
-
-      if (!sharingAvailable) {
-        throw new Error('File sharing is not available on this device.');
-      }
-
-      await Sharing.shareAsync(fileUri, {
-        dialogTitle: 'Open Anki deck',
-        mimeType: 'application/octet-stream',
-        UTI: 'public.data',
-      });
+      await shareFile(fileUri, AnkiSharingOptions);
 
       Alert.alert(
         'Clear export queue?',
@@ -168,34 +152,22 @@ const QueueRow: React.FC<{ queItem: QueueItemWithModel }> = ({ queItem }) => {
         'w-full flex-row items-start gap-3 rounded-2xl',
         'border border-border bg-surface p-4'
       )}>
-      <Pressable
-        className="min-w-0 flex-1 active:opacity-70"
-        accessibilityRole="button">
-        <Text
-          className="shrink font-semibold text-foreground"
-          numberOfLines={1}>
+      <Pressable className="min-w-0 flex-1 active:opacity-70" accessibilityRole="button">
+        <Text className="shrink font-semibold text-foreground" numberOfLines={1}>
           {title}
         </Text>
       </Pressable>
 
       <AnchoredMenu>
-        <AnchoredMenuTrigger
-          className="shrink-0"
-          accessibilityLabel={`Open actions for ${title}`}>
-          <Ionicons
-            name="ellipsis-vertical"
-            size={18}
-            className="text-mutedForeground"
-          />
+        <AnchoredMenuTrigger className="shrink-0" accessibilityLabel={`Open actions for ${title}`}>
+          <Ionicons name="ellipsis-vertical" size={18} className="text-mutedForeground" />
         </AnchoredMenuTrigger>
 
         <AnchoredMenuItem
           icon="trash-outline"
           label="Delete"
           destructive
-          onPress={async () =>
-            deleteFromQueueQuery(queItem.applicationId)
-          }
+          onPress={async () => deleteFromQueueQuery(queItem.applicationId)}
         />
       </AnchoredMenu>
     </View>

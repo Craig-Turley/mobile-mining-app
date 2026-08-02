@@ -14,7 +14,9 @@ export function allDecksQuery() {
 }
 
 export function deckByApplicationIdQuery(applicationId: number) {
-  return appDb.select().from(decks).where(eq(decks.applicationId, applicationId)).limit(1);
+  return appDb.query.decks.findFirst({
+    where: eq(decks.applicationId, applicationId),
+  });
 }
 
 export function upsertDeckQuery({ applicationId, deckFormData, deck }: UpsertDeckInput) {

@@ -43,6 +43,13 @@
       "when": 1784782476671,
       "tag": "0005_sharp_lilith",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1785636126691,
+      "tag": "0006_insert-default-settings",
+      "breakpoints": true
     }
   ]
 }

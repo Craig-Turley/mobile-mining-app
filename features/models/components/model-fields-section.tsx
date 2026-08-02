@@ -1,5 +1,6 @@
 import { View, ViewProps, Text, Switch } from 'react-native';
-import { AllowedModelField, modelFieldLabels, ModelFields } from '@/lib/flash-card';
+import { AllowedModelField, modelFieldLabels } from '@/lib/anki-settings';
+import { AnkiModelFields } from '@/lib/anki-settings/anki-settings.types';
 
 export interface ModelFieldsSectionProps extends ViewProps {
   availableFields: readonly AllowedModelField[];
@@ -20,7 +21,7 @@ export default function ModelFieldsSection({
 
       <View className="rounded-[10px] bg-surface">
         {availableFields.map((field, index) => {
-          const isLast = index === ModelFields.length - 1;
+          const isLast = index === Object.keys(AnkiModelFields).length - 1;
           const enabled = Boolean(currentFields.find((f) => f.name == field.name));
 
           return (

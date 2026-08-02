@@ -2,8 +2,8 @@ import { sql } from 'drizzle-orm';
 import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import type { Model } from 'genanki-ts';
 
-import { AllowedModelField } from '@/lib/flash-card';
-import { ModelFormData } from '@/lib/model-form';
+import { AllowedModelField } from '@/lib/anki-settings';
+import { ModelFormData } from '@/lib/anki-settings';
 
 export const models = sqliteTable('models', {
   applicationId: integer('application_id').primaryKey({ autoIncrement: true }),

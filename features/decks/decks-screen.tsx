@@ -25,7 +25,7 @@ cssInterop(Ionicons, {
   },
 });
 
-interface DecksScreenProps { }
+interface DecksScreenProps {}
 
 export const DecksScreen: React.FC<DecksScreenProps> = () => {
   const { data: decks, isLoading: isDecksLoading } = useAppLiveQuery(
@@ -33,10 +33,7 @@ export const DecksScreen: React.FC<DecksScreenProps> = () => {
     NOPMutationMapper
   );
 
-  const { data: defaults } = useAppLiveQuery(
-    getAppDefaultsQuery(),
-    rows => rows[0] ?? null,
-  );
+  const { data: defaults } = useAppLiveQuery(getAppDefaultsQuery(), (rows) => rows[0] ?? null);
 
   return (
     <NewDeckModalProvider>
@@ -111,8 +108,7 @@ const DeckRow: React.FC<{ deck: StoredDeck; isDefault: boolean }> = ({ deck, isD
       </View>
 
       <AnchoredMenu>
-        <AnchoredMenuTrigger
-          accessibilityLabel={`Open actions for ${deck.deck.name}`}>
+        <AnchoredMenuTrigger accessibilityLabel={`Open actions for ${deck.deck.name}`}>
           <Ionicons name="ellipsis-vertical" size={18} className="text-mutedForeground" />
         </AnchoredMenuTrigger>
 

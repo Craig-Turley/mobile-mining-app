@@ -11,7 +11,7 @@ import { deleteSubtitles, deleteVideo } from '@/db/features/files/files.services
 import { NOPQueryMapper } from '@/db/hooks/use-query';
 import { AnchoredMenu, AnchoredMenuItem, AnchoredMenuTrigger } from '@/components/ui/anchored-menu';
 
-interface ScreenContentProps extends PropsWithChildren { }
+interface ScreenContentProps extends PropsWithChildren {}
 
 export const VideoLibraryScreen: React.FC<ScreenContentProps> = ({ children }) => {
   const { data, error } = useAppLiveQuery(videosQuery(), NOPQueryMapper);
@@ -55,11 +55,7 @@ interface VideoRowProps extends ViewProps {
   videoName: string;
 }
 
-const VideoRow = ({
-  videoId,
-  videoSubtitleId,
-  videoName,
-}: VideoRowProps) => {
+const VideoRow = ({ videoId, videoSubtitleId, videoName }: VideoRowProps) => {
   const { colors } = useAppTheme();
 
   return (
@@ -75,19 +71,12 @@ const VideoRow = ({
             },
           });
         }}>
-        <Text
-          className="w-full text-foreground"
-          numberOfLines={1}
-          ellipsizeMode="tail">
+        <Text className="w-full text-foreground" numberOfLines={1} ellipsizeMode="tail">
           {videoName}
         </Text>
 
-        <View className="self-start flex-row items-center gap-1 rounded-full border border-primary px-1.5 py-0.5">
-          <Ionicons
-            name="document"
-            size={20}
-            color={colors.primary}
-          />
+        <View className="flex-row items-center gap-1 self-start rounded-full border border-primary px-1.5 py-0.5">
+          <Ionicons name="document" size={20} color={colors.primary} />
 
           <Text className="text-[9px] uppercase text-primary">
             {videoSubtitleId !== null ? 'Captions' : 'No Captions'}
@@ -99,11 +88,7 @@ const VideoRow = ({
         <AnchoredMenuTrigger
           className="shrink-0"
           accessibilityLabel={`Open actions for ${videoName}`}>
-          <Ionicons
-            name="ellipsis-vertical"
-            size={18}
-            color={colors.mutedForeground}
-          />
+          <Ionicons name="ellipsis-vertical" size={18} color={colors.mutedForeground} />
         </AnchoredMenuTrigger>
 
         {videoSubtitleId !== null ? (

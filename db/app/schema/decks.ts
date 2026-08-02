@@ -3,7 +3,7 @@ import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import type { Deck } from 'genanki-ts';
 
 import { AllowedModelField } from '@/lib/flash-card';
-import { DeckFormData } from '@/lib/deck-form';
+import { DeckFormData } from '@/lib/anki-settings';
 
 export const decks = sqliteTable('decks', {
   applicationId: integer('application_id').primaryKey({ autoIncrement: true }),

@@ -1,8 +1,8 @@
 import { View, ViewProps, Text, TextInput, Pressable } from 'react-native';
 import { useState } from 'react';
-import { DEFAULT_CSS } from '@/lib/flash-card';
+import { DEFAULT_CSS } from '@/lib/anki-settings';
 
-export interface ModelCssSectionProps extends ViewProps {}
+export interface ModelCssSectionProps extends ViewProps { }
 
 export default function ModelCssSection({ className, ...rest }: ModelCssSectionProps) {
   const [css, setCss] = useState<string>(DEFAULT_CSS);

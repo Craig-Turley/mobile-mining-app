@@ -1,5 +1,4 @@
 import { jmdictDb, jmdictSchema } from '@/db/jmdict/client';
-import { Entry } from '@/types/entry';
 import { Token } from '@kuzulabz/expo-kagome';
 import { and, eq, or, sql } from 'drizzle-orm';
 
