@@ -1,8 +1,8 @@
-import React, { PropsWithChildren } from 'react';
+import React from 'react';
 import VideoPlayer from './components/video-player';
+import SubtitlesPlayer from './components/subtitles-player';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import SubtitlesPlayer from './components/subtitles-player';
 import { useVideoPlayer } from 'expo-video';
 import { EntryModalProvider } from './contexts/entry-modal-context';
 import { ActivityIndicator, Text } from 'react-native';
@@ -11,9 +11,7 @@ import { useAppLiveQuery } from '@/db/hooks/use-app-live-query';
 import { videoByIdQuery } from '@/db/features/files/files.queries';
 import { NOPQueryMapper } from '@/db/hooks/use-query';
 
-interface ScreenContentProps extends PropsWithChildren {}
-
-export const VideoPlayerScreen: React.FC<ScreenContentProps> = ({ children }) => {
+export const VideoPlayerScreen: React.FC = () => {
   const { videoId } = useLocalSearchParams<{ videoId: string }>();
 
   const numericVideoId = Number(videoId);
@@ -39,6 +37,7 @@ export const VideoPlayerScreen: React.FC<ScreenContentProps> = ({ children }) =>
           headerTransparent: true,
           headerBackButtonDisplayMode: 'minimal',
           title: '',
+          gestureEnabled: false,
         }}
       />
 
