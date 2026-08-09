@@ -18,6 +18,8 @@ packages/
 /ios
 /android
 
+.env
+
 # macOS
 .DS_Store
 

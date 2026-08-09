@@ -17,7 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { insertIntoQueueQuery } from '@/db/features/queue/queue.queries';
 import { CustomAddModal } from './custom-add-modal';
 import { useQuery } from '@/db/hooks/use-query';
-import { lookupTokenQuery } from '@/db/features/jmdict/jmdict.queries';
+import { lookupTokenQuery } from '@/db/features/dictionaries/dictionaries.queries';
 import { mapStoredEntryToEntry } from '@/lib/entry/entry.mapper';
 import { useAppLiveQuery } from '@/db/hooks/use-app-live-query';
 import { getAppDefaultsQuery } from '@/db/features/defaults/defaults.queries';

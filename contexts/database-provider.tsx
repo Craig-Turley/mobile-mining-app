@@ -1,60 +1,35 @@
 import { ReactNode, useEffect, useState } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Text, View } from 'react-native';
 import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator';
+import { dictionariesDb } from '@/db/dictionaries/client';
 
-import { APP_DB_NAME, appDb } from '@/db/app/client';
-import filesMigrations from '../drizzle/files/migrations';
+import { appDb } from '@/db/app/client';
+import appMigrations from '@/drizzle/app/migrations';
+import dictionariesMigration from '@/drizzle/dictionaries/migrations';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-import { ensureLookupDbInstalled } from '@/db/utils';
+import { attachAndBuildViews, InstalledDictionary } from '@/db/features/dictionaries/dictionaries.actions';
+import { DefaultSQLiteDownloadDirectory, getDatabasePath, getFileName, listDirectoryContents } from '@/lib/file-system';
 
 type Props = {
   children: ReactNode;
 };
 
 export function DatabaseProvider({ children }: Props) {
-  const migrationState = useMigrations(appDb, filesMigrations);
+  const appMigration = useMigrations(appDb, appMigrations);
+  const dictionaryMigration = useMigrations(dictionariesDb, dictionariesMigration);
 
-  const [lookupReady, setLookupReady] = useState(false);
-  const [lookupError, setLookupError] = useState<Error | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function installLookupDb() {
-      try {
-        await ensureLookupDbInstalled();
-
-        if (!cancelled) {
-          setLookupReady(true);
-        }
-      } catch (error) {
-        if (!cancelled) {
-          setLookupError(error instanceof Error ? error : new Error(String(error)));
-        }
-      }
-    }
-
-    void installLookupDb();
-    // void clearDevDatabases();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  if (migrationState.error || lookupError) {
-    const error = migrationState.error ?? lookupError;
-
+  const migrationError = appMigration.error ?? dictionaryMigration.error;
+  if (migrationError) {
     return (
       <SafeAreaView edges={['top', 'bottom', 'left', 'right']}>
         <Text>Database setup failed.</Text>
-        <Text>{error?.message ?? String(error)}</Text>
+        <Text>{migrationError instanceof Error ? migrationError.message : String(migrationError)}</Text>
       </SafeAreaView>
     );
   }
 
-  if (!migrationState.success || !lookupReady) {
+  const migrationsReady = appMigration.success && dictionaryMigration.success;
+  if (!migrationsReady) {
     return (
       <SafeAreaView edges={['top', 'bottom', 'left', 'right']}>
         <View>
@@ -65,48 +40,54 @@ export function DatabaseProvider({ children }: Props) {
     );
   }
 
-  return <>{children}</>;
+  return (
+    <DictionaryAttachProvider>
+      {children}
+    </DictionaryAttachProvider>
+  );
 }
 
-// WARN: the below is for developement
-import * as SQLite from 'expo-sqlite';
-import { JMDICT_DB_NAME } from '@/db/jmdict/client';
+function DictionaryAttachProvider({ children }: Props) {
+  const [status, setStatus] = useState<'attaching' | 'ready' | 'error'>('attaching');
+  const [error, setError] = useState<unknown>(null);
 
-const DEV_DATABASES = [APP_DB_NAME] as const;
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const installed =
+          listDirectoryContents(DefaultSQLiteDownloadDirectory.uri)
+            .map(dir => ({ filePath: getDatabasePath(dir), alias: getFileName(dir) }))
+        await attachAndBuildViews(installed);
+        if (!cancelled) setStatus('ready');
+      } catch (e) {
+        if (!cancelled) {
+          setError(e);
+          setStatus('error');
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
-export async function clearDevDatabases(): Promise<void> {
-  if (!__DEV__) {
-    throw new Error('clearDevDatabases can only run in development.');
-  }
-
-  const results = await Promise.allSettled(
-    DEV_DATABASES.map(async (databaseName) => {
-      await SQLite.deleteDatabaseAsync(databaseName);
-      console.log(`[database] Deleted ${databaseName}`);
-    })
-  );
-
-  const failures = results
-    .map((result, index) => ({
-      result,
-      databaseName: DEV_DATABASES[index],
-    }))
-    .filter(
-      (
-        entry
-      ): entry is {
-        result: PromiseRejectedResult;
-        databaseName: (typeof DEV_DATABASES)[number];
-      } => entry.result.status === 'rejected'
-    );
-
-  if (failures.length > 0) {
-    failures.forEach(({ databaseName, result }) => {
-      console.error(`[database] Failed to delete ${databaseName}`, result.reason);
-    });
-
-    throw new Error(
-      `Failed to delete: ${failures.map((failure) => failure.databaseName).join(', ')}`
+  if (status === 'error') {
+    return (
+      <SafeAreaView edges={['top', 'bottom', 'left', 'right']}>
+        <Text>Database setup failed.</Text>
+        <Text>{error instanceof Error ? error.message : String(error)}</Text>
+      </SafeAreaView>
     );
   }
+  if (status === 'attaching') {
+    return (
+      <SafeAreaView edges={['top', 'bottom', 'left', 'right']}>
+        <View>
+          <ActivityIndicator />
+          <Text>Loading dictionaries...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return <>{children}</>;
 }

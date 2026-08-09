@@ -8,7 +8,7 @@ export default defineConfig({
     './db/app/schema/queue.ts',
     './db/app/schema/defaults.ts',
   ],
-  out: './drizzle/files',
+  out: './drizzle/app',
   dialect: 'sqlite',
   driver: 'expo',
 });

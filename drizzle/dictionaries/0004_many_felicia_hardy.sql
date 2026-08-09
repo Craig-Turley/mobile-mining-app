@@ -1,0 +1,1 @@
+ALTER TABLE `dictionaries` RENAME TO `installed`;

@@ -9,9 +9,9 @@
     "lint": "eslint \"**/*.{js,jsx,ts,tsx}\" && prettier -c \"**/*.{js,jsx,ts,tsx,json}\"",
     "format": "eslint \"**/*.{js,jsx,ts,tsx}\" --fix && prettier \"**/*.{js,jsx,ts,tsx,json}\" --write",
     "web": "expo start --web",
-    "db:pull:jmdict": "drizzle-kit pull --config=drizzle.jmdict.config.ts",
+    "db:generate:dictionaries": "drizzle-kit generate --config=drizzle.dictionaries.config.ts",
     "db:generate:files": "drizzle-kit generate --config=drizzle.app.config.ts",
-    "db:sync": "npm run db:pull:jmdict && npm run db:generate:files"
+    "db:sync": "npm run db:generate:dictionaries && npm run db:generate:files"
   },
   "dependencies": {
     "@expo/ui": "~55.0.17",

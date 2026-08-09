@@ -2,8 +2,7 @@ import { eq, inArray, sql } from 'drizzle-orm';
 import { Model } from 'genanki-ts';
 import { appDb } from '@/db/app/client';
 import { models } from '@/db/app/schema/models';
-import { type AllowedModelField } from '@/lib/flash-card';
-import { type ModelFormData } from '@/lib/anki-settings';
+import { type ModelFormData, type AllowedModelField } from '@/lib/anki-settings';
 
 export type UpsertModelInput = {
   applicationId?: number;

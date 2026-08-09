@@ -12,16 +12,15 @@ import {
   formDataToModel,
 } from '@/lib/anki-settings';
 import { ModelFormData } from '@/lib/anki-settings';
-import { generateModelId } from '@/lib/genanki';
 import { StoredModel } from '@/db/app/schema/models';
+import { useMutation } from '@/db/hooks/use-mutation';
+import { upsertModelQuery } from '@/db/features/models/models.queries';
+import { NOPMutationMapper } from '@/db/hooks/use-app-live-query';
+import { generateModelId } from '@/lib/genanki/index';
 import ModelMetaDataSection from './components/model-meta-data-section';
 import ModelFieldsSection from './components/model-fields-section';
 import ModelTemplatesSection from './components/model-templates-section';
 import ModelRulesSection from './components/model-rules-section';
-import ModelCssSection from './components/model-css-section';
-import { useMutation } from '@/db/hooks/use-mutation';
-import { upsertModelQuery } from '@/db/features/models/models.queries';
-import { NOPMutationMapper } from '@/db/hooks/use-app-live-query';
 
 cssInterop(Ionicons, {
   className: {

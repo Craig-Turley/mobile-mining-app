@@ -11,7 +11,7 @@ import { getModelsByIdsQuery } from '@/db/features/models/models.queries';
 import { deckByApplicationIdQuery } from '@/db/features/decks/decks.queries';
 import { getAppDefaultsQuery } from '@/db/features/defaults/defaults.queries';
 import { Model } from '@/packages/genanki-ts/dist';
-import { AllowedModelField } from '@/lib/flash-card';
+import { AllowedModelField } from '@/lib/anki-settings';
 import { NOPQueryMapper } from '@/db/hooks/use-query';
 import { useAppLiveQuery } from '@/db/hooks/use-app-live-query';
 import { allQueueItemsQuery, clearQueueQuery, deleteFromQueueQuery } from '@/db/features/queue/queue.queries';

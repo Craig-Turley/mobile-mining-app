@@ -95,13 +95,14 @@ type ExampleSentence struct {
 }
 
 type WordDictionaryEntry struct {
-	Id        int
-	KanjiJSON string
-	KanaJSON  string
-	SenseJSON string
+	ID         int
+	Dictionary string
+	KanjiJSON  string
+	KanaJSON   string
+	SenseJSON  string
 }
 
-func WordEntryFromWord(word *Word) *WordDictionaryEntry {
+func WordEntryFromWord(word *Word, dictionary string) *WordDictionaryEntry {
 	id, err := strconv.Atoi(word.ID)
 	if err != nil {
 		panic(err)
@@ -123,15 +124,17 @@ func WordEntryFromWord(word *Word) *WordDictionaryEntry {
 	}
 
 	return &WordDictionaryEntry{
-		Id:        id,
-		KanjiJSON: string(kanjiJSON),
-		KanaJSON:  string(kanaJSON),
-		SenseJSON: string(senseJSON),
+		ID:         id,
+		Dictionary: dictionary,
+		KanjiJSON:  string(kanjiJSON),
+		KanaJSON:   string(kanaJSON),
+		SenseJSON:  string(senseJSON),
 	}
 }
 
 type LookupEntry struct {
-	Entry_id   int // fk entry.id
+	Dictionary string
+	EntryID    int
 	Expression string
 	Reading    string
 }
@@ -145,50 +148,82 @@ type Form struct {
 	Reading    string
 }
 
-const DATABASE_NAME = "jmdict.db"
-const ENTRIES_TABLE_NAME = "entries"
-const LOOKUP_TABLE_NAME = "lookup"
+const (
+	DATABASE_NAME      = "jmdict.db"
+	DICTIONARY_NAME    = "JMDict"
+	ENTRIES_TABLE_NAME = "entries"
+	LOOKUP_TABLE_NAME  = "lookup"
+)
 
-var DROP_ENTRIES_QUERY = fmt.Sprintf("DROP TABLE IF EXISTS %s;", ENTRIES_TABLE_NAME)
-var DROP_LOOKUP_QUERY = fmt.Sprintf("DROP TABLE IF EXISTS %s;", LOOKUP_TABLE_NAME)
+var DROP_LOOKUP_QUERY = fmt.Sprintf(
+	"DROP TABLE IF EXISTS %s;",
+	LOOKUP_TABLE_NAME,
+)
+
+var DROP_ENTRIES_QUERY = fmt.Sprintf(
+	"DROP TABLE IF EXISTS %s;",
+	ENTRIES_TABLE_NAME,
+)
+
+var CREATE_ENTRIES_QUERY = fmt.Sprintf(`
+CREATE TABLE %s (
+	id INTEGER NOT NULL,
+	dictionary TEXT NOT NULL,
+	kanji_json TEXT NOT NULL,
+	kana_json TEXT NOT NULL,
+	sense_json TEXT NOT NULL,
+
+	PRIMARY KEY (dictionary, id)
+);`, ENTRIES_TABLE_NAME)
+
 var CREATE_LOOKUP_QUERY = fmt.Sprintf(`
-CREATE TABLE IF NOT EXISTS %s (
+CREATE TABLE %s (
+	dictionary TEXT NOT NULL,
 	entry_id INTEGER NOT NULL,
 	expression TEXT,
 	reading TEXT,
 
-	FOREIGN KEY (entry_id)
-		REFERENCES %s(id)
-		ON DELETE CASCADE
+	FOREIGN KEY (dictionary, entry_id)
+		REFERENCES %s(dictionary, id)
 );`, LOOKUP_TABLE_NAME, ENTRIES_TABLE_NAME)
-var INSERT_LOOKUP_QUERY = fmt.Sprintf(
-	`INSERT INTO %s (%s) VALUES (?, ?, ?)`,
-	LOOKUP_TABLE_NAME,
-	"entry_id, expression, reading",
+
+var INSERT_ENTRY_QUERY = fmt.Sprintf(`
+INSERT INTO %s (
+	id,
+	dictionary,
+	kanji_json,
+	kana_json,
+	sense_json
 )
+VALUES (?, ?, ?, ?, ?)
+`, ENTRIES_TABLE_NAME)
+
+var INSERT_LOOKUP_QUERY = fmt.Sprintf(`
+INSERT INTO %s (
+	dictionary,
+	entry_id,
+	expression,
+	reading
+)
+VALUES (?, ?, ?, ?)
+`, LOOKUP_TABLE_NAME)
 
 var CREATE_TABLE_COMMANDS = []string{
-	DROP_ENTRIES_QUERY,
+	// Child table must be dropped before parent table.
 	DROP_LOOKUP_QUERY,
-	CREATE_LOOKUP_QUERY,
+	DROP_ENTRIES_QUERY,
+
+	// Parent table must exist before child FK is created.
 	CREATE_ENTRIES_QUERY,
+	CREATE_LOOKUP_QUERY,
 }
 
-var CREATE_ENTRIES_QUERY = fmt.Sprintf(`
-CREATE TABLE IF NOT EXISTS %s (
-	id INTEGER PRIMARY KEY,
-	kanji_json TEXT NOT NULL,
-	kana_json TEXT NOT NULL,
-	sense_json TEXT NOT NULL
-);`, ENTRIES_TABLE_NAME)
-
-var INSERT_ENTRY_QUERY = fmt.Sprintf(
-	`INSERT INTO %s (id, kanji_json, kana_json, sense_json) VALUES (?, ?, ?, ?)`,
-	ENTRIES_TABLE_NAME,
-)
-
 func buildLookupForms(word Word) []Form {
-	forms := make([]Form, 0, max(1, len(word.Kanji))*len(word.Kana))
+	forms := make(
+		[]Form,
+		0,
+		max(1, len(word.Kanji))*len(word.Kana),
+	)
 
 	for _, kana := range word.Kana {
 		switch {
@@ -239,33 +274,55 @@ func processDictionary(db *sql.DB) error {
 
 	for _, q := range CREATE_TABLE_COMMANDS {
 		if _, err := tx.Exec(q); err != nil {
-			return err
+			return fmt.Errorf("creating schema: %w", err)
 		}
 	}
 
-	for _, word := range dict.Words {
-		entry := WordEntryFromWord(&word)
+	entryStmt, err := tx.Prepare(INSERT_ENTRY_QUERY)
+	if err != nil {
+		return err
+	}
+	defer entryStmt.Close()
 
-		if _, err := tx.Exec(
-			INSERT_ENTRY_QUERY,
-			entry.Id,
+	lookupStmt, err := tx.Prepare(INSERT_LOOKUP_QUERY)
+	if err != nil {
+		return err
+	}
+	defer lookupStmt.Close()
+
+	for _, word := range dict.Words {
+		entry := WordEntryFromWord(&word, DICTIONARY_NAME)
+
+		if _, err := entryStmt.Exec(
+			entry.ID,
+			entry.Dictionary,
 			entry.KanjiJSON,
 			entry.KanaJSON,
 			entry.SenseJSON,
 		); err != nil {
-			return err
+			return fmt.Errorf(
+				"inserting entry %s:%d: %w",
+				entry.Dictionary,
+				entry.ID,
+				err,
+			)
 		}
 
 		forms := buildLookupForms(word)
 
 		for _, form := range forms {
-			if _, err := tx.Exec(
-				INSERT_LOOKUP_QUERY,
-				entry.Id,
+			if _, err := lookupStmt.Exec(
+				entry.Dictionary,
+				entry.ID,
 				form.Expression,
 				form.Reading,
 			); err != nil {
-				return err
+				return fmt.Errorf(
+					"inserting lookup for %s:%d: %w",
+					entry.Dictionary,
+					entry.ID,
+					err,
+				)
 			}
 		}
 	}
@@ -280,17 +337,27 @@ var SUPPORTED_OPERATIONS = []string{
 
 func main() {
 	if len(os.Args) < 3 {
-		log.Fatal("usage: go run ./scripts/jitendex <operation> <sqlite-file-output-path>")
+		log.Fatal(
+			"usage: go run ./scripts/jitendex <operation> <sqlite-file-output-path>",
+		)
 	}
 
 	operation := os.Args[1]
 	outputPath := os.Args[2]
 
-	db, err := sql.Open("sqlite3", outputPath+"/"+DATABASE_NAME)
+	db, err := sql.Open(
+		"sqlite3",
+		outputPath+"/"+DATABASE_NAME+"?_foreign_keys=on",
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer db.Close()
+
+	// Force the connection to be established now and verify FK support.
+	if err := db.Ping(); err != nil {
+		log.Fatal(err)
+	}
 
 	start := time.Now()
 
@@ -299,18 +366,22 @@ func main() {
 		if err := processDictionary(db); err != nil {
 			log.Fatal(err)
 		}
+
 	// case "create_indexes":
 	// 	if err := createIndexes(db); err != nil {
 	// 		log.Fatal(err)
 	// 	}
+
 	default:
-		log.Fatalf("Operation not supported. Please use one of the following options: %s", strings.Join(SUPPORTED_OPERATIONS, " "))
+		log.Fatalf(
+			"Operation not supported. Please use one of the following options: %s",
+			strings.Join(SUPPORTED_OPERATIONS, " "),
+		)
 	}
 
 	end := time.Now()
-	elapsed := end.Sub(start)
 
 	log.Printf("Started:  %s", start.Format(time.RFC3339))
 	log.Printf("Finished: %s", end.Format(time.RFC3339))
-	log.Printf("Complete. Took: %s", elapsed)
+	log.Printf("Complete. Took: %s", end.Sub(start))
 }

@@ -1,4 +1,4 @@
-import { StoredEntry } from '@/db/jmdict/types';
+import { StoredEntry } from '@/db/dictionaries/schema';
 import { Entry } from './entry.types';
 
 export function mapStoredEntryToEntry(storedEntry: StoredEntry[]): Entry[] {

@@ -1,6 +1,11 @@
 import { Directory, Paths, File } from 'expo-file-system';
+import { defaultDatabaseDirectory, } from 'expo-sqlite';
 
 export type FilePath = 'videos' | 'subtitles';
+export const DefaultSQLiteDirectory = defaultDatabaseDirectory;
+export const DefaultSQLiteDownloadDirectory = new Directory(
+  DefaultSQLiteDirectory, "downloads"
+);
 
 type FileData = {
   id: number;
@@ -38,4 +43,45 @@ export function saveFile(file: FileData, filePath: FilePath, extensionFallback: 
 export function deleteFile(filePath: string) {
   const file = new File(Paths.document, filePath);
   if (file.exists) file.delete();
+}
+
+export async function downloadSQLiteDatabase(url: string) {
+  return File.downloadFileAsync(
+    url,
+    DefaultSQLiteDownloadDirectory,
+    { idempotent: true },
+  );
+}
+
+export function getFileName(uri: string) {
+  return new File(uri).name;
+}
+
+export function getDatabasePath(name: string) {
+  return decodeURIComponent(
+    `${DefaultSQLiteDirectory.replace(/\/$/, '')}/${name}`
+      .replace(/^file:\/\//, ''),
+  );
+}
+
+export function listDirectoryContents(uri: string): string[] {
+  const dir = new Directory(uri);
+
+  dir.create({
+    idempotent: true,
+    intermediates: true,
+  });
+
+  return dir.list().map((item) => item.uri);
+}
+
+export function clearDirectory(uri: string) {
+  const dir = new Directory(uri);
+  if (!dir.exists) {
+    return;
+  }
+
+  for (const item of dir.list()) {
+    item.delete();
+  }
 }

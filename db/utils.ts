@@ -1,9 +1,9 @@
-import { JMDICT_DB_NAME } from './jmdict/client';
+import { DICTIONARIES_DB_NAME } from './dictionaries/client';
 import { Directory, File, Paths } from 'expo-file-system';
 
 const SQLITE_DIR = new Directory(Paths.document, 'SQLite');
-const JMDICT_DB_FILE = new File(SQLITE_DIR, JMDICT_DB_NAME);
-const REMOTE__JMDICT_DB_URL = `http://localhost:8080/dicts/${JMDICT_DB_NAME}`;
+const JMDICT_DB_FILE = new File(SQLITE_DIR, DICTIONARIES_DB_NAME);
+const REMOTE__JMDICT_DB_URL = `http://localhost:8080/dicts/${DICTIONARIES_DB_NAME}`;
 
 export async function ensureLookupDbInstalled(onProgress?: (progress: number) => void) {
   if (!SQLITE_DIR.exists) {
@@ -17,7 +17,7 @@ export async function ensureLookupDbInstalled(onProgress?: (progress: number) =>
     return JMDICT_DB_FILE.uri;
   }
 
-  const tempFile = new File(SQLITE_DIR, `${JMDICT_DB_NAME}.download`);
+  const tempFile = new File(SQLITE_DIR, `${DICTIONARIES_DB_NAME}.download`);
 
   if (tempFile.exists) {
     tempFile.delete();

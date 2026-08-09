@@ -7,7 +7,7 @@ import { router, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { cssInterop } from 'nativewind';
 
-interface ModelsScreenProps {}
+interface ModelsScreenProps { }
 
 type RoutePathname = Extract<Href, { pathname: unknown }>['pathname'];
 type IoniconName = ComponentProps<typeof Ionicons>['name'];
@@ -40,6 +40,17 @@ const GROUPS: Group[] = [
         description: 'Where new mines land',
         pathname: '/decks-screen',
         icon: 'file-tray',
+      },
+    ],
+  },
+  {
+    title: 'Dictionaries',
+    rows: [
+      {
+        label: 'Downloaded',
+        description: 'Dictionaries used for displaying word meaning',
+        pathname: '/dictionaries-screen',
+        icon: 'book',
       },
     ],
   },
@@ -106,17 +117,17 @@ export const AnkiSettingsScreen: React.FC<ModelsScreenProps> = () => {
   );
 };
 
-interface SectionProps extends ViewProps {}
+interface SectionProps extends ViewProps { }
 
 const Section = ({ className, children, ...rest }: SectionProps) => {
   return (
-    <View className={cn('w-full flex-1', className)} {...rest}>
+    <View className={cn('w-full', className)} {...rest}>
       {children}
     </View>
   );
 };
 
-interface SectionTitleProps extends TextProps {}
+interface SectionTitleProps extends TextProps { }
 
 const SectionTitle = ({ className, children, ...rest }: SectionTitleProps) => {
   return (
@@ -126,7 +137,7 @@ const SectionTitle = ({ className, children, ...rest }: SectionTitleProps) => {
   );
 };
 
-interface SectionBodyProps extends ViewProps {}
+interface SectionBodyProps extends ViewProps { }
 
 const SectionBody = ({ className, children, ...rest }: SectionBodyProps) => {
   return (
