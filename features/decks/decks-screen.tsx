@@ -25,9 +25,7 @@ cssInterop(Ionicons, {
   },
 });
 
-interface DecksScreenProps {}
-
-export const DecksScreen: React.FC<DecksScreenProps> = () => {
+export const DecksScreen: React.FC = () => {
   const { data: decks, isLoading: isDecksLoading } = useAppLiveQuery(
     allDecksQuery(),
     NOPMutationMapper

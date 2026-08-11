@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { Text, TouchableOpacity, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { cssInterop } from 'nativewind';
 import { useAppTheme } from '@/theme/theme-provider';
@@ -110,68 +110,74 @@ export const ModelCreateScreen: React.FC<ScreenContentProps> = () => {
           ),
         }}
       />
-      <ScrollView
-        className="flex-1 bg-background"
-        contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={{ paddingBottom: 8, gap: 16 }}>
-        <ModelMetaDataSection
-          name={form.name}
-          setModelName={(name) => {
-            setForm((currentForm) => ({
-              ...currentForm,
-              name,
-            }));
-          }}
-        />
-        <ModelFieldsSection
-          availableFields={ModelFields}
-          currentFields={form.fields}
-          setModelFields={(fields: AllowedModelField[]) => {
-            const allowedFieldNames = new Set<ModelFieldName>(fields.map((field) => field.name));
 
-            setForm((currentForm) => ({
-              ...currentForm,
-              fields,
-              templates: currentForm.templates.map((template) => ({
-                ...template,
-                frontFields: template.frontFields.filter((fieldName) =>
-                  allowedFieldNames.has(fieldName)
-                ),
-                backFields: template.backFields.filter((fieldName) =>
-                  allowedFieldNames.has(fieldName)
-                ),
-                rule: {
-                  ...template.rule,
-                  fields: template.rule.fields.filter((fieldName) =>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ScrollView
+          className="flex-1 bg-background"
+          contentInsetAdjustmentBehavior="automatic"
+          contentContainerStyle={{ paddingBottom: 8, gap: 16 }}>
+          <ModelMetaDataSection
+            name={form.name}
+            setModelName={(name) => {
+              setForm((currentForm) => ({
+                ...currentForm,
+                name,
+              }));
+            }}
+          />
+          <ModelFieldsSection
+            availableFields={ModelFields}
+            currentFields={form.fields}
+            setModelFields={(fields: AllowedModelField[]) => {
+              const allowedFieldNames = new Set<ModelFieldName>(fields.map((field) => field.name));
+
+              setForm((currentForm) => ({
+                ...currentForm,
+                fields,
+                templates: currentForm.templates.map((template) => ({
+                  ...template,
+                  frontFields: template.frontFields.filter((fieldName) =>
                     allowedFieldNames.has(fieldName)
                   ),
-                },
-              })),
-            }));
-          }}
-        />
-        <ModelTemplatesSection
-          availableFields={[...availableFields, 'FrontSide']}
-          templates={form.templates}
-          setModelTemplates={(templates) => {
-            setForm((currentForm) => ({
-              ...currentForm,
-              templates,
-            }));
-          }}
-        />
-        <ModelRulesSection
-          availableFields={availableFields}
-          templates={form.templates}
-          setModelTemplates={(templates) => {
-            setForm((currentForm) => ({
-              ...currentForm,
-              templates,
-            }));
-          }}
-        />
-        {/*<ModelCssSection />*/}
-      </ScrollView>
+                  backFields: template.backFields.filter((fieldName) =>
+                    allowedFieldNames.has(fieldName)
+                  ),
+                  rule: {
+                    ...template.rule,
+                    fields: template.rule.fields.filter((fieldName) =>
+                      allowedFieldNames.has(fieldName)
+                    ),
+                  },
+                })),
+              }));
+            }}
+          />
+          <ModelTemplatesSection
+            availableFields={[...availableFields, 'FrontSide']}
+            templates={form.templates}
+            setModelTemplates={(templates) => {
+              setForm((currentForm) => ({
+                ...currentForm,
+                templates,
+              }));
+            }}
+          />
+          <ModelRulesSection
+            availableFields={availableFields}
+            templates={form.templates}
+            setModelTemplates={(templates) => {
+              setForm((currentForm) => ({
+                ...currentForm,
+                templates,
+              }));
+            }}
+          />
+          {/*<ModelCssSection />*/}
+        </ScrollView>
+      </KeyboardAvoidingView>
     </>
   );
 };

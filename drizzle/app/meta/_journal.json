@@ -5,50 +5,8 @@
     {
       "idx": 0,
       "version": "6",
-      "when": 1781442256017,
-      "tag": "0000_lazy_purifiers",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1784038100721,
-      "tag": "0001_tan_inertia",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1784356278878,
-      "tag": "0002_high_ultragirl",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "6",
-      "when": 1784518588519,
-      "tag": "0003_redundant_avengers",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "6",
-      "when": 1784558194823,
-      "tag": "0004_fast_sumo",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "6",
-      "when": 1784782476671,
-      "tag": "0005_sharp_lilith",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "6",
-      "when": 1785636126691,
-      "tag": "0006_insert-default-settings",
+      "when": 1786263889067,
+      "tag": "0000_complex_vin_gonzales",
       "breakpoints": true
     }
   ]

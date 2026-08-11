@@ -131,7 +131,7 @@ export const QueueScreen: React.FC<QueueScreenProps> = () => {
 
           <CustomExportModal
             visible={isModalOpen}
-            initialDeckApplicationId={defaults[0].deckApplicationId}
+            initialDeckApplicationId={defaults[0]?.deckApplicationId ?? null}
             close={() => setIsModalOpen(false)}
             isSubmitting={false}
             onClose={() => { }}

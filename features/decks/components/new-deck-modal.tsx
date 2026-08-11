@@ -1,7 +1,8 @@
 import {
   BottomSheetModal,
   BottomSheetModalProps,
-  BottomSheetView,
+  BottomSheetScrollView,
+  BottomSheetTextInput,
   type BottomSheetModal as BottomSheetModalType,
 } from '@gorhom/bottom-sheet';
 import { Pressable, Text, View } from 'react-native';
@@ -10,7 +11,6 @@ import { cssInterop } from 'nativewind';
 import { darkColors, lightColors } from '@/theme/colors';
 import { useAppTheme } from '@/theme/theme-provider';
 import { Ionicons } from '@expo/vector-icons';
-import { TextInput } from '@/components/text-input';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DeckFormData } from '@/lib/anki-settings';
 import { generateDeckId } from '@/lib/genanki';
@@ -20,9 +20,9 @@ import { upsertDeckQuery } from '@/db/features/decks/decks.queries';
 import { NOPMutationMapper } from '@/db/hooks/use-app-live-query';
 import { formDataToDeck } from '@/lib/anki-settings';
 
-interface NewDeckModalProps extends BottomSheetModalProps {}
+interface NewDeckModalProps extends BottomSheetModalProps { }
 
-cssInterop(BottomSheetView, {
+cssInterop(BottomSheetScrollView, {
   className: 'style',
 });
 
@@ -59,15 +59,22 @@ export const NewDeckBottomSheetModal = forwardRef<
       enableDynamicSizing
       enablePanDownToClose
       maxDynamicContentSize={600}
+      keyboardBehavior="interactive"
+      keyboardBlurBehavior="restore"
+      android_keyboardInputMode="adjustResize"
       backgroundStyle={{
         backgroundColor: bgColor,
       }}
-      {...props}>
-      <BottomSheetView
-        className="px-4 pt-2"
-        style={{
-          paddingBottom: insets.bottom + 12,
-        }}>
+    >
+      <BottomSheetScrollView
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingTop: 8,
+          paddingBottom: 16 + insets.bottom,
+          gap: 16,
+        }}
+      >
         <View className="mb-4 flex-row items-center justify-between">
           <View>
             <Text className="uppercase tracking-[3px] text-primary">New deck</Text>
@@ -102,12 +109,17 @@ export const NewDeckBottomSheetModal = forwardRef<
           <View className="gap-3">
             <Text className="text-[10px] uppercase tracking-widest text-mutedForeground">Name</Text>
 
-            <TextInput
+            <BottomSheetTextInput
               value={form.name}
-              onChangeText={(text) => setForm((prev) => ({ ...prev, name: text }))}
-              placeholder="e.g. Mining · JLPT"
+              onChangeText={(text) =>
+                setForm((prev) => ({
+                  ...prev,
+                  name: text,
+                }))
+              }
+              placeholder="e.g. Mining · Kanji"
               placeholderTextColor="#888"
-              className="rounded-lg border border-border bg-surface text-lg text-foreground"
+              className="p-3 rounded-lg border border-border bg-surface text-lg text-foreground"
               returnKeyType="done"
             />
 
@@ -122,14 +134,18 @@ export const NewDeckBottomSheetModal = forwardRef<
               Description
             </Text>
 
-            <TextInput
+            <BottomSheetTextInput
               value={form.description}
-              onChangeText={(text) => setForm((prev) => ({ ...prev, description: text }))}
+              onChangeText={(text) =>
+                setForm((prev) => ({
+                  ...prev,
+                  description: text,
+                }))
+              }
               placeholder="e.g. Main deck for..."
               placeholderTextColor="#888"
-              className="rounded-lg border border-border bg-surface text-lg text-foreground"
-              returnKeyType="done"
-              multiline={true}
+              className="p-3 rounded-lg border border-border bg-surface text-lg text-foreground"
+              multiline
             />
           </View>
 
@@ -185,7 +201,7 @@ export const NewDeckBottomSheetModal = forwardRef<
             <Text className="text-primary-foreground text-sm font-semibold">Create deck</Text>
           </Pressable>
         </View>
-      </BottomSheetView>
+      </BottomSheetScrollView>
     </BottomSheetModal>
   );
 });

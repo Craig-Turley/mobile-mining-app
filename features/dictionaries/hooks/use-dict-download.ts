@@ -4,25 +4,33 @@ import { downloadRemoteDict } from "../lib/download-remote-dict";
 import { NOPMutationMapper } from "@/db/hooks/use-app-live-query";
 import { clearDirectory, DefaultSQLiteDownloadDirectory } from "@/lib/file-system";
 
-export function useDictionaryDownload(url: string, onSuccess?: () => void) {
+export function useDictionaryDownload(
+  url: string,
+  onSuccess?: () => void,
+) {
   const [importing, setImporting] = useState(false);
-
   const mutation = useMutation(
     async () => {
       setImporting(true);
-      // let the overlay actually paint before the JS thread locks up
-      await new Promise(resolve => requestAnimationFrame(resolve));
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => resolve()),
+      );
+
       try {
         await downloadRemoteDict(url);
-      } catch {
+        onSuccess?.();
+      } catch (error) {
         clearDirectory(DefaultSQLiteDownloadDirectory.uri);
+        throw error;
       } finally {
-        onSuccess?.()
         setImporting(false);
       }
     },
     NOPMutationMapper,
   );
 
-  return { ...mutation, importing };
+  return {
+    ...mutation,
+    importing,
+  };
 }

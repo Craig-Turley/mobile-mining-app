@@ -45,11 +45,11 @@ export function deleteFile(filePath: string) {
   if (file.exists) file.delete();
 }
 
-export async function downloadSQLiteDatabase(url: string) {
+export async function downloadSQLiteDatabase(url: string, timeout = 30_000) {
   return File.downloadFileAsync(
     url,
     DefaultSQLiteDownloadDirectory,
-    { idempotent: true },
+    { idempotent: true, },
   );
 }
 
