@@ -1,26 +1,19 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, FlatList, Alert } from 'react-native';
+import Button from '@/components/ui/button';
+import { View, Text, FlatList, Alert } from 'react-native';
 import { QueueToolbar } from './components/queue-toolbar';
 import { cn } from '@/utils/cn';
 import { Ionicons } from '@expo/vector-icons';
 import { cssInterop } from 'nativewind';
-import { QueueItemWithModel, StoredModel } from '@/db/app/schema';
-import Button from '@/components/ui/button';
+import { QueueItemWithModel } from '@/db/app/schema';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getModelsByIdsQuery } from '@/db/features/models/models.queries';
-import { deckByApplicationIdQuery } from '@/db/features/decks/decks.queries';
 import { getAppDefaultsQuery } from '@/db/features/defaults/defaults.queries';
-import { Model } from '@/packages/genanki-ts/dist';
-import { AllowedModelField } from '@/lib/anki-settings';
 import { NOPQueryMapper } from '@/db/hooks/use-query';
 import { useAppLiveQuery } from '@/db/hooks/use-app-live-query';
 import { allQueueItemsQuery, clearQueueQuery, deleteFromQueueQuery } from '@/db/features/queue/queue.queries';
 import { AnchoredMenu, AnchoredMenuItem, AnchoredMenuTrigger } from '@/components/ui/anchored-menu';
 import { CustomExportModal } from './components/custom-export-modal';
-import { exportToAnki, prepareDeckForExport } from '@/lib/genanki/index';
-import { shareFile, AnkiSharingOptions } from '@/lib/sharing/sharing';
-
-interface QueueScreenProps { }
+import { exportQueueToAnki } from './lib/export-to-anki';
 
 cssInterop(Ionicons, {
   className: {
@@ -31,33 +24,7 @@ cssInterop(Ionicons, {
   },
 });
 
-// TODO: move this into a db function
-export function hydrateStoredModel(storedModel: StoredModel): StoredModel {
-  return {
-    ...storedModel,
-    model: new Model<AllowedModelField[]>({
-      id: storedModel.model.id,
-      name: storedModel.model.name,
-      type: storedModel.model.type,
-      mod: storedModel.model.mod,
-      usn: storedModel.model.usn,
-      sortf: storedModel.model.sortf,
-      did: storedModel.model.did,
-      flds: storedModel.model.flds,
-      tmpls: storedModel.model.tmpls,
-      css: storedModel.model.css,
-      latexPre: storedModel.model.latexPre,
-      latexPost: storedModel.model.latexPost,
-      latexsvg: storedModel.model.latexsvg,
-      req: storedModel.model.req,
-      vers: storedModel.model.vers,
-      originalStockKind: storedModel.model.originalStockKind,
-      originalId: storedModel.model.originalId,
-    }),
-  };
-}
-
-export const QueueScreen: React.FC<QueueScreenProps> = () => {
+export const QueueScreen: React.FC = () => {
   const { data: queuedItems, isLoading } = useAppLiveQuery(allQueueItemsQuery(), NOPQueryMapper);
   const { data: defaults } = useAppLiveQuery(getAppDefaultsQuery(), NOPQueryMapper);
   const insets = useSafeAreaInsets();
@@ -65,14 +32,7 @@ export const QueueScreen: React.FC<QueueScreenProps> = () => {
 
   const exportFunc = async (deckId: number) => {
     try {
-      const selectedDeck = await deckByApplicationIdQuery(deckId);
-      if (!selectedDeck) throw new Error("selected deck not found");
-      const models = await getModelsByIdsQuery(queuedItems.map(q => q.modelApplicationId)).then((m) => m.map(hydrateStoredModel));
-
-      const preparedDeck = prepareDeckForExport(selectedDeck, models, queuedItems);
-      const fileUri = await exportToAnki(preparedDeck);
-
-      await shareFile(fileUri, AnkiSharingOptions);
+      await exportQueueToAnki(deckId, queuedItems);
 
       Alert.alert(
         'Clear export queue?',
@@ -85,14 +45,10 @@ export const QueueScreen: React.FC<QueueScreenProps> = () => {
           {
             text: 'Yes',
             style: 'destructive',
-            onPress: async () => {
-              await clearQueueQuery();
-            },
+            onPress: clearQueueQuery,
           },
         ],
-        {
-          cancelable: true,
-        }
+        { cancelable: true }
       );
     } catch (error) {
       console.error('Failed to export Anki deck:', error);
@@ -145,6 +101,7 @@ export const QueueScreen: React.FC<QueueScreenProps> = () => {
 
 const QueueRow: React.FC<{ queItem: QueueItemWithModel }> = ({ queItem }) => {
   const title = queItem.entry.kanji.map((kanji) => kanji.text).join(', ');
+  const model = queItem.model.name;
 
   return (
     <View
@@ -152,11 +109,26 @@ const QueueRow: React.FC<{ queItem: QueueItemWithModel }> = ({ queItem }) => {
         'w-full flex-row items-start gap-3 rounded-2xl',
         'border border-border bg-surface p-4'
       )}>
-      <Pressable className="min-w-0 flex-1 active:opacity-70" accessibilityRole="button">
+      <View className="min-w-0 flex-1 gap-2 active:opacity-70">
         <Text className="shrink font-semibold text-foreground" numberOfLines={1}>
           {title}
         </Text>
-      </Pressable>
+
+        <View className="flex-row items-center gap-1">
+          <Ionicons
+            name="layers"
+            size={14}
+            className="text-mutedForeground"
+          />
+
+          <Text
+            className="shrink text-sm text-mutedForeground"
+            numberOfLines={1}
+          >
+            {model}
+          </Text>
+        </View>
+      </View>
 
       <AnchoredMenu>
         <AnchoredMenuTrigger className="shrink-0" accessibilityLabel={`Open actions for ${title}`}>
