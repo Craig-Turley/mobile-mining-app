@@ -1,13 +1,20 @@
-import React from 'react';
-import { ActivityIndicator, Pressable, PressableProps, Text, TextProps, View } from 'react-native';
+import React, { useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Animated,
+  GestureResponderEvent,
+  Pressable,
+  PressableProps,
+  Text,
+  TextProps,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { cn } from '@/utils/cn';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive';
-
 export type ButtonSize = 'sm' | 'md' | 'lg' | 'icon';
 
-export interface ButtonProps extends Omit<PressableProps, 'children'> {
+export interface ButtonProps extends Omit<PressableProps, 'children' | 'onPress'> {
   children?: React.ReactNode;
   label?: string;
   variant?: ButtonVariant;
@@ -19,6 +26,10 @@ export interface ButtonProps extends Omit<PressableProps, 'children'> {
   className?: string;
   textClassName?: string;
   textProps?: TextProps;
+  onPress?: (event: GestureResponderEvent) => void | Promise<void>;
+  successLabel?: string;
+  successIcon?: keyof typeof Ionicons.glyphMap | null;
+  successDuration?: number;
 }
 
 const containerVariants: Record<ButtonVariant, string> = {
@@ -51,6 +62,13 @@ const textSizeVariants: Record<ButtonSize, string> = {
   icon: 'text-sm',
 };
 
+const roundedVariants: Record<ButtonSize, string> = {
+  sm: 'rounded-lg',
+  md: 'rounded-xl',
+  lg: 'rounded-xl',
+  icon: 'rounded-xl',
+};
+
 export function Button({
   children,
   label,
@@ -65,29 +83,62 @@ export function Button({
   textClassName,
   textProps,
   accessibilityLabel,
+  onPress,
+  successLabel,
+  successIcon = 'checkmark',
+  successDuration = 1000,
   ...pressableProps
 }: ButtonProps) {
-  const isDisabled = disabled || loading;
+  const [showSuccess, setShowSuccess] = useState(false);
+  const successOpacity = useRef(new Animated.Value(0)).current;
+  const successScale = useRef(new Animated.Value(0.9)).current;
+
+  const runSuccessAnimation = () => {
+    setShowSuccess(true);
+    successOpacity.setValue(0);
+    successScale.setValue(0.9);
+
+    Animated.parallel([
+      Animated.timing(successOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
+      Animated.spring(successScale, { toValue: 1, friction: 6, tension: 80, useNativeDriver: true }),
+    ]).start(() => {
+      setTimeout(() => {
+        Animated.parallel([
+          Animated.timing(successOpacity, { toValue: 0, duration: 200, useNativeDriver: true }),
+          Animated.timing(successScale, { toValue: 0.9, duration: 200, useNativeDriver: true }),
+        ]).start(() => setShowSuccess(false));
+      }, successDuration);
+    });
+  };
+
+  const handlePress = (event: GestureResponderEvent) => {
+    if (!onPress) return;
+    const result = onPress(event);
+    if (result && typeof (result as Promise<void>).then === 'function') {
+      (result as Promise<void>).then(() => {
+        if (successLabel) runSuccessAnimation();
+      }).catch(() => {
+        console.log("Button caught an error");
+      });
+    }
+  };
+
+  const isDisabled = disabled || loading || showSuccess;
   const resolvedIconSize = iconSize ?? (size === 'sm' ? 16 : size === 'lg' ? 20 : 18);
-
   const content = label ?? children;
-  const iconColorClassName = textVariants[variant];
-
   const iconElement = icon ? (
-    <Ionicons name={icon} size={resolvedIconSize} className={iconColorClassName} />
+    <Ionicons name={icon} size={resolvedIconSize} className={textVariants[variant]} />
   ) : null;
 
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? (typeof label === 'string' ? label : undefined)}
-      accessibilityState={{
-        disabled: isDisabled,
-        busy: loading,
-      }}
+      accessibilityState={{ disabled: isDisabled, busy: loading }}
       disabled={isDisabled}
+      onPress={handlePress}
       className={cn(
-        'flex-row items-center justify-center gap-2',
+        'flex-row items-center justify-center gap-2 overflow-hidden',
         containerVariants[variant],
         sizeVariants[size],
         isDisabled && 'opacity-50',
@@ -97,27 +148,29 @@ export function Button({
       {loading ? (
         <ActivityIndicator />
       ) : (
-        <View className="flex-row items-center justify-center gap-2">
+        <Animated.View className="flex-row items-center justify-center gap-2">
           {iconPosition === 'left' && iconElement}
-
           {typeof content === 'string' ? (
             <Text
               {...textProps}
-              className={cn(
-                'font-semibold',
-                textVariants[variant],
-                textSizeVariants[size],
-                textClassName,
-                textProps?.className
-              )}>
+              className={cn('font-semibold', textVariants[variant], textSizeVariants[size], textClassName, textProps?.className)}>
               {content}
             </Text>
           ) : (
             content
           )}
-
           {iconPosition === 'right' && iconElement}
-        </View>
+        </Animated.View>
+      )}
+
+      {showSuccess && (
+        <Animated.View
+          pointerEvents="none"
+          className={cn('absolute inset-0 flex-row items-center justify-center gap-2', roundedVariants[size], className, 'bg-green-500')}
+          style={{ opacity: successOpacity, transform: [{ scale: successScale }] }}>
+          {successIcon && <Ionicons name={successIcon} size={resolvedIconSize} color="white" />}
+          <Text className={cn('font-semibold text-white', textSizeVariants[size])}>{successLabel}</Text>
+        </Animated.View>
       )}
     </Pressable>
   );
