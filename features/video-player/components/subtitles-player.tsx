@@ -3,23 +3,24 @@ import { PropsWithChildren, useEffect, useRef, useState } from 'react';
 import { parseSubtitles, SubtitleCue } from '@/utils/subtitles';
 import Subtitle from './subtitle';
 import { useEventListener } from 'expo';
-import { VideoPlayer } from 'expo-video';
 import { Directory, File, Paths } from 'expo-file-system';
 import getFile from '@/utils/file';
 import { insertSubtitle } from '@/db/features/files/files.services';
 import { useAppLiveQuery } from '@/db/hooks/use-app-live-query';
 import { subtitleByIdQuery } from '@/db/features/files/files.queries';
 import { NOPQueryMapper } from '@/db/hooks/use-query';
+import { useVideoPlayerContext } from '../contexts/video-screen-context';
 
 export interface SubtitlePlayerProps extends PropsWithChildren {
   videoId: number;
   subtitlesId: number | null;
-  player: VideoPlayer;
 }
 
 type SubtitleError = 'unassociated_file' | 'upload_error' | 'missing_file';
 
-export default function SubtitlesPlayer({ videoId, subtitlesId, player }: SubtitlePlayerProps) {
+export default function SubtitlesPlayer({ videoId, subtitlesId }: SubtitlePlayerProps) {
+  const { player } = useVideoPlayerContext();
+
   const {
     data,
     error: subtitleQueryError,

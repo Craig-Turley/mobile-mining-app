@@ -33,8 +33,10 @@ export default function Subtitle({ cue, active, onLayout }: SubtitleProps) {
       return;
     }
 
-    tokenList.forEach((t) => (t.reading = katakanaToHiragana(t.reading)));
-    setTokens(tokenList);
+    const cleaned = tokenList
+      .filter((t) => t.surface_form.trim().length > 0) // drop whitespace-only tokens
+      .map((t) => ({ ...t, reading: katakanaToHiragana(t.reading) }));
+    setTokens(cleaned);
   };
 
   const renderToken = (token: Token, index: number) => (

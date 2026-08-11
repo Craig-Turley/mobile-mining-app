@@ -3,7 +3,6 @@ import VideoPlayer from './components/video-player';
 import SubtitlesPlayer from './components/subtitles-player';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useVideoPlayer } from 'expo-video';
 import { EntryModalProvider } from './contexts/entry-modal-context';
 import { ActivityIndicator, Text } from 'react-native';
 import { VideoScreenProvider } from './contexts/video-screen-context';
@@ -20,11 +19,6 @@ export const VideoPlayerScreen: React.FC = () => {
     videoByIdQuery(numericVideoId),
     NOPQueryMapper
   );
-
-  const player = useVideoPlayer(null, (player) => {
-    player.timeUpdateEventInterval = 0.25;
-    player.play();
-  });
 
   const isError = error !== undefined;
   const video = data?.[0] ?? null;
@@ -52,11 +46,10 @@ export const VideoPlayerScreen: React.FC = () => {
               <Text className="text-foreground">Video not found.</Text>
             ) : (
               <>
-                <VideoPlayer player={player} videoId={numericVideoId} />
+                <VideoPlayer videoId={numericVideoId} />
 
                 <SubtitlesPlayer
                   key={`${video.id}-${video.subtitle_id ?? 'none'}`}
-                  player={player}
                   videoId={numericVideoId}
                   subtitlesId={video.subtitle_id}
                 />

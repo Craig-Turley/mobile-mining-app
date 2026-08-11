@@ -1,4 +1,4 @@
-import { VideoPlayer as ExpoVideoPlayer, VideoView } from 'expo-video';
+import { VideoView } from 'expo-video';
 import { cssInterop } from 'nativewind';
 import { View, Text } from 'react-native';
 import { PropsWithChildren, useEffect } from 'react';
@@ -6,6 +6,7 @@ import { buildFullPath } from '@/lib/file-system';
 import { useAppLiveQuery } from '@/db/hooks/use-app-live-query';
 import { videoByIdQuery } from '@/db/features/files/files.queries';
 import { NOPQueryMapper } from '@/db/hooks/use-query';
+import { useVideoPlayerContext } from '../contexts/video-screen-context';
 
 cssInterop(VideoView, {
   className: 'style',
@@ -13,10 +14,11 @@ cssInterop(VideoView, {
 
 export interface VideoPlayerProps extends PropsWithChildren {
   videoId: number;
-  player: ExpoVideoPlayer;
 }
 
-export default function VideoPlayer({ videoId, player }: VideoPlayerProps) {
+export default function VideoPlayer({ videoId }: VideoPlayerProps) {
+  const { player } = useVideoPlayerContext();
+
   const { data, error, isLoading } = useAppLiveQuery(
     videoByIdQuery(Number(videoId)),
     NOPQueryMapper
