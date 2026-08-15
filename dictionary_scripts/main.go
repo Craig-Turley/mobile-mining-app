@@ -149,7 +149,7 @@ type Form struct {
 }
 
 const (
-	DATABASE_NAME      = "jmdict.db"
+	DATABASE_NAME      = "jmdict-v1.0.0.db"
 	DICTIONARY_NAME    = "JMDict"
 	ENTRIES_TABLE_NAME = "entries"
 	LOOKUP_TABLE_NAME  = "lookup"

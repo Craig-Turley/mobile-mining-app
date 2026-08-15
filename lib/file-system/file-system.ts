@@ -1,7 +1,8 @@
 import { Directory, Paths, File } from 'expo-file-system';
 import { defaultDatabaseDirectory, } from 'expo-sqlite';
+import { unzip } from 'react-native-zip-archive';
 
-export type FilePath = 'videos' | 'subtitles';
+export type FilePath = 'videos' | 'subtitles' | 'temp';
 export const DefaultSQLiteDirectory = defaultDatabaseDirectory;
 export const DefaultSQLiteDownloadDirectory = new Directory(
   DefaultSQLiteDirectory, "downloads"
@@ -45,10 +46,13 @@ export function deleteFile(filePath: string) {
   if (file.exists) file.delete();
 }
 
-export async function downloadSQLiteDatabase(url: string, timeout = 30_000) {
+export async function downloadFile(url: string, filePath: FilePath) {
+  const directory = new Directory(Paths.document, filePath);
+  directory.create({ intermediates: true, idempotent: true });
+
   return File.downloadFileAsync(
     url,
-    DefaultSQLiteDownloadDirectory,
+    directory,
     { idempotent: true, },
   );
 }
@@ -84,4 +88,8 @@ export function clearDirectory(uri: string) {
   for (const item of dir.list()) {
     item.delete();
   }
+}
+
+export async function unzipFile(src: string, dest: string) {
+  return unzip(src, dest);
 }
