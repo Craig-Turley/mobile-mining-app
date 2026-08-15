@@ -1,5 +1,6 @@
 import { dictionariesDb } from "@/db/dictionaries/client";
-import { DefaultSQLiteDownloadDirectory, listDirectoryContents } from "@/lib/file-system";
+import { DefaultSQLiteDownloadDirectory, deleteFile, listDirectoryContents } from "@/lib/file-system";
+import { File } from "expo-file-system";
 
 function toSqlAlias(filename: string): string {
   return filename
@@ -47,4 +48,30 @@ export async function attachAndBuildViews() {
     CREATE TEMP VIEW entries AS ${entriesUnion};
     CREATE TEMP VIEW lookup AS ${lookupUnion};
   `);
+}
+
+// NOTE: this is temporary for deleting the current sqlite files
+export async function deleteDictionary(filePath: string) {
+  const sqlite = dictionariesDb.$client;
+
+  const fileName = filePath.substring(filePath.lastIndexOf("/") + 1);
+  const alias = toSqlAlias(fileName);
+  const escapedAlias = alias.replace(/"/g, '""');
+
+  await sqlite.execAsync(`
+    DROP VIEW IF EXISTS temp.entries;
+    DROP VIEW IF EXISTS temp.lookup;
+  `);
+
+  await sqlite.execAsync(`
+    DETACH DATABASE "${escapedAlias}";
+  `);
+
+  // NOTE: THIS IS SUPER TEMPORARY
+  const file = new File(filePath);
+  if (file.exists) file.delete();
+  console.log(file.exists);
+  // ------------------------------
+
+  await attachAndBuildViews();
 }

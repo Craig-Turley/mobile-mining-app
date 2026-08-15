@@ -7,6 +7,10 @@ import { useAppTheme } from '@/theme/theme-provider';
 import { DictionaryImportOverlay } from './components/dictionary-import-overlay';
 import { useDictionaryDownload } from './hooks/use-dict-download';
 import { useHasDictionary } from '@/db/features/dictionaries/dictionaries.hooks';
+import { AnchoredMenu, AnchoredMenuItem, AnchoredMenuTrigger } from '@/components/ui/anchored-menu';
+import { deleteDict } from './lib/delete-dict';
+import { DefaultSQLiteDownloadDirectory } from '@/lib/file-system';
+import { File } from 'expo-file-system';
 
 remapProps(FlatList, {
   className: 'style',
@@ -123,12 +127,18 @@ const JMDictRow: React.FC = () => {
         <Text className="flex-1 text-[17px] leading-[22px] text-foreground">
           JMDict
         </Text>
-        <Pressable disabled={hasDictionary} onPress={downloadDict}>
+
+        <Pressable
+          disabled={hasDictionary}
+          onPress={downloadDict}
+          className="flex-row items-center gap-2"
+        >
           <Ionicons
             name={hasDictionary ? "checkmark" : "download-outline"}
             color={hasDictionary ? app.colors.posNoun : app.colors.primary}
             size={24}
           />
+          {hasDictionary && <AnchoredSettings refresh={refreshHasDictionary} />}
         </Pressable>
       </View>
     );
@@ -141,3 +151,25 @@ const JMDictRow: React.FC = () => {
     </>
   );
 };
+
+// NOTE: this is just tempoaray until how to drive this page 
+const AnchoredSettings: React.FC<{ refresh: () => void }> = ({ refresh }) => {
+  return (
+    <AnchoredMenu>
+      <AnchoredMenuTrigger >
+        <Ionicons name="ellipsis-vertical" size={18} className="text-mutedForeground" />
+      </AnchoredMenuTrigger>
+
+      <AnchoredMenuItem
+        icon="trash-outline"
+        label="Delete"
+        destructive
+        onPress={async () => {
+          const file = new File(DefaultSQLiteDownloadDirectory, "jmdict-v1.0.0.db");
+          await deleteDict(file.uri);
+          refresh();
+        }}
+      />
+    </AnchoredMenu>
+  );
+}
