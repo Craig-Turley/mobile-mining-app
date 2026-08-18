@@ -1,0 +1,7 @@
+node_modules
+.expo
+dist
+
+!packages/
+!packages/genanki-ts/
+!packages/genanki-ts/**

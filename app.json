@@ -46,7 +46,10 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.mobile-mining-app"
+      "bundleIdentifier": "com.anonymous.mobile-mining-app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -54,6 +57,12 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.anonymous.mobileminingapp"
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "70231d79-2412-4fe6-9f1d-e498e94652a3"
+      }
     }
   }
 }
