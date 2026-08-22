@@ -10,6 +10,7 @@ import { videosQuery } from '@/db/features/files/files.queries';
 import { deleteSubtitles, deleteVideo } from '@/db/features/files/files.services';
 import { NOPQueryMapper } from '@/db/hooks/use-query';
 import { AnchoredMenu, AnchoredMenuItem, AnchoredMenuTrigger } from '@/components/ui/anchored-menu';
+import { LocalMediaSource } from './lib/player-sources';
 
 interface ScreenContentProps extends PropsWithChildren { }
 
@@ -66,8 +67,10 @@ const VideoRow = ({ videoId, videoSubtitleId, videoName }: VideoRowProps) => {
           router.push({
             pathname: '/video-player',
             params: {
-              videoId,
-              subtitlesId: videoSubtitleId,
+              sourceString: JSON.stringify({
+                type: "local",
+                videoId
+              } satisfies LocalMediaSource),
             },
           });
         }}>

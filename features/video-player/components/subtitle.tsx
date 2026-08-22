@@ -14,7 +14,7 @@ export interface SubtitleProps extends PropsWithChildren {
 }
 
 export default function Subtitle({ cue, active, onLayout }: SubtitleProps) {
-  const { setTimeStamp } = useVideoPlayerContext();
+  const { seekTo } = useVideoPlayerContext();
   const [tokens, setTokens] = useState<Token[]>([]);
   const { setToken } = useEntryModal();
 
@@ -62,7 +62,7 @@ export default function Subtitle({ cue, active, onLayout }: SubtitleProps) {
   };
 
   return (
-    <Pressable onPress={() => setTimeStamp(cue.start)}>
+    <Pressable onPress={() => seekTo(cue.start)}>
       <View
         className={cn(
           'my-3 w-full gap-1 rounded-lg border-4 border-solid border-muted p-2 py-4',

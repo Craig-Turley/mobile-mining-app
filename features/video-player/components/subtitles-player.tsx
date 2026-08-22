@@ -1,36 +1,55 @@
-import { View, Text, FlatList, Pressable } from 'react-native';
-import { PropsWithChildren, useEffect, useRef, useState } from 'react';
-import { parseSubtitles, SubtitleCue } from '@/lib/subtitles';
 import Subtitle from './subtitle';
+import { View, Text, FlatList, Pressable } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { parseSubtitles, SubtitleCue } from '@/lib/subtitles';
 import { useEventListener } from 'expo';
 import { getFile, openFile } from '@/lib/file-system';
 import { insertSubtitle } from '@/db/features/files/files.services';
 import { useAppLiveQuery } from '@/db/hooks/use-app-live-query';
-import { subtitleByIdQuery } from '@/db/features/files/files.queries';
-import { NOPQueryMapper } from '@/db/hooks/use-query';
-import { useVideoPlayerContext } from '../contexts/video-screen-context';
-
-export interface SubtitlePlayerProps extends PropsWithChildren {
-  videoId: number;
-  subtitlesId: number | null;
-}
+import { subtitleByIdQuery, videoByIdQuery } from '@/db/features/files/files.queries';
+import { useLocalVideoPlayerContext, useVideoPlayerContext } from '../contexts/video-screen-context';
 
 type SubtitleError = 'unassociated_file' | 'upload_error' | 'missing_file';
 
-export default function SubtitlesPlayer({ videoId, subtitlesId }: SubtitlePlayerProps) {
-  const { player } = useVideoPlayerContext();
+export default function SubtitlesPlayer() {
+  const { source } = useVideoPlayerContext();
 
+  switch (source.type) {
+    case "local":
+      return <LocalSubtitlesPlayer />
+    case "youtube":
+      return <YoutubeSubtitlesPlayer />
+  }
+}
+
+export function LocalSubtitlesPlayer() {
+  const { player, source } = useLocalVideoPlayerContext();
+
+  const videoId = Number(source.videoId);
   const {
-    data,
+    data: videoData,
+    error: videoError,
+    isLoading: isVideoLoading,
+  } = useAppLiveQuery(
+    videoByIdQuery(videoId),
+    (rows) => rows[0] ?? null,
+    [videoId],
+  );
+
+  const subtitleId = videoData?.subtitle_id ?? null;
+  const {
+    data: subtitleFile,
     error: subtitleQueryError,
     isLoading: isSubtitleLoading,
-  } = useAppLiveQuery(subtitleByIdQuery(subtitlesId), NOPQueryMapper);
-
-  const subtitleFile = data?.[0] ?? null;
+  } = useAppLiveQuery(
+    subtitleByIdQuery(subtitleId),
+    (rows) => rows[0],
+    [subtitleId],
+  );
 
   const [error, setError] = useState<SubtitleError | null>(null);
   const [subtitles, setSubtitles] = useState<SubtitleCue[]>([]);
-  const [activeSubtitleIndex, setActiveSubtitleIndex] = useState<number>(-1);
+  const [activeSubtitleIndex, setActiveSubtitleIndex] = useState(-1);
 
   const subtitleListRef = useRef<FlatList<SubtitleCue> | null>(null);
   const subtitlesRef = useRef<SubtitleCue[]>([]);
@@ -59,7 +78,7 @@ export default function SubtitlesPlayer({ videoId, subtitlesId }: SubtitlePlayer
       setSubtitles([]);
       setActiveSubtitleIndex(-1);
 
-      if (subtitlesId == null) {
+      if (subtitleId == null) {
         setError('unassociated_file');
         return;
       }
@@ -69,12 +88,7 @@ export default function SubtitlesPlayer({ videoId, subtitlesId }: SubtitlePlayer
         return;
       }
 
-      if (data === undefined) {
-        return;
-      }
-
-      if (!subtitleFile) {
-        setError('unassociated_file');
+      if (subtitleFile == null) {
         return;
       }
 
@@ -84,21 +98,25 @@ export default function SubtitlesPlayer({ videoId, subtitlesId }: SubtitlePlayer
 
         if (cancelled) return;
 
-        setError(null);
         setSubtitles(parsed);
-        setActiveSubtitleIndex(-1);
-      } catch (e) {
+      } catch {
         if (cancelled) return;
+
         setError('missing_file');
       }
     };
 
-    loadSubtitles();
+    void loadSubtitles();
 
     return () => {
       cancelled = true;
     };
-  }, [subtitlesId, data, subtitleFile?.id, subtitleFile?.relative_path, subtitleQueryError]);
+  }, [
+    subtitleId,
+    subtitleFile?.id,
+    subtitleFile?.relative_path,
+    subtitleQueryError,
+  ]);
 
   useEffect(() => {
     if (activeSubtitleIndex < 0) return;
@@ -124,6 +142,32 @@ export default function SubtitlesPlayer({ videoId, subtitlesId }: SubtitlePlayer
       return next;
     });
   });
+
+  if (isSubtitleLoading) {
+    return (
+      <View className="flex-1 items-center justify-center bg-background p-2">
+        <Text className="text-foreground">Loading subtitles...</Text>
+      </View>
+    );
+  }
+
+  if (isVideoLoading) {
+    return (
+      <View className="flex-1 items-center justify-center bg-background p-2">
+        <Text className="text-foreground">Loading video...</Text>
+      </View>
+    );
+  }
+
+  if (videoError) {
+    return (
+      <View className="flex-1 items-center justify-center bg-background p-2">
+        <Text className="text-foreground">
+          There was an error retrieving the video.
+        </Text>
+      </View>
+    );
+  }
 
   if (isSubtitleLoading) {
     return (
@@ -170,7 +214,7 @@ export default function SubtitlesPlayer({ videoId, subtitlesId }: SubtitlePlayer
             ref={subtitleListRef}
             data={subtitles}
             extraData={activeSubtitleIndex}
-            keyExtractor={(item) => `${subtitlesId}-${item.id}`}
+            keyExtractor={(item) => `${subtitleId}-${item.id}`}
             renderItem={({ item, index }) => (
               <Subtitle
                 cue={item}
@@ -195,4 +239,8 @@ export default function SubtitlesPlayer({ videoId, subtitlesId }: SubtitlePlayer
         </View>
       );
   }
+}
+
+function YoutubeSubtitlesPlayer() {
+  return (<View></View>)
 }

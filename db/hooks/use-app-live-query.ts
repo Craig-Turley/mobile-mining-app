@@ -6,9 +6,10 @@ export const NOPMutationMapper = <T>(value: T): T => value;
 
 export function useAppLiveQuery<TQuery extends DrizzleLiveQuery, TData>(
   query: TQuery,
-  mapResult: (data: Awaited<TQuery>) => TData
+  mapResult: (data: Awaited<TQuery>) => TData,
+  deps: unknown[] = [],
 ) {
-  const result = useDrizzleLiveQuery(query);
+  const result = useDrizzleLiveQuery(query, deps);
 
   return {
     ...result,

@@ -1,26 +1,34 @@
+import YoutubePlayer from "react-native-youtube-iframe";
 import { VideoView } from 'expo-video';
 import { cssInterop } from 'nativewind';
 import { View, Text } from 'react-native';
-import { PropsWithChildren, useEffect } from 'react';
+import { useEffect } from 'react';
 import { buildFullPath } from '@/lib/file-system';
 import { useAppLiveQuery } from '@/db/hooks/use-app-live-query';
 import { videoByIdQuery } from '@/db/features/files/files.queries';
 import { NOPQueryMapper } from '@/db/hooks/use-query';
-import { useVideoPlayerContext } from '../contexts/video-screen-context';
+import { useLocalVideoPlayerContext, useVideoPlayerContext, useYoutubeVideoPlayerContext } from '../contexts/video-screen-context';
 
 cssInterop(VideoView, {
   className: 'style',
 });
 
-export interface VideoPlayerProps extends PropsWithChildren {
-  videoId: number;
+export default function VideoPlayer() {
+  const context = useVideoPlayerContext();
+
+  switch (context.type) {
+    case "local":
+      return <LocalVideoPlayer />;
+    case "youtube":
+      return <YoutubeVideoPlayer />;
+  }
 }
 
-export default function VideoPlayer({ videoId }: VideoPlayerProps) {
-  const { player } = useVideoPlayerContext();
+function LocalVideoPlayer() {
+  const { player, source } = useLocalVideoPlayerContext();
 
   const { data, error, isLoading } = useAppLiveQuery(
-    videoByIdQuery(Number(videoId)),
+    videoByIdQuery(Number(source.videoId)),
     NOPQueryMapper
   );
 
@@ -68,5 +76,24 @@ export default function VideoPlayer({ videoId }: VideoPlayerProps) {
         allowsPictureInPicture
       />
     </View>
+  );
+}
+
+function YoutubeVideoPlayer() {
+  const {
+    player,
+    source,
+    playing,
+    onChangeState,
+  } = useYoutubeVideoPlayerContext();
+
+  return (
+    <YoutubePlayer
+      ref={player}
+      height={220}
+      videoId={source.url}
+      play={playing}
+      onChangeState={onChangeState}
+    />
   );
 }
