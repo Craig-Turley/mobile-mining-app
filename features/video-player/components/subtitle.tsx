@@ -1,9 +1,9 @@
 import { PropsWithChildren, useEffect, useState } from 'react';
 import { View, Text, LayoutChangeEvent, Pressable } from 'react-native';
-import { secondsToTime, SubtitleCue } from '@/utils/subtitles';
+import { secondsToTime, SubtitleCue } from '@/lib/subtitles';
 import { cn } from '@/utils/cn';
 import { getTokens, Token } from '@kuzulabz/expo-kagome';
-import { getPosTag, katakanaToHiragana } from '@/utils/tokenizer';
+import { getPosTag, katakanaToHiragana } from '@/lib/tokenizer';
 import { useVideoPlayerContext } from '../contexts/video-screen-context';
 import { useEntryModal } from '../contexts/entry-modal-context';
 

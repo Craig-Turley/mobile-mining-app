@@ -1,3 +1,5 @@
+import * as DocumentPicker from 'expo-document-picker';
+import * as ImagePicker from 'expo-image-picker';
 import { Directory, Paths, File } from 'expo-file-system';
 import { defaultDatabaseDirectory, } from 'expo-sqlite';
 import { unzip } from 'react-native-zip-archive';
@@ -13,6 +15,28 @@ type FileData = {
   uri: string;
   name?: string;
 };
+
+export async function getFile({ src }: { src: 'file' | 'photos' }) {
+  let result;
+
+  if (src === 'file') {
+    result = await DocumentPicker.getDocumentAsync({
+      copyToCacheDirectory: true,
+      multiple: false,
+    });
+  } else if (src === 'photos') {
+    result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['videos'],
+      allowsMultipleSelection: false,
+      quality: 1,
+    });
+  }
+
+  if (!result) return;
+  if (result.canceled) return;
+
+  return result.assets[0];
+}
 
 function getExtension(fallback: string, name?: string) {
   return name?.split('.').pop() || fallback;
@@ -39,6 +63,10 @@ export function saveFile(file: FileData, filePath: FilePath, extensionFallback: 
     id: file.id,
     localPath: `${filePath}/${destinationName}`,
   };
+}
+
+export async function openFile(path: string) {
+  return new File(Paths.document, path).text();
 }
 
 export function deleteFile(filePath: string) {

@@ -16,15 +16,6 @@ export interface SubtitleCue {
   text: string;
 }
 
-function srtTimeToSeconds(time: string): number {
-  const [hours, minutes, rest] = time.split(':');
-  const [seconds, milliseconds] = rest.split(',');
-
-  return (
-    Number(hours) * 3600 + Number(minutes) * 60 + Number(seconds) + Number(milliseconds) / 1000
-  );
-}
-
 export function parseSubtitles(srtText: string): SubtitleCue[] {
   const parsed = parser.fromSrt(srtText) as ParsedSrtCue[];
 
@@ -51,4 +42,13 @@ export function secondsToTime(rawSeconds: number): string {
   }
 
   return `${minutes}:${paddedSeconds}`;
+}
+
+function srtTimeToSeconds(time: string): number {
+  const [hours, minutes, rest] = time.split(':');
+  const [seconds, milliseconds] = rest.split(',');
+
+  return (
+    Number(hours) * 3600 + Number(minutes) * 60 + Number(seconds) + Number(milliseconds) / 1000
+  );
 }

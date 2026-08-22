@@ -11,7 +11,7 @@ import { deleteSubtitles, deleteVideo } from '@/db/features/files/files.services
 import { NOPQueryMapper } from '@/db/hooks/use-query';
 import { AnchoredMenu, AnchoredMenuItem, AnchoredMenuTrigger } from '@/components/ui/anchored-menu';
 
-interface ScreenContentProps extends PropsWithChildren {}
+interface ScreenContentProps extends PropsWithChildren { }
 
 export const VideoLibraryScreen: React.FC<ScreenContentProps> = ({ children }) => {
   const { data, error } = useAppLiveQuery(videosQuery(), NOPQueryMapper);

@@ -1,6 +1,6 @@
 import { useAppTheme } from '@/theme/theme-provider';
 import { Stack } from 'expo-router';
-import getFile from '@/utils/file';
+import { getFile } from '@/lib/file-system';
 import { insertVideo } from '@/db/features/files/files.services';
 
 export function VideoLoaderToolbar() {

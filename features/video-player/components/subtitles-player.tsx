@@ -1,10 +1,9 @@
 import { View, Text, FlatList, Pressable } from 'react-native';
 import { PropsWithChildren, useEffect, useRef, useState } from 'react';
-import { parseSubtitles, SubtitleCue } from '@/utils/subtitles';
+import { parseSubtitles, SubtitleCue } from '@/lib/subtitles';
 import Subtitle from './subtitle';
 import { useEventListener } from 'expo';
-import { Directory, File, Paths } from 'expo-file-system';
-import getFile from '@/utils/file';
+import { getFile, openFile } from '@/lib/file-system';
 import { insertSubtitle } from '@/db/features/files/files.services';
 import { useAppLiveQuery } from '@/db/hooks/use-app-live-query';
 import { subtitleByIdQuery } from '@/db/features/files/files.queries';
@@ -79,17 +78,9 @@ export default function SubtitlesPlayer({ videoId, subtitlesId }: SubtitlePlayer
         return;
       }
 
-      const dir = new Directory(Paths.document);
-
-      if (!dir.exists) {
-        setError('missing_file');
-        return;
-      }
-
       try {
-        const file = new File(Paths.document, subtitleFile.relative_path);
-        const text = await file.text();
-        const parsed = parseSubtitles(text);
+        const file = await openFile(subtitleFile.relative_path);
+        const parsed = parseSubtitles(file);
 
         if (cancelled) return;
 
