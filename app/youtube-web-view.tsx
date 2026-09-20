@@ -318,8 +318,6 @@ export default function YoutubeBrowserScreen() {
                     events?: YoutubeCaptionEvent[];
                   };
 
-                  body.events?.map((evnt) => console.log(evnt));
-
                   if (!body.events) {
                     throw new Error('events not found in timedtext response');
                   }

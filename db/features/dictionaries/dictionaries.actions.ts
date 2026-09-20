@@ -69,7 +69,7 @@ export async function deleteDictionary(filePath: string) {
   // NOTE: THIS IS SUPER TEMPORARY
   const file = new File(filePath);
   if (file.exists) file.delete();
-  console.log(file.exists);
+  // console.log(file.exists);
   // ------------------------------
 
   await attachAndBuildViews();
