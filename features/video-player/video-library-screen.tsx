@@ -11,18 +11,20 @@ import { deleteSubtitles, deleteVideo } from '@/db/features/files/files.services
 import { NOPQueryMapper } from '@/db/hooks/use-query';
 import { AnchoredMenu, AnchoredMenuItem, AnchoredMenuTrigger } from '@/components/ui/anchored-menu';
 import { LocalMediaSource } from './lib/player-sources';
+import { cn } from '@/utils/cn';
 
-interface ScreenContentProps extends PropsWithChildren { }
+interface ScreenContentProps extends PropsWithChildren {}
 
 export const VideoLibraryScreen: React.FC<ScreenContentProps> = ({ children }) => {
   const { data, error } = useAppLiveQuery(videosQuery(), NOPQueryMapper);
 
-  const isError = error != undefined;
+  const isError = error !== undefined;
 
   return (
-    <View className="flex-1 bg-background">
+    <View className="flex-1 gap-4 bg-background p-4">
       <VideoLoaderToolbar />
-      <View className="flex-1 p-4">
+      <YoutubeButton />
+      <View className="flex-1">
         {isError ? (
           <View>
             <Text className="text-foreground">There was an error retrieving your videos</Text>
@@ -50,6 +52,32 @@ export const VideoLibraryScreen: React.FC<ScreenContentProps> = ({ children }) =
   );
 };
 
+const YoutubeButton: React.FC = () => {
+  const openWebview = () => {
+    router.push({
+      pathname: '/youtube-web-view',
+    });
+  };
+
+  return (
+    <Pressable onPress={openWebview}>
+      <View className={cn('w-full flex-row items-center gap-3 rounded-2xl p-3', 'bg-surface')}>
+        <View className="h-10 w-10 shrink-0 items-center justify-center rounded-full bg-background">
+          <Ionicons name="logo-youtube" size={20} className="text-primary" />
+        </View>
+
+        <View className="min-w-0 flex-1">
+          <Text className="text-base font-semibold text-foreground" numberOfLines={1}>
+            Watch from YouTube
+          </Text>
+        </View>
+
+        <Ionicons name="chevron-forward" size={20} className="shrink-0 text-mutedForeground" />
+      </View>
+    </Pressable>
+  );
+};
+
 interface VideoRowProps extends ViewProps {
   videoId: number;
   videoSubtitleId: number | null;
@@ -68,8 +96,8 @@ const VideoRow = ({ videoId, videoSubtitleId, videoName }: VideoRowProps) => {
             pathname: '/video-player',
             params: {
               sourceString: JSON.stringify({
-                type: "local",
-                videoId
+                type: 'local',
+                videoId,
               } satisfies LocalMediaSource),
             },
           });

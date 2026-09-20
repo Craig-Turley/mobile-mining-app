@@ -12,15 +12,14 @@ import { darkColors, lightColors } from '@/theme/colors';
 import { useAppTheme } from '@/theme/theme-provider';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { DeckFormData } from '@/lib/anki-settings';
+import { DeckFormData, formDataToDeck } from '@/lib/anki-settings';
 import { generateDeckId } from '@/lib/genanki';
 import { useNewDeckModal } from '../contexts/new-deck-modal-context';
 import { useMutation } from '@/db/hooks/use-mutation';
 import { upsertDeckQuery } from '@/db/features/decks/decks.queries';
 import { NOPMutationMapper } from '@/db/hooks/use-app-live-query';
-import { formDataToDeck } from '@/lib/anki-settings';
 
-interface NewDeckModalProps extends BottomSheetModalProps { }
+interface NewDeckModalProps extends BottomSheetModalProps {}
 
 cssInterop(BottomSheetScrollView, {
   className: 'style',
@@ -42,7 +41,7 @@ function newDeckForm() {
 export const NewDeckBottomSheetModal = forwardRef<
   BottomSheetModalType,
   Omit<NewDeckModalProps, 'children'>
->((props, ref) => {
+>((_, ref) => {
   const bgColor = useAppTheme().theme === 'light' ? lightColors.surface : darkColors.surface;
 
   const insets = useSafeAreaInsets();
@@ -64,8 +63,7 @@ export const NewDeckBottomSheetModal = forwardRef<
       android_keyboardInputMode="adjustResize"
       backgroundStyle={{
         backgroundColor: bgColor,
-      }}
-    >
+      }}>
       <BottomSheetScrollView
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{
@@ -73,8 +71,7 @@ export const NewDeckBottomSheetModal = forwardRef<
           paddingTop: 8,
           paddingBottom: 16 + insets.bottom,
           gap: 16,
-        }}
-      >
+        }}>
         <View className="mb-4 flex-row items-center justify-between">
           <View>
             <Text className="uppercase tracking-[3px] text-primary">New deck</Text>
@@ -119,7 +116,7 @@ export const NewDeckBottomSheetModal = forwardRef<
               }
               placeholder="e.g. Mining · Kanji"
               placeholderTextColor="#888"
-              className="p-3 rounded-lg border border-border bg-surface text-lg text-foreground"
+              className="rounded-lg border border-border bg-surface p-3 text-lg text-foreground"
               returnKeyType="done"
             />
 
@@ -144,7 +141,7 @@ export const NewDeckBottomSheetModal = forwardRef<
               }
               placeholder="e.g. Main deck for..."
               placeholderTextColor="#888"
-              className="p-3 rounded-lg border border-border bg-surface text-lg text-foreground"
+              className="rounded-lg border border-border bg-surface p-3 text-lg text-foreground"
               multiline
             />
           </View>

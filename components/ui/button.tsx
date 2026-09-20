@@ -100,7 +100,12 @@ export function Button({
 
     Animated.parallel([
       Animated.timing(successOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
-      Animated.spring(successScale, { toValue: 1, friction: 6, tension: 80, useNativeDriver: true }),
+      Animated.spring(successScale, {
+        toValue: 1,
+        friction: 6,
+        tension: 80,
+        useNativeDriver: true,
+      }),
     ]).start(() => {
       setTimeout(() => {
         Animated.parallel([
@@ -115,11 +120,13 @@ export function Button({
     if (!onPress) return;
     const result = onPress(event);
     if (result && typeof (result as Promise<void>).then === 'function') {
-      (result as Promise<void>).then(() => {
-        if (successLabel) runSuccessAnimation();
-      }).catch(() => {
-        console.log("Button caught an error");
-      });
+      (result as Promise<void>)
+        .then(() => {
+          if (successLabel) runSuccessAnimation();
+        })
+        .catch(() => {
+          // console.log("Button caught an error");
+        });
     }
   };
 
@@ -153,7 +160,13 @@ export function Button({
           {typeof content === 'string' ? (
             <Text
               {...textProps}
-              className={cn('font-semibold', textVariants[variant], textSizeVariants[size], textClassName, textProps?.className)}>
+              className={cn(
+                'font-semibold',
+                textVariants[variant],
+                textSizeVariants[size],
+                textClassName,
+                textProps?.className
+              )}>
               {content}
             </Text>
           ) : (
@@ -166,14 +179,19 @@ export function Button({
       {showSuccess && (
         <Animated.View
           pointerEvents="none"
-          className={cn('absolute inset-0 flex-row items-center justify-center gap-2', roundedVariants[size], className, 'bg-green-500')}
+          className={cn(
+            'absolute inset-0 flex-row items-center justify-center gap-2',
+            roundedVariants[size],
+            className,
+            'bg-green-500'
+          )}
           style={{ opacity: successOpacity, transform: [{ scale: successScale }] }}>
           {successIcon && <Ionicons name={successIcon} size={resolvedIconSize} color="white" />}
-          <Text className={cn('font-semibold text-white', textSizeVariants[size])}>{successLabel}</Text>
+          <Text className={cn('font-semibold text-white', textSizeVariants[size])}>
+            {successLabel}
+          </Text>
         </Animated.View>
       )}
     </Pressable>
   );
 }
-
-export default Button;

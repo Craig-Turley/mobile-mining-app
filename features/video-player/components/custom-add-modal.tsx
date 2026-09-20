@@ -1,14 +1,13 @@
-import Button from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { allModelsQuery } from '@/db/features/models/models.queries';
 import { NOPQueryMapper, useQuery } from '@/db/hooks/use-query';
 import { useAppTheme } from '@/theme/theme-provider';
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 
 interface CustomAddModalProps {
   visible: boolean;
-  close: () => void;
   initialModelApplicationId?: number | null;
   isSubmitting?: boolean;
   onClose: () => void;
@@ -17,7 +16,6 @@ interface CustomAddModalProps {
 
 export function CustomAddModal({
   visible,
-  close,
   initialModelApplicationId,
   isSubmitting = false,
   onClose,
@@ -29,13 +27,6 @@ export function CustomAddModal({
 
   const [selectedModelId, setSelectedModelId] = useState<number | null>(
     initialModelApplicationId ?? null
-  );
-
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-
-  const selectedModel = useMemo(
-    () => models?.find((model) => model.applicationId === selectedModelId) ?? null,
-    [models, selectedModelId]
   );
 
   useEffect(() => {
@@ -55,24 +46,12 @@ export function CustomAddModal({
     setSelectedModelId(models[0]?.applicationId ?? null);
   }, [visible, initialModelApplicationId, models]);
 
-  useEffect(() => {
-    if (!visible) {
-      setIsDropdownOpen(false);
-    }
-  }, [visible]);
-
   const handleClose = () => {
     if (isSubmitting) {
       return;
     }
 
-    setIsDropdownOpen(false);
     onClose();
-  };
-
-  const handleSelectModel = (modelApplicationId: number) => {
-    setSelectedModelId(modelApplicationId);
-    setIsDropdownOpen(false);
   };
 
   const handleSubmit = async () => {
@@ -80,9 +59,8 @@ export function CustomAddModal({
       return;
     }
 
-    setIsDropdownOpen(false);
     await onSubmit(selectedModelId);
-    close();
+    onClose();
   };
 
   return (
@@ -165,9 +143,7 @@ export function CustomAddModal({
                         className={`min-h-14 flex-row items-center px-4 py-3 ${
                           index !== models.length - 1 ? 'border-b border-border' : ''
                         }`}
-                        onPress={() => {
-                          handleSelectModel(model.applicationId);
-                        }}>
+                        onPress={() => setSelectedModelId(model.applicationId)}>
                         <Text
                           numberOfLines={2}
                           className={`flex-1 text-base ${

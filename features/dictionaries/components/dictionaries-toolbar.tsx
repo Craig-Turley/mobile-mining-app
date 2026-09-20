@@ -1,5 +1,5 @@
-import { useAppTheme } from "@/theme/theme-provider";
-import { Stack } from "expo-router";
+import { useAppTheme } from '@/theme/theme-provider';
+import { Stack } from 'expo-router';
 
 export function DictionariesToolbar() {
   const { colors } = useAppTheme();

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Button from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { View, Text, FlatList, Alert } from 'react-native';
 import { QueueToolbar } from './components/queue-toolbar';
 import { cn } from '@/utils/cn';
@@ -10,7 +10,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getAppDefaultsQuery } from '@/db/features/defaults/defaults.queries';
 import { NOPQueryMapper } from '@/db/hooks/use-query';
 import { useAppLiveQuery } from '@/db/hooks/use-app-live-query';
-import { allQueueItemsQuery, clearQueueQuery, deleteFromQueueQuery } from '@/db/features/queue/queue.queries';
+import {
+  allQueueItemsQuery,
+  clearQueueQuery,
+  deleteFromQueueQuery,
+} from '@/db/features/queue/queue.queries';
 import { AnchoredMenu, AnchoredMenuItem, AnchoredMenuTrigger } from '@/components/ui/anchored-menu';
 import { CustomExportModal } from './components/custom-export-modal';
 import { exportQueueToAnki } from './lib/export-to-anki';
@@ -90,7 +94,7 @@ export const QueueScreen: React.FC = () => {
             initialDeckApplicationId={defaults[0]?.deckApplicationId ?? null}
             close={() => setIsModalOpen(false)}
             isSubmitting={false}
-            onClose={() => { }}
+            onClose={() => {}}
             onSubmit={exportFunc}
           />
         </>
@@ -115,16 +119,9 @@ const QueueRow: React.FC<{ queItem: QueueItemWithModel }> = ({ queItem }) => {
         </Text>
 
         <View className="flex-row items-center gap-1">
-          <Ionicons
-            name="layers"
-            size={14}
-            className="text-mutedForeground"
-          />
+          <Ionicons name="layers" size={14} className="text-mutedForeground" />
 
-          <Text
-            className="shrink text-sm text-mutedForeground"
-            numberOfLines={1}
-          >
+          <Text className="shrink text-sm text-mutedForeground" numberOfLines={1}>
             {model}
           </Text>
         </View>

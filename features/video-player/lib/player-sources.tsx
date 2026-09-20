@@ -1,14 +1,15 @@
 export type LocalMediaSource = {
-  type: "local";
+  type: 'local';
   videoId: number;
 };
 
 export type YoutubeMediaSource = {
-  type: "youtube";
-  url: string;
+  type: 'youtube';
+  /**
+   * @type YoutubeCaptions
+   */
+  captions: string;
   videoId: string;
 };
 
-export type MediaSource =
-  | LocalMediaSource
-  | YoutubeMediaSource;
+export type MediaSource = LocalMediaSource | YoutubeMediaSource;

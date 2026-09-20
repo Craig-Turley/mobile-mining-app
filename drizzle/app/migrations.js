@@ -3,10 +3,9 @@
 import journal from './meta/_journal.json';
 import m0000 from './0000_complex_vin_gonzales.sql';
 
-  export default {
-    journal,
-    migrations: {
-      m0000
-    }
-  }
-  
+export default {
+  journal,
+  migrations: {
+    m0000,
+  },
+};

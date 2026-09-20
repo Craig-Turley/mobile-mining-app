@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import { hasDictionaryQuery } from "./dictionaries.queries";
+import { useCallback, useEffect, useState } from 'react';
+import { hasDictionaryQuery } from './dictionaries.queries';
 
 export async function getHasDictionary() {
   const rows = await hasDictionaryQuery();

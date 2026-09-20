@@ -1,9 +1,9 @@
-import Button from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { allDecksQuery } from '@/db/features/decks/decks.queries';
 import { NOPQueryMapper, useQuery } from '@/db/hooks/use-query';
 import { useAppTheme } from '@/theme/theme-provider';
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 
 interface CustomExportModalProps {

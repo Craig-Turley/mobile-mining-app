@@ -7,7 +7,7 @@ export const AnkiSharingOptions = {
 };
 
 /**
- * Function for exporting to Anki 
+ * Function for exporting to Anki
  * use AnkiSharingOptions as default export options to Anki
  */
 export async function shareFile(fileUri: string, options: Sharing.SharingOptions = {}) {

@@ -7,11 +7,12 @@ import {
   FrontSideModelFields,
   modelFieldLabels,
   ModelFieldName,
+  createTemplateFormData,
+  TemplateFormData,
 } from '@/lib/anki-settings';
 import { useMemo, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/theme-provider';
-import { createTemplateFormData, TemplateFormData } from '@/lib/anki-settings';
 
 export interface ModelTemplatesSectionProps extends ViewProps {
   availableFields: readonly ModelFieldName[];
@@ -38,9 +39,9 @@ export default function ModelTemplatesSection({
     const nextTemplates = templates.map((template, index) =>
       index === currentTemplateIdx
         ? {
-          ...template,
-          ...updates,
-        }
+            ...template,
+            ...updates,
+          }
         : template
     );
 

@@ -100,18 +100,18 @@ export function renderStructuredContent(node: Node, key = 'root'): React.ReactNo
   }
 }
 
-function DefinitionView({ definition }: { definition: any }) {
-  if (typeof definition === 'string') {
-    return <Text>{definition}</Text>;
-  }
-
-  if (definition.type === 'text') {
-    return <Text>{definition.text}</Text>;
-  }
-
-  if (definition.type === 'structured-content') {
-    return <View>{renderStructuredContent(definition.content)}</View>;
-  }
-
-  return null;
-}
+// function DefinitionView({ definition }: { definition: any }) {
+//   if (typeof definition === 'string') {
+//     return <Text>{definition}</Text>;
+//   }
+//
+//   if (definition.type === 'text') {
+//     return <Text>{definition.text}</Text>;
+//   }
+//
+//   if (definition.type === 'structured-content') {
+//     return <View>{renderStructuredContent(definition.content)}</View>;
+//   }
+//
+//   return null;
+// }

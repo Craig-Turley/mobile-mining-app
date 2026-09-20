@@ -4,10 +4,7 @@ import * as schema from './schema';
 
 export const DICTIONARIES_DB_NAME = 'dictionaries.db';
 
-const sqlite = openDatabaseSync(
-  DICTIONARIES_DB_NAME,
-  { enableChangeListener: true },
-);
+const sqlite = openDatabaseSync(DICTIONARIES_DB_NAME, { enableChangeListener: true });
 
 sqlite.execSync(`
     PRAGMA temp_store = MEMORY;

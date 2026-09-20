@@ -1,5 +1,9 @@
-import { attachAndBuildViews } from "@/db/features/dictionaries/dictionaries.actions";
-import { DefaultSQLiteDownloadDirectory, downloadFile, unzipFile } from "@/lib/file-system/file-system";
+import { attachAndBuildViews } from '@/db/features/dictionaries/dictionaries.actions';
+import {
+  DefaultSQLiteDownloadDirectory,
+  downloadFile,
+  unzipFile,
+} from '@/lib/file-system/file-system';
 
 export async function downloadRemoteDict(url: string) {
   const file = await downloadFile(url, 'temp');

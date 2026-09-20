@@ -1,14 +1,12 @@
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { Directory, Paths, File } from 'expo-file-system';
-import { defaultDatabaseDirectory, } from 'expo-sqlite';
+import { defaultDatabaseDirectory } from 'expo-sqlite';
 import { unzip } from 'react-native-zip-archive';
 
 export type FilePath = 'videos' | 'subtitles' | 'temp';
 export const DefaultSQLiteDirectory = defaultDatabaseDirectory;
-export const DefaultSQLiteDownloadDirectory = new Directory(
-  DefaultSQLiteDirectory, "downloads"
-);
+export const DefaultSQLiteDownloadDirectory = new Directory(DefaultSQLiteDirectory, 'downloads');
 
 type FileData = {
   id: number;
@@ -78,11 +76,7 @@ export async function downloadFile(url: string, filePath: FilePath) {
   const directory = new Directory(Paths.document, filePath);
   directory.create({ intermediates: true, idempotent: true });
 
-  return File.downloadFileAsync(
-    url,
-    directory,
-    { idempotent: true, },
-  );
+  return File.downloadFileAsync(url, directory, { idempotent: true });
 }
 
 export function getFileName(uri: string) {
@@ -91,8 +85,7 @@ export function getFileName(uri: string) {
 
 export function getDatabasePath(name: string) {
   return decodeURIComponent(
-    `${DefaultSQLiteDirectory.replace(/\/$/, '')}/${name}`
-      .replace(/^file:\/\//, ''),
+    `${DefaultSQLiteDirectory.replace(/\/$/, '')}/${name}`.replace(/^file:\/\//, '')
   );
 }
 

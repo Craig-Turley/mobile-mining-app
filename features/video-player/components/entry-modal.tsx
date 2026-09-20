@@ -1,5 +1,5 @@
 import * as Haptics from 'expo-haptics';
-import Button from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import {
   BottomSheetFooter,
   BottomSheetFooterProps,
@@ -50,10 +50,7 @@ export const EntryBottomSheetModal = forwardRef<
     data: defaults,
     isLoading: isDefaultsLoading,
     error: defaultsError,
-  } = useAppLiveQuery(
-    getAppDefaultsQuery(),
-    (rows) => rows[0] ?? null
-  );
+  } = useAppLiveQuery(getAppDefaultsQuery(), (rows) => rows[0] ?? null);
 
   const snapPoints = useMemo(() => ['35%'], []);
   const { colors } = useAppTheme();
@@ -65,25 +62,30 @@ export const EntryBottomSheetModal = forwardRef<
 
   const insets = useSafeAreaInsets();
 
-  const handleQuickAdd = async () => {
-    if (defaults?.modelApplicationId == null || e == null) return;
+  const handleQuickAdd = useCallback(async () => {
+    if (defaults?.modelApplicationId == null || e == null) {
+      return;
+    }
 
     try {
-      insertIntoQueueQuery({ modelApplicationId: defaults.modelApplicationId, entry: e });
+      await insertIntoQueueQuery({
+        modelApplicationId: defaults.modelApplicationId,
+        entry: e,
+      });
+
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     } catch (err) {
       console.log('Quick add submit error');
       throw err;
     }
-  };
+  }, [defaults?.modelApplicationId, e]);
 
   const renderFooter = useCallback(
     (footerProps: BottomSheetFooterProps) => (
       <BottomSheetFooter {...footerProps} bottomInset={insets.bottom}>
         <View
           className="w-full gap-2 border-t border-border bg-surface px-4 pt-3"
-          style={{ paddingBottom: 5 }}
-        >
+          style={{ paddingBottom: 5 }}>
           <View className="w-full flex-row gap-2">
             <View className="flex-1">
               <Button
@@ -101,30 +103,36 @@ export const EntryBottomSheetModal = forwardRef<
                 onPress={handleQuickAdd}
                 successLabel="Added"
                 successIcon="checkmark"
-                disabled={e == null || isDefaultsLoading || defaults?.modelApplicationId == null || defaultsError != null}
+                disabled={
+                  e == null ||
+                  isDefaultsLoading ||
+                  defaults?.modelApplicationId == null ||
+                  defaultsError != null
+                }
               />
             </View>
           </View>
 
-          {!isDefaultsLoading &&
-            defaultsError == null &&
-            defaults?.modelApplicationId == null && (
-              <View className="bg-primaryMuted w-full flex-row items-center justify-center gap-2 rounded-full border-2 border-border px-4 py-2">
-                <Ionicons
-                  name="warning"
-                  size={18}
-                  className="text-primary"
-                />
+          {!isDefaultsLoading && defaultsError == null && defaults?.modelApplicationId == null && (
+            <View className="bg-primaryMuted w-full flex-row items-center justify-center gap-2 rounded-full border-2 border-border px-4 py-2">
+              <Ionicons name="warning" size={18} className="text-primary" />
 
-                <Text className="flex-1 text-center text-[11px] font-semibold text-primary">
-                  Configure a default model to enable the quick add button
-                </Text>
-              </View>
-            )}
+              <Text className="flex-1 text-center text-[11px] font-semibold text-primary">
+                Configure a default model to enable the quick add button
+              </Text>
+            </View>
+          )}
         </View>
       </BottomSheetFooter>
     ),
-    [defaults?.modelApplicationId, defaultsError, e, handleQuickAdd, insets.bottom, isDefaultsLoading]
+    [
+      defaults?.modelApplicationId,
+      defaultsError,
+      e,
+      handleQuickAdd,
+      insets.bottom,
+      isDefaultsLoading,
+    ]
   );
 
   const handleCustomAdd = (modelApplicationId: number) => {
@@ -135,7 +143,7 @@ export const EntryBottomSheetModal = forwardRef<
         entry: e!,
       });
     } catch {
-      console.log("Custom add submit error");
+      console.log('Custom add submit error');
     } finally {
       setIsCustomAddSubmitting(false);
     }
@@ -185,14 +193,9 @@ export const EntryBottomSheetModal = forwardRef<
 
       <CustomAddModal
         visible={isCustomAddOpen}
-        close={() => setIsCustomAddOpen(false)}
         initialModelApplicationId={defaults?.modelApplicationId}
         isSubmitting={isCustomAddSubmitting}
-        onClose={() => {
-          if (!isCustomAddSubmitting) {
-            setIsCustomAddOpen(false);
-          }
-        }}
+        onClose={() => setIsCustomAddOpen(false)}
         onSubmit={handleCustomAdd}
       />
     </>

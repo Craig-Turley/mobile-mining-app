@@ -22,7 +22,7 @@ export default function ModelFieldsSection({
       <View className="rounded-[10px] bg-surface">
         {availableFields.map((field, index) => {
           const isLast = index === Object.keys(AnkiModelFields).length - 1;
-          const enabled = Boolean(currentFields.find((f) => f.name == field.name));
+          const enabled = Boolean(currentFields.find((f) => f.name === field.name));
 
           return (
             <View key={field.name} className="min-h-[50px] flex-row items-center px-4">
@@ -37,7 +37,7 @@ export default function ModelFieldsSection({
                     if (enabled) {
                       setModelFields([...currentFields, field]);
                     } else {
-                      setModelFields([...currentFields].filter((f) => f.name != field.name));
+                      setModelFields([...currentFields].filter((f) => f.name !== field.name));
                     }
                   }}
                   accessibilityLabel={`Include ${field.name}`}

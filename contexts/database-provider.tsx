@@ -7,7 +7,9 @@ import { appDb } from '@/db/app/client';
 import appMigrations from '@/drizzle/app/migrations';
 // import dictionariesMigration from '@/drizzle/dictionaries/migrations';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { attachAndBuildViews, /* InstalledDictionary */ } from '@/db/features/dictionaries/dictionaries.actions';
+import {
+  attachAndBuildViews /* InstalledDictionary */,
+} from '@/db/features/dictionaries/dictionaries.actions';
 // import { DefaultSQLiteDownloadDirectory, getDatabasePath, getFileName, listDirectoryContents } from '@/lib/file-system';
 
 type Props = {
@@ -18,17 +20,19 @@ export function DatabaseProvider({ children }: Props) {
   const appMigration = useMigrations(appDb, appMigrations);
   // const dictionaryMigration = useMigrations(dictionariesDb, dictionariesMigration);
 
-  const migrationError = appMigration.error /* ?? dictionaryMigration.error */;
+  const migrationError = appMigration.error; /* ?? dictionaryMigration.error */
   if (migrationError) {
     return (
       <SafeAreaView edges={['top', 'bottom', 'left', 'right']}>
         <Text>Database setup failed.</Text>
-        <Text>{migrationError instanceof Error ? migrationError.message : String(migrationError)}</Text>
+        <Text>
+          {migrationError instanceof Error ? migrationError.message : String(migrationError)}
+        </Text>
       </SafeAreaView>
     );
   }
 
-  const migrationsReady = appMigration.success/*  && dictionaryMigration.success */;
+  const migrationsReady = appMigration.success; /*  && dictionaryMigration.success */
   if (!migrationsReady) {
     return (
       <SafeAreaView edges={['top', 'bottom', 'left', 'right']}>
@@ -40,11 +44,7 @@ export function DatabaseProvider({ children }: Props) {
     );
   }
 
-  return (
-    <DictionaryAttachProvider>
-      {children}
-    </DictionaryAttachProvider>
-  );
+  return <DictionaryAttachProvider>{children}</DictionaryAttachProvider>;
 }
 
 function DictionaryAttachProvider({ children }: Props) {
@@ -64,7 +64,9 @@ function DictionaryAttachProvider({ children }: Props) {
         }
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   if (status === 'error') {

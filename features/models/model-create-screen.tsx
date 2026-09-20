@@ -1,17 +1,24 @@
 import React, { useMemo, useState } from 'react';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { Text, TouchableOpacity, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import {
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { cssInterop } from 'nativewind';
 import { useAppTheme } from '@/theme/theme-provider';
 import {
   ModelFields,
+  ModelFormData,
   AllowedModelField,
   ModelFieldName,
   createTemplateFormData,
   formDataToModel,
 } from '@/lib/anki-settings';
-import { ModelFormData } from '@/lib/anki-settings';
 import { StoredModel } from '@/db/app/schema/models';
 import { useMutation } from '@/db/hooks/use-mutation';
 import { upsertModelQuery } from '@/db/features/models/models.queries';
@@ -31,7 +38,7 @@ cssInterop(Ionicons, {
   },
 });
 
-interface ScreenContentProps { }
+interface ScreenContentProps {}
 
 export const ModelCreateScreen: React.FC<ScreenContentProps> = () => {
   const { editModelFormData } = useLocalSearchParams<{
@@ -113,8 +120,7 @@ export const ModelCreateScreen: React.FC<ScreenContentProps> = () => {
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView
           className="flex-1 bg-background"
           contentInsetAdjustmentBehavior="automatic"

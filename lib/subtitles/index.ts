@@ -1,1 +1,1 @@
-export * from './subtitles.ts';
+export * from './subtitles';

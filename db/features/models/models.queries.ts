@@ -15,7 +15,7 @@ export function allModelsQuery() {
 }
 
 export function getModelsByIdsQuery(applicationIds: number[]) {
-  return appDb.select().from(models).where(inArray(models.applicationId, applicationIds))
+  return appDb.select().from(models).where(inArray(models.applicationId, applicationIds));
 }
 
 export function modelByApplicationQuery(applicationId: number) {

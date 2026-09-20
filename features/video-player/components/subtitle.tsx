@@ -1,4 +1,4 @@
-import { PropsWithChildren, useEffect, useState } from 'react';
+import { PropsWithChildren, useCallback, useEffect, useState } from 'react';
 import { View, Text, LayoutChangeEvent, Pressable } from 'react-native';
 import { secondsToTime, SubtitleCue } from '@/lib/subtitles';
 import { cn } from '@/utils/cn';
@@ -18,15 +18,8 @@ export default function Subtitle({ cue, active, onLayout }: SubtitleProps) {
   const [tokens, setTokens] = useState<Token[]>([]);
   const { setToken } = useEntryModal();
 
-  // NOTE: the flatlist that holds these components takes care of the rendering when
-  // it needs to be mounted so we're not hammering the cpu with unnessarcy tokenize calls
-  // (i think)
-  useEffect(() => {
-    tokenize();
-  }, []);
-
   // TODO: handle error case of unparsable subtitles
-  const tokenize = async () => {
+  const tokenize = useCallback(async () => {
     const tokenList = await getTokens(cue.text);
     if (tokenList == null) {
       console.log(`error parsing cue with id ${cue.id}`);
@@ -37,7 +30,14 @@ export default function Subtitle({ cue, active, onLayout }: SubtitleProps) {
       .filter((t) => t.surface_form.trim().length > 0) // drop whitespace-only tokens
       .map((t) => ({ ...t, reading: katakanaToHiragana(t.reading) }));
     setTokens(cleaned);
-  };
+  }, [cue.id, cue.text]);
+
+  // NOTE: the flatlist that holds these components takes care of the rendering when
+  // it needs to be mounted so we're not hammering the cpu with unnessarcy tokenize calls
+  // (i think)
+  useEffect(() => {
+    tokenize();
+  }, [tokenize]);
 
   const renderToken = (token: Token, index: number) => (
     <Text key={index} className={`${getTokenColor(token)}`} onPress={() => setToken(token)}>

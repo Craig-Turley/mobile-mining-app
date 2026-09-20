@@ -1,6 +1,6 @@
-import { StoredModel } from "@/db/app/schema";
-import { AllowedModelField } from "@/lib/anki-settings";
-import { Model } from "genanki-ts";
+import { StoredModel } from '@/db/app/schema';
+import { AllowedModelField } from '@/lib/anki-settings';
+import { Model } from 'genanki-ts';
 
 export function mapStoredModel(storedModel: StoredModel): StoredModel {
   return {

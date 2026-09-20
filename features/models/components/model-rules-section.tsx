@@ -2,8 +2,7 @@ import { View, ViewProps, Text, Pressable } from 'react-native';
 import { cn } from '@/utils/cn';
 import { FieldLabel } from './field-label';
 import { RequirementModes } from 'genanki-ts';
-import { modelFieldLabels, ModelFieldName } from '@/lib/anki-settings';
-import { TemplateFormData } from '@/lib/anki-settings';
+import { TemplateFormData, modelFieldLabels, ModelFieldName } from '@/lib/anki-settings';
 
 export interface ModelRulesSectionProps extends ViewProps {
   availableFields: readonly ModelFieldName[];
@@ -23,12 +22,12 @@ export default function ModelRulesSection({
       templates.map((template, index) =>
         index === templateIndex
           ? {
-            ...template,
-            rule: {
-              ...template.rule,
-              mode,
-            },
-          }
+              ...template,
+              rule: {
+                ...template.rule,
+                mode,
+              },
+            }
           : template
       )
     );

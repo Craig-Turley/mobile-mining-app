@@ -1,15 +1,14 @@
 import { useAppTheme } from '@/theme/theme-provider';
-import { router, Stack } from 'expo-router';
+import { Stack } from 'expo-router';
 import { getFile } from '@/lib/file-system';
 import { insertVideo } from '@/db/features/files/files.services';
-import { YoutubeMediaSource } from '../lib/player-sources';
 
 export function VideoLoaderToolbar() {
   const { colors } = useAppTheme();
 
   const uploadHelper = async (src: 'file' | 'photos') => {
     const file = await getFile({ src });
-    if (file == undefined) {
+    if (file === undefined) {
       console.log('undefined file on upload');
       return;
     }

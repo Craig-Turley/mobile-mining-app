@@ -1,7 +1,16 @@
 import { useVideoPlayer, VideoPlayer } from 'expo-video';
-import { createContext, RefObject, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  RefObject,
+  useCallback,
+  useContext,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { LocalMediaSource, MediaSource, YoutubeMediaSource } from '../lib/player-sources';
-import { YoutubeIframeRef } from "react-native-youtube-iframe";
+import { YoutubeIframeRef } from 'react-native-youtube-iframe';
 
 // NOTE: we are treating this as one context but this context actually
 // switches the provider based on the tagged union below
@@ -16,7 +25,7 @@ import { YoutubeIframeRef } from "react-native-youtube-iframe";
 
 type LocalPlayerContext = {
   source: LocalMediaSource;
-  type: "local";
+  type: 'local';
   player: VideoPlayer;
 
   getTimestamp: () => Promise<number>;
@@ -27,7 +36,7 @@ type LocalPlayerContext = {
 
 type YoutubePlayerContext = {
   source: YoutubeMediaSource;
-  type: "youtube";
+  type: 'youtube';
 
   player: RefObject<YoutubeIframeRef | null>;
   playing: boolean;
@@ -39,9 +48,7 @@ type YoutubePlayerContext = {
   seekTo: (seconds: number) => Promise<void>;
 };
 
-type VideoScreenContextType =
-  | LocalPlayerContext
-  | YoutubePlayerContext;
+type VideoScreenContextType = LocalPlayerContext | YoutubePlayerContext;
 
 const VideoScreenContext = createContext<VideoScreenContextType | null>(null);
 
@@ -52,29 +59,19 @@ type VideoScreenProviderProps = {
 
 export function VideoScreenProvider({ children, source }: VideoScreenProviderProps) {
   switch (source.type) {
-    case "local":
-      return (
-        <LocalMediaPlayerProvider source={source}>
-          {children}
-        </LocalMediaPlayerProvider>
-      );
+    case 'local':
+      return <LocalMediaPlayerProvider source={source}>{children}</LocalMediaPlayerProvider>;
 
-    case "youtube":
-      return (
-        <YoutubeMediaPlayerProvider source={source}>
-          {children}
-        </YoutubeMediaPlayerProvider>
-      );
+    case 'youtube':
+      return <YoutubeMediaPlayerProvider source={source}>{children}</YoutubeMediaPlayerProvider>;
   }
 }
 
 export function useLocalVideoPlayerContext(): LocalPlayerContext {
   const context = useVideoPlayerContext();
 
-  if (context.type !== "local") {
-    throw new Error(
-      "useLocalVideoPlayerContext must be used with a local media source"
-    );
+  if (context.type !== 'local') {
+    throw new Error('useLocalVideoPlayerContext must be used with a local media source');
   }
 
   return context;
@@ -83,10 +80,8 @@ export function useLocalVideoPlayerContext(): LocalPlayerContext {
 export function useYoutubeVideoPlayerContext(): YoutubePlayerContext {
   const context = useVideoPlayerContext();
 
-  if (context.type !== "youtube") {
-    throw new Error(
-      "useLocalVideoPlayerContext must be used with a local media source"
-    );
+  if (context.type !== 'youtube') {
+    throw new Error('useLocalVideoPlayerContext must be used with a local media source');
   }
 
   return context;
@@ -99,15 +94,22 @@ function LocalMediaPlayerProvider({
   source: LocalMediaSource;
   children: ReactNode;
 }) {
-  const player = useVideoPlayer(null, (player) => { player.timeUpdateEventInterval = 0.25 });
+  const player = useVideoPlayer(null, (player) => {
+    player.timeUpdateEventInterval = 0.25;
+  });
   const getTimestamp = useCallback(async () => player.currentTime, [player]);
   const play = useCallback(async () => player.play(), [player]);
   const pause = useCallback(async () => player.pause(), [player]);
-  const seekTo = useCallback(async (seconds: number) => { player.currentTime = seconds }, [player]);
+  const seekTo = useCallback(
+    async (seconds: number) => {
+      player.currentTime = seconds;
+    },
+    [player]
+  );
 
   const value = useMemo<VideoScreenContextType>(
     () => ({
-      type: "local",
+      type: 'local',
       source,
       player,
       getTimestamp,
@@ -115,23 +117,12 @@ function LocalMediaPlayerProvider({
       pause,
       seekTo,
     }),
-    [
-      source,
-      player,
-      getTimestamp,
-      play,
-      pause,
-      seekTo,
-    ],
+    [source, player, getTimestamp, play, pause, seekTo]
   );
 
   player.play();
 
-  return (
-    <VideoScreenContext.Provider value={value}>
-      {children}
-    </VideoScreenContext.Provider>
-  );
+  return <VideoScreenContext.Provider value={value}>{children}</VideoScreenContext.Provider>;
 }
 
 function YoutubeMediaPlayerProvider({
@@ -166,12 +157,12 @@ function YoutubeMediaPlayerProvider({
 
   const onChangeState = useCallback((state: string) => {
     switch (state) {
-      case "playing":
+      case 'playing':
         setPlaying(true);
         break;
 
-      case "paused":
-      case "ended":
+      case 'paused':
+      case 'ended':
         setPlaying(false);
         break;
     }
@@ -179,7 +170,7 @@ function YoutubeMediaPlayerProvider({
 
   const value = useMemo<YoutubePlayerContext>(
     () => ({
-      type: "youtube",
+      type: 'youtube',
       source,
       player: playerRef,
       playing,
@@ -189,22 +180,10 @@ function YoutubeMediaPlayerProvider({
       pause,
       seekTo,
     }),
-    [
-      source,
-      playing,
-      onChangeState,
-      getTimestamp,
-      play,
-      pause,
-      seekTo,
-    ],
+    [source, playing, onChangeState, getTimestamp, play, pause, seekTo]
   );
 
-  return (
-    <VideoScreenContext.Provider value={value}>
-      {children}
-    </VideoScreenContext.Provider>
-  );
+  return <VideoScreenContext.Provider value={value}>{children}</VideoScreenContext.Provider>;
 }
 
 export function useVideoPlayerContext() {

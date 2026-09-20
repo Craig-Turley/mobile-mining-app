@@ -22,10 +22,7 @@ export function lookupTokenQuery(token: Token) {
     .from(lookup)
     .innerJoin(
       entries,
-      and(
-        eq(entries.dictionary, lookup.dictionary),
-        eq(entries.id, lookup.entryId),
-      )
+      and(eq(entries.dictionary, lookup.dictionary), eq(entries.id, lookup.entryId))
     )
     .where(
       or(
@@ -51,9 +48,9 @@ export function lookupTokenQuery(token: Token) {
 }
 
 export type InsertInstalledInput = {
-  alias: string,
-  filePath: string,
-}
+  alias: string;
+  filePath: string;
+};
 
 /**
  * @description use a mapper that maps result to a boolean to

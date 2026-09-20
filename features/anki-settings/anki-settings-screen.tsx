@@ -7,7 +7,7 @@ import { router, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { cssInterop } from 'nativewind';
 
-interface ModelsScreenProps { }
+interface ModelsScreenProps {}
 
 type RoutePathname = Extract<Href, { pathname: unknown }>['pathname'];
 type IoniconName = ComponentProps<typeof Ionicons>['name'];
@@ -117,7 +117,7 @@ export const AnkiSettingsScreen: React.FC<ModelsScreenProps> = () => {
   );
 };
 
-interface SectionProps extends ViewProps { }
+interface SectionProps extends ViewProps {}
 
 const Section = ({ className, children, ...rest }: SectionProps) => {
   return (
@@ -127,7 +127,7 @@ const Section = ({ className, children, ...rest }: SectionProps) => {
   );
 };
 
-interface SectionTitleProps extends TextProps { }
+interface SectionTitleProps extends TextProps {}
 
 const SectionTitle = ({ className, children, ...rest }: SectionTitleProps) => {
   return (
@@ -137,7 +137,7 @@ const SectionTitle = ({ className, children, ...rest }: SectionTitleProps) => {
   );
 };
 
-interface SectionBodyProps extends ViewProps { }
+interface SectionBodyProps extends ViewProps {}
 
 const SectionBody = ({ className, children, ...rest }: SectionBodyProps) => {
   return (

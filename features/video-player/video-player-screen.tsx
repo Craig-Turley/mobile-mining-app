@@ -11,7 +11,6 @@ export const VideoPlayerScreen: React.FC = () => {
   const { sourceString } = useLocalSearchParams<{ sourceString: string }>();
   const source = JSON.parse(sourceString) as MediaSource;
 
-
   return (
     <>
       <Stack.Screen
