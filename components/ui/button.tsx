@@ -23,6 +23,7 @@ export interface ButtonProps extends Omit<PressableProps, 'children' | 'onPress'
   icon?: keyof typeof Ionicons.glyphMap;
   iconPosition?: 'left' | 'right';
   iconSize?: number;
+  iconClassName?: string;
   className?: string;
   textClassName?: string;
   textProps?: TextProps;
@@ -79,6 +80,7 @@ export function Button({
   icon,
   iconPosition = 'left',
   iconSize,
+  iconClassName,
   className,
   textClassName,
   textProps,
@@ -134,7 +136,7 @@ export function Button({
   const resolvedIconSize = iconSize ?? (size === 'sm' ? 16 : size === 'lg' ? 20 : 18);
   const content = label ?? children;
   const iconElement = icon ? (
-    <Ionicons name={icon} size={resolvedIconSize} className={textVariants[variant]} />
+    <Ionicons name={icon} size={resolvedIconSize} className={cn(textVariants[variant], iconClassName)} />
   ) : null;
 
   return (

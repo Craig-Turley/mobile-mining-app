@@ -11,6 +11,7 @@ import {
 } from 'react';
 import { LocalMediaSource, MediaSource, YoutubeMediaSource } from '../lib/player-sources';
 import { YoutubeIframeRef } from 'react-native-youtube-iframe';
+import { useEvent } from 'expo';
 
 // NOTE: we are treating this as one context but this context actually
 // switches the provider based on the tagged union below
@@ -32,6 +33,7 @@ type LocalPlayerContext = {
   play: () => Promise<void>;
   pause: () => Promise<void>;
   seekTo: (seconds: number) => Promise<void>;
+  playing: boolean;
 };
 
 type YoutubePlayerContext = {
@@ -97,9 +99,28 @@ function LocalMediaPlayerProvider({
   const player = useVideoPlayer(null, (player) => {
     player.timeUpdateEventInterval = 0.25;
   });
-  const getTimestamp = useCallback(async () => player.currentTime, [player]);
-  const play = useCallback(async () => player.play(), [player]);
-  const pause = useCallback(async () => player.pause(), [player]);
+
+  const { isPlaying: playing } = useEvent(
+    player,
+    'playingChange',
+    { isPlaying: player.playing }
+  );
+
+  const getTimestamp = useCallback(
+    async () => player.currentTime,
+    [player]
+  );
+
+  const play = useCallback(
+    async () => player.play(),
+    [player]
+  );
+
+  const pause = useCallback(
+    async () => player.pause(),
+    [player]
+  );
+
   const seekTo = useCallback(
     async (seconds: number) => {
       player.currentTime = seconds;
@@ -112,17 +133,28 @@ function LocalMediaPlayerProvider({
       type: 'local',
       source,
       player,
+      playing,
       getTimestamp,
       play,
       pause,
       seekTo,
     }),
-    [source, player, getTimestamp, play, pause, seekTo]
+    [
+      source,
+      player,
+      playing,
+      getTimestamp,
+      play,
+      pause,
+      seekTo,
+    ]
   );
 
-  player.play();
-
-  return <VideoScreenContext.Provider value={value}>{children}</VideoScreenContext.Provider>;
+  return (
+    <VideoScreenContext.Provider value={value}>
+      {children}
+    </VideoScreenContext.Provider>
+  );
 }
 
 function YoutubeMediaPlayerProvider({
