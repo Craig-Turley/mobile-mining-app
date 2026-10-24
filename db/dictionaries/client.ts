@@ -17,7 +17,6 @@ export async function newDictionaryClientAsync(dictionaryName: string) {
   const sqlite = await openDatabaseAsync(dictionaryName, {});
 
   sqlite.execAsync(`
-    PRAGMA query_only = ON;
     PRAGMA temp_store = MEMORY;
   `);
 

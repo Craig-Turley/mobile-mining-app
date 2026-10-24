@@ -14,6 +14,26 @@ type FileData = {
   name?: string;
 };
 
+export async function getDictionaryDirectory() {
+  return Directory.pickDirectoryAsync();
+}
+
+export async function getDictionaryZipFile() {
+  const result = await DocumentPicker.getDocumentAsync({
+    type: ['application/zip', 'application/x-zip-compressed'],
+    copyToCacheDirectory: true,
+    multiple: false,
+  });
+  if (result.canceled) return null;
+
+  const asset = result.assets[0];
+  if (!asset.name.toLowerCase().endsWith('.zip')) {
+    throw new Error('Expected a ZIP file');
+  }
+
+  return new File(asset.uri);
+}
+
 export async function getFile({ src }: { src: 'file' | 'photos' }) {
   let result;
 

@@ -1,5 +1,34 @@
 import { useCallback, useEffect, useState } from 'react';
 import { hasDictionaryQuery } from './dictionaries.queries';
+import { convert } from '@/db/lib';
+
+export function useConvertDictionary() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const convertDictionary = useCallback(async (uri: string) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      await convert(uri);
+    } catch (e) {
+      const error = e instanceof Error ? e : new Error(String(e));
+
+      setError(error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return {
+    convertDictionary,
+    isLoading,
+    isError: error !== null,
+    error,
+  };
+}
 
 export async function getHasDictionary() {
   const rows = await hasDictionaryQuery();

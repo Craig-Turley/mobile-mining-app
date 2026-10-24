@@ -1,16 +1,14 @@
 import { ReactNode, useEffect, useState } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator';
-// import { dictionariesDb } from '@/db/dictionaries/client';
-
 import { appDb } from '@/db/app/client';
+import { dictionariesDb } from '@/db/dictionaries/client';
 import appMigrations from '@/drizzle/app/migrations';
-// import dictionariesMigration from '@/drizzle/dictionaries/migrations';
+import dictionariesMigration from '@/drizzle/dictionaries/migrations';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   attachAndBuildViews /* InstalledDictionary */,
 } from '@/db/features/dictionaries/dictionaries.actions';
-// import { DefaultSQLiteDownloadDirectory, getDatabasePath, getFileName, listDirectoryContents } from '@/lib/file-system';
 
 type Props = {
   children: ReactNode;
@@ -18,9 +16,9 @@ type Props = {
 
 export function DatabaseProvider({ children }: Props) {
   const appMigration = useMigrations(appDb, appMigrations);
-  // const dictionaryMigration = useMigrations(dictionariesDb, dictionariesMigration);
+  const dictionaryMigration = useMigrations(dictionariesDb, dictionariesMigration);
 
-  const migrationError = appMigration.error; /* ?? dictionaryMigration.error */
+  const migrationError = appMigration.error ?? dictionaryMigration.error;
   if (migrationError) {
     return (
       <SafeAreaView edges={['top', 'bottom', 'left', 'right']}>
