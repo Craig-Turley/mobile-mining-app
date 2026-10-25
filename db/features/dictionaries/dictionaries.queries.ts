@@ -32,13 +32,14 @@ export function lookupTokenQuery(token: Token) {
   const baseForm = token.base_form;
   const reading = token.reading;
 
+  console.log(baseForm, reading);
   return dictionariesDb
     .select()
     .from(terms)
     .where(
       or(
         eq(terms.expression, baseForm),
-        eq(terms.reading, baseForm),
+        eq(terms.reading, reading),
       ),
     )
     .orderBy(
