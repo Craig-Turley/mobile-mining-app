@@ -148,8 +148,8 @@ export const ModelCreateScreen: React.FC<ScreenContentProps> = () => {
                   frontFields: template.frontFields.filter((fieldName) =>
                     allowedFieldNames.has(fieldName)
                   ),
-                  backFields: template.backFields.filter((fieldName) =>
-                    allowedFieldNames.has(fieldName)
+                  backFields: template.backFields.filter(
+                    (fieldName) => fieldName === 'FrontSide' || allowedFieldNames.has(fieldName)
                   ),
                   rule: {
                     ...template.rule,

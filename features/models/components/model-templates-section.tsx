@@ -96,8 +96,8 @@ export default function ModelTemplatesSection({
     availableFieldSet.has(field.name)
   );
 
-  const availableBackFields = BackSideModelFields.filter((field) =>
-    availableFieldSet.has(field.name)
+  const availableBackFields = BackSideModelFields.filter(
+    (field) => field.name === 'FrontSide' || availableFieldSet.has(field.name)
   );
 
   return (

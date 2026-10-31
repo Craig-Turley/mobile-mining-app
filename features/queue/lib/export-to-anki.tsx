@@ -2,8 +2,10 @@ import { getModelsByIdsQuery } from '@/db/features/models/models.queries';
 import { deckByApplicationIdQuery } from '@/db/features/decks/decks.queries';
 import { exportToAnki, prepareDeckForExport } from '@/lib/genanki/index';
 import { shareFile, AnkiSharingOptions } from '@/lib/sharing/sharing';
-import { mapStoredModel } from '@/features/models/model.mappers';
 import { QueueItemWithModel } from '@/db/app/schema';
+import { getDictionariesQuery } from '@/db/features/dictionaries/dictionaries.queries';
+import { prepareAnkiNotes } from './prepare-anki-notes';
+import { createGlossaryMedia } from './glossary-media';
 
 export async function exportQueueToAnki(deckId: number, queuedItems: QueueItemWithModel[]) {
   const selectedDeck = await deckByApplicationIdQuery(deckId);
@@ -11,13 +13,21 @@ export async function exportQueueToAnki(deckId: number, queuedItems: QueueItemWi
     throw new Error('selected deck not found');
   }
 
-  const models = await getModelsByIdsQuery(queuedItems.map((q) => q.modelApplicationId)).then(
-    (models) => models.map(mapStoredModel)
-  );
-
-  const preparedDeck = prepareDeckForExport(selectedDeck, models, queuedItems);
-
-  const fileUri = await exportToAnki(preparedDeck);
+  const models = await getModelsByIdsQuery([
+    ...new Set(queuedItems.map((q) => q.modelApplicationId)),
+  ]);
+  const dictionaries = await getDictionariesQuery();
+  const media = createGlossaryMedia();
+  let fileUri: string;
+  try {
+    const notes = await prepareAnkiNotes(queuedItems, models, dictionaries, media.resolve);
+    console.log(JSON.stringify(notes));
+    const preparedDeck = prepareDeckForExport(selectedDeck.deck, notes);
+    console.log(JSON.stringify(preparedDeck));
+    fileUri = await exportToAnki(preparedDeck);
+  } finally {
+    media.dispose();
+  }
 
   await shareFile(fileUri, AnkiSharingOptions);
 }

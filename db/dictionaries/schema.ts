@@ -35,7 +35,7 @@ export const terms = sqliteTable(
     index('idx_terms_dictionary').on(table.dictionary),
     index('idx_entries_expression').on(table.expression),
     index('idx_entries_reading').on(table.reading),
-  ],
+  ]
 );
 
 export type StoredTerm = typeof terms.$inferSelect;
@@ -75,9 +75,6 @@ export interface ComponentNode {
     style?: Record<string, unknown>;
   };
 }
-
-
-import { mapStoredTermToEntry } from '@/lib/entry/entry.mapper';
 
 // export const entries = sqliteView('entries', {
 //   id: integer().notNull(),

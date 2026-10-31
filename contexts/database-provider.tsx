@@ -8,6 +8,7 @@ import dictionariesMigration from '@/drizzle/dictionaries/migrations';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { initializeCssCache } from '@/lib/dictionaries/cache';
 import { getDictionariesQuery } from '@/db/features/dictionaries/dictionaries.queries';
+import { upgradeAnkiData } from '@/db/lib/upgrade-anki-data';
 import {
   attachAndBuildViews /* InstalledDictionary */,
 } from '@/db/features/dictionaries/dictionaries.actions';
@@ -56,6 +57,7 @@ function DictionaryAttachProvider({ children }: Props) {
     (async () => {
       try {
         await attachAndBuildViews();
+        await upgradeAnkiData();
         initializeCssCache(await getDictionariesQuery());
         if (!cancelled) setStatus('ready');
       } catch (e) {

@@ -1,26 +1,35 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { hasDictionaryQuery } from './dictionaries.queries';
 import { convert } from '@/db/lib';
+import { importDictionaryZip } from '@/features/dictionaries/lib/import-dictionary-zip';
 
 export function useConvertDictionary() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const importing = useRef(false);
 
-  const convertDictionary = useCallback(async (uri: string) => {
-    setIsLoading(true);
-    setError(null);
+  const convertDictionary = useCallback(
+    async (uri: string, format: 'directory' | 'zip' = 'directory') => {
+      if (importing.current) throw new Error('A dictionary import is already running.');
+      importing.current = true;
+      setIsLoading(true);
+      setError(null);
 
-    try {
-      await convert(uri);
-    } catch (e) {
-      const error = e instanceof Error ? e : new Error(String(e));
+      try {
+        if (format === 'zip') await importDictionaryZip(uri);
+        else await convert(uri);
+      } catch (e) {
+        const error = e instanceof Error ? e : new Error(String(e));
 
-      setError(error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+        setError(error);
+        throw error;
+      } finally {
+        importing.current = false;
+        setIsLoading(false);
+      }
+    },
+    []
+  );
 
   return {
     convertDictionary,

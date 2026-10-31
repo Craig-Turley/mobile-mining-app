@@ -1,8 +1,17 @@
 # Native dictionary rendering
 
 The app imports **schema-2 `react-native-component-tree` output** from
-`yomitan-dictionary-transformer`. Select the transformed directory from the
-Dictionaries toolbar. Raw Yomitan dictionaries must be transformed first.
+`yomitan-dictionary-transformer`. The Dictionaries toolbar offers **Import ZIP** and
+**Import folder**. ZIPs can contain the transformed files directly or inside one
+enclosing folder; `manifest.json` and `index.json` identify the dictionary root.
+Archives containing multiple dictionary roots are rejected. Raw Yomitan dictionaries
+must be transformed first.
+
+ZIPs are extracted natively into a unique cache directory before the existing importer
+runs. The import overlay covers extraction and database insertion. Extraction files
+and the document picker's cached archive are removed afterward, including on failure;
+the user's original ZIP is not deleted. The permanent dictionary assets remain after
+temporary extraction cleanup.
 
 ## Pipeline
 

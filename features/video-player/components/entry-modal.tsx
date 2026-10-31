@@ -3,10 +3,13 @@ import { Button } from '@/components/ui/button';
 import {
   BottomSheetFooter,
   BottomSheetFooterProps,
+  BottomSheetHandle,
+  type BottomSheetHandleProps,
   BottomSheetModal,
   BottomSheetModalProps,
   BottomSheetScrollView,
   BottomSheetView,
+  TouchableOpacity,
   type BottomSheetModal as BottomSheetModalType,
 } from '@gorhom/bottom-sheet';
 import { Token } from '@kuzulabz/expo-kagome';
@@ -30,6 +33,7 @@ import { StoredDefinition } from '@/db/dictionaries/schema';
 import { Ruby, RubyText } from '@/components/ui/ruby';
 import { getDictionaryStyles } from '@/lib/dictionaries/cache';
 import { resolveDictionaryAsset } from '@/lib/dictionaries/assets';
+import { mapStoredTermToEntry, type Entry } from '@/lib/entry';
 
 interface EntryModalProps extends BottomSheetModalProps {
   token: Token | null;
@@ -54,14 +58,45 @@ export const EntryBottomSheetModal = forwardRef<
     reading?: string;
   } | null>(null);
   const currentLookup = internalLookup?.token === token ? internalLookup : null;
-  const { data: entries, isLoading } = useQuery(
-    () =>
-      currentLookup
+  const { data: lookupResult, isLoading } = useQuery(
+    async () => ({
+      token,
+      lookup: currentLookup,
+      entries: await (currentLookup
         ? lookupExpressionQuery(currentLookup.expression, currentLookup.reading)
-        : lookupTokenQuery(token!),
+        : lookupTokenQuery(token!)),
+    }),
     NOPQueryMapper,
     [token, currentLookup],
     { enabled: token !== null }
+  );
+  const entries =
+    lookupResult?.token === token && lookupResult?.lookup === currentLookup
+      ? lookupResult.entries
+      : null;
+  const [selection, setSelection] = useState<{ entries: typeof entries; index: number } | null>(
+    null
+  );
+  const activeIndex =
+    selection?.entries === entries
+      ? Math.min(selection.index, Math.max(0, (entries?.length ?? 0) - 1))
+      : 0;
+  const activeEntry = !isLoading ? (entries?.[activeIndex] ?? null) : null;
+  const changeEntry = useCallback(
+    (direction: number) => {
+      if (!entries?.length) return;
+      setSelection((previous) => ({
+        entries,
+        index: Math.max(
+          0,
+          Math.min(
+            entries.length - 1,
+            (previous?.entries === entries ? previous.index : 0) + direction
+          )
+        ),
+      }));
+    },
+    [entries]
   );
 
   const {
@@ -76,75 +111,73 @@ export const EntryBottomSheetModal = forwardRef<
   const [contentWidth, setContentWidth] = useState(viewport.width - 32);
   const insets = useSafeAreaInsets();
 
-  const [isCustomAddOpen, setIsCustomAddOpen] = useState(false);
+  const [customAddEntry, setCustomAddEntry] = useState<Entry | null>(null);
   const [isCustomAddSubmitting, setIsCustomAddSubmitting] = useState(false);
 
-  const e: StoredDefinition[] | null =
-    entries?.[0]?.definitionsJson != null
-      ? (JSON.parse(entries[0].definitionsJson) as StoredDefinition[])
-      : null;
-
-  const renderedEntries = useMemo(
-    () =>
-      entries?.map((entry) => {
-        const definitions = JSON.parse(entry.definitionsJson) as StoredDefinition[];
-        const options = {
-          stylesheet: getDictionaryStyles(entry.dictionary),
-          environment: {
-            width: viewport.width,
-            height: viewport.height,
-            contentWidth,
-            fontSize: 16,
-            fontScale: viewport.fontScale,
-            color: colors.foreground,
-            dark: theme === 'dark',
-          },
-          resolveAsset: (path: string) => resolveDictionaryAsset(entry.dictionary, path),
-          onInternalLink: (href: string) => {
-            const params = new URLSearchParams(href.slice(1));
-            const expression = params.get('query');
-            if (expression)
-              setInternalLookup({ token, expression, reading: params.get('reading') ?? undefined });
-          },
-        };
-        return (
-          <View key={entry.id} style={{ width: contentWidth, paddingBottom: 16 }}>
-            <Ruby>
-              <Text className="text-4xl text-foreground">{entry.expression}</Text>
-              <RubyText className="text-sm text-foreground">
-                {entry.reading || entry.expression}
-              </RubyText>
-            </Ruby>
-            <Text className="mb-2 text-xs text-mutedForeground">{entry.dictionary}</Text>
-            {definitions.map((definition, index) =>
-              definition.type === 'content' ? (
-                <React.Fragment key={index}>{renderDefinition(definition, options)}</React.Fragment>
-              ) : null
-            )}
-          </View>
-        );
-      }),
-    [
-      entries,
-      viewport.width,
-      viewport.height,
-      viewport.fontScale,
-      colors.foreground,
-      theme,
-      contentWidth,
-      token,
-    ]
+  const activeDefinitions = useMemo(
+    () => (activeEntry ? (JSON.parse(activeEntry.definitionsJson) as StoredDefinition[]) : null),
+    [activeEntry]
   );
 
+  const renderedEntry = useMemo(() => {
+    const entry = activeEntry;
+    if (!entry || !activeDefinitions) return null;
+    const options = {
+      stylesheet: getDictionaryStyles(entry.dictionary),
+      environment: {
+        width: viewport.width,
+        height: viewport.height,
+        contentWidth,
+        fontSize: 16,
+        fontScale: viewport.fontScale,
+        color: colors.foreground,
+        dark: theme === 'dark',
+      },
+      resolveAsset: (path: string) => resolveDictionaryAsset(entry.dictionary, path),
+      onInternalLink: (href: string) => {
+        const params = new URLSearchParams(href.slice(1));
+        const expression = params.get('query');
+        if (expression)
+          setInternalLookup({ token, expression, reading: params.get('reading') ?? undefined });
+      },
+    };
+    return (
+      <View key={entry.id} style={{ width: contentWidth, paddingBottom: 16 }}>
+        <Ruby>
+          <Text className="text-4xl text-foreground">{entry.expression}</Text>
+          <RubyText className="text-sm text-foreground">
+            {entry.reading || entry.expression}
+          </RubyText>
+        </Ruby>
+        <Text className="mb-2 text-xs text-mutedForeground">{entry.dictionary}</Text>
+        {activeDefinitions.map((definition, index) =>
+          definition.type === 'content' ? (
+            <React.Fragment key={index}>{renderDefinition(definition, options)}</React.Fragment>
+          ) : null
+        )}
+      </View>
+    );
+  }, [
+    activeEntry,
+    activeDefinitions,
+    viewport.width,
+    viewport.height,
+    viewport.fontScale,
+    colors.foreground,
+    theme,
+    contentWidth,
+    token,
+  ]);
+
   const handleQuickAdd = useCallback(async () => {
-    if (defaults?.modelApplicationId == null || e == null) {
+    if (defaults?.modelApplicationId == null || activeEntry == null) {
       return;
     }
 
     try {
       await insertIntoQueueQuery({
         modelApplicationId: defaults.modelApplicationId,
-        entry: e,
+        entry: mapStoredTermToEntry(activeEntry),
       });
 
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
@@ -152,12 +185,62 @@ export const EntryBottomSheetModal = forwardRef<
       console.log('Quick add submit error');
       throw err;
     }
-  }, [defaults?.modelApplicationId, e]);
+  }, [defaults?.modelApplicationId, activeEntry]);
+
+  const renderHandle = useCallback(
+    (handleProps: BottomSheetHandleProps) => (
+      <View>
+        <BottomSheetHandle {...handleProps} />
+        {activeEntry != null && entries != null && entries.length > 1 && (
+          <View className="flex-row items-center justify-between px-4 pb-2">
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Previous entry"
+              accessibilityState={{ disabled: activeIndex === 0 }}
+              disabled={activeIndex === 0}
+              activeOpacity={0.6}
+              hitSlop={8}
+              style={{
+                width: 44,
+                height: 44,
+                alignItems: 'center',
+                justifyContent: 'center',
+                opacity: activeIndex === 0 ? 0.35 : 1,
+              }}
+              onPress={() => changeEntry(-1)}>
+              <Ionicons name="chevron-back" size={24} color={colors.foreground} />
+            </TouchableOpacity>
+            <Text accessibilityLiveRegion="polite" className="text-sm text-foreground">
+              {activeIndex + 1} / {entries.length}
+            </Text>
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Next entry"
+              accessibilityState={{ disabled: activeIndex === entries.length - 1 }}
+              disabled={activeIndex === entries.length - 1}
+              activeOpacity={0.6}
+              hitSlop={8}
+              style={{
+                width: 44,
+                height: 44,
+                alignItems: 'center',
+                justifyContent: 'center',
+                opacity: activeIndex === entries.length - 1 ? 0.35 : 1,
+              }}
+              onPress={() => changeEntry(1)}>
+              <Ionicons name="chevron-forward" size={24} color={colors.foreground} />
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+    ),
+    [activeEntry, entries, activeIndex, changeEntry, colors.foreground]
+  );
 
   const renderFooter = useCallback(
     (footerProps: BottomSheetFooterProps) => (
       <BottomSheetFooter {...footerProps} bottomInset={0}>
-        {e != null && (
+        {activeDefinitions != null && (
           <View
             className="w-full gap-2 border-t border-border bg-surface px-4 pt-3"
             style={{ paddingBottom: insets.bottom + 5 }}>
@@ -167,19 +250,22 @@ export const EntryBottomSheetModal = forwardRef<
                   label="Add"
                   className="rounded-full"
                   variant="secondary"
-                  onPress={() => setIsCustomAddOpen(true)}
+                  onPress={() => {
+                    if (activeEntry) setCustomAddEntry(mapStoredTermToEntry(activeEntry));
+                  }}
                 />
               </View>
 
               <View className="flex-1">
                 <Button
+                  key={activeEntry?.id}
                   label="Quick Add"
                   className="rounded-full"
                   onPress={handleQuickAdd}
                   successLabel="Added"
                   successIcon="checkmark"
                   disabled={
-                    e == null ||
+                    activeDefinitions == null ||
                     isDefaultsLoading ||
                     defaults?.modelApplicationId == null ||
                     defaultsError != null
@@ -206,7 +292,8 @@ export const EntryBottomSheetModal = forwardRef<
     [
       defaults?.modelApplicationId,
       defaultsError,
-      e,
+      activeDefinitions,
+      activeEntry,
       handleQuickAdd,
       insets.bottom,
       isDefaultsLoading,
@@ -214,7 +301,7 @@ export const EntryBottomSheetModal = forwardRef<
   );
 
   const handleCustomAdd = async (modelApplicationId: number) => {
-    if (e == null) {
+    if (customAddEntry == null) {
       return;
     }
 
@@ -223,7 +310,7 @@ export const EntryBottomSheetModal = forwardRef<
     try {
       await insertIntoQueueQuery({
         modelApplicationId,
-        entry: e,
+        entry: customAddEntry,
       });
     } catch (err) {
       console.log('Custom add submit error', err);
@@ -244,8 +331,10 @@ export const EntryBottomSheetModal = forwardRef<
         backgroundStyle={{
           backgroundColor: colors.surface,
         }}
+        handleComponent={renderHandle}
         footerComponent={renderFooter}>
         <BottomSheetScrollView
+          key={activeEntry?.id ?? 'empty'}
           onLayout={(event) => setContentWidth(Math.max(0, event.nativeEvent.layout.width - 32))}
           contentContainerClassName="px-4"
           contentContainerStyle={{
@@ -260,8 +349,8 @@ export const EntryBottomSheetModal = forwardRef<
           )}
           {isLoading ? (
             <Text className="text-foreground" />
-          ) : token && entries != null && entries.length > 0 && e != null ? (
-            renderedEntries
+          ) : token && activeEntry != null ? (
+            renderedEntry
           ) : (
             <Text className="text-foreground">
               {token ? 'No definitions found.' : 'No token selected.'}
@@ -271,28 +360,12 @@ export const EntryBottomSheetModal = forwardRef<
       </BottomSheetModal>
 
       <CustomAddModal
-        visible={isCustomAddOpen}
+        visible={customAddEntry != null}
         initialModelApplicationId={defaults?.modelApplicationId}
         isSubmitting={isCustomAddSubmitting}
-        onClose={() => setIsCustomAddOpen(false)}
+        onClose={() => setCustomAddEntry(null)}
         onSubmit={handleCustomAdd}
       />
     </>
   );
 });
-
-// <View className="gap-2">
-//   <View className="w-full flex-row items-end gap-2">
-//     <Text className="text-4xl text-foreground">{token.base_form}</Text>
-//
-//     <Text className="text-2xl text-mutedForeground">{e.reading}</Text>
-//   </View>
-//
-//   <View className="flex-row items-start gap-2">
-//     <Text className="font-semibold text-foreground">•</Text>
-//
-//     <Text className="flex-1 font-semibold text-foreground">
-//       {e.definitionsJson.length}
-//     </Text>
-//   </View>
-// </View>

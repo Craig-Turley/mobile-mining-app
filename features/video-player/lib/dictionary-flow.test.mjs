@@ -14,6 +14,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import test from 'node:test';
 import vm from 'node:vm';
 import React from 'react';
@@ -569,7 +570,7 @@ test(
   }
 );
 
-test('import persists CSS/assets transactionally, rolls back failed banks, and invalidates on deletion', async () => {
+test('folder and ZIP imports persist CSS/assets transactionally and clean up failed imports', async (t) => {
   const SQLite = require('better-sqlite3');
   const { drizzle } = require('drizzle-orm/better-sqlite3');
   const root = mkdtempSync(join(tmpdir(), 'dictionary-import-test-'));
@@ -581,6 +582,14 @@ test('import persists CSS/assets transactionally, rolls back failed banks, and i
     }
     get exists() {
       return existsSync(this.uri);
+    }
+    get name() {
+      return this.uri.split('/').at(-1);
+    }
+    list() {
+      return readdirSync(this.uri, { withFileTypes: true }).map((item) =>
+        item.isDirectory() ? new Directory(this, item.name) : new File(this, item.name)
+      );
     }
     get parentDirectory() {
       return new Directory(dirname(this.uri));
@@ -615,6 +624,9 @@ test('import persists CSS/assets transactionally, rolls back failed banks, and i
     }
     copy(destination) {
       copyFileSync(this.uri, destination.uri);
+    }
+    delete() {
+      rmSync(this.uri);
     }
     stream() {
       const bytes = readFileSync(this.uri);
@@ -751,6 +763,188 @@ test('import persists CSS/assets transactionally, rolls back failed banks, and i
     assert.equal(sqlite.prepare('SELECT count(*) AS n FROM terms').get().n, 0);
     assert.equal(assets.dictionaryAssetDirectory('Test').exists, false);
     assert.equal(cache.getDictionaryStyles('Test').length, 0);
+
+    const JSZip = require('jszip');
+    const cacheDirectory = join(root, 'cache with spaces');
+    const pickerDirectory = join(root, 'picker cache');
+    mkdirSync(pickerDirectory);
+    class ZipFile {
+      constructor(...parts) {
+        this.file = new File(
+          ...parts.map((part) => {
+            const value = part.uri ?? part;
+            return value.startsWith('file:') ? fileURLToPath(value) : value;
+          })
+        );
+      }
+      get uri() {
+        return pathToFileURL(this.file.uri).href;
+      }
+      get exists() {
+        return this.file.exists;
+      }
+      delete() {
+        this.file.delete();
+      }
+    }
+    const zipFs = { Directory, File: ZipFile, Paths: { cache: cacheDirectory } };
+    let failExtraction = false;
+    const unzipFile = async (src, dest) => {
+      assert.ok(!src.startsWith('file:'));
+      assert.ok(!src.includes('%20'));
+      if (failExtraction) {
+        writeFileSync(join(dest, 'partial.txt'), 'partial');
+        throw new Error('Native extraction failed');
+      }
+      const zip = await JSZip.loadAsync(readFileSync(src));
+      for (const item of Object.values(zip.files)) {
+        const target = join(dest, item.name);
+        if (item.dir) mkdirSync(target, { recursive: true });
+        else {
+          mkdirSync(dirname(target), { recursive: true });
+          writeFileSync(target, await item.async('uint8array'));
+        }
+      }
+      return dest;
+    };
+    const zipImporter = loadTsx('../../../features/dictionaries/lib/import-dictionary-zip.ts', {
+      'expo-file-system': zipFs,
+      '@/db/lib/dictionary-to-sqlite': importer,
+      '@/lib/file-system': { unzipFile },
+    });
+    const sourceFiles = [
+      'index.json',
+      'manifest.json',
+      'term_bank_1.json',
+      'styles.css',
+      'assets/image.png',
+    ];
+    writeFileSync(
+      join(source, 'index.json'),
+      JSON.stringify({ title: 'Test', revision: '1', format: 3 })
+    );
+    async function archive(name, prefixes = [''], overrides = {}) {
+      const zip = new JSZip();
+      for (const prefix of prefixes)
+        for (const path of sourceFiles) {
+          if (overrides[path] === null) continue;
+          zip.file(`${prefix}${path}`, overrides[path] ?? readFileSync(join(source, path)));
+        }
+      zip.file('__MACOSX/._index.json', 'metadata');
+      const path = join(pickerDirectory, name);
+      writeFileSync(path, await zip.generateAsync({ type: 'uint8array' }));
+      return path;
+    }
+    function cleaned(path) {
+      assert.equal(existsSync(path), false, 'cached picker ZIP must be deleted');
+      assert.deepEqual(readdirSync(cacheDirectory), [], 'extracted files must be deleted');
+    }
+
+    await t.test('ZIP roots and single enclosing folders match directory imports', async () => {
+      for (const prefixes of [[''], ['Dictionary 日本語/']]) {
+        const path = await archive('My dictionary 日本語.zip', prefixes);
+        await zipImporter.importDictionaryZip(pathToFileURL(path).href);
+        assert.equal(
+          sqlite.prepare('SELECT css FROM dictionaries').get().css,
+          'span { color: red }'
+        );
+        assert.equal(sqlite.prepare('SELECT expression FROM terms').get().expression, '語');
+        assert.deepEqual(
+          JSON.parse(sqlite.prepare('SELECT definitions_json FROM terms').get().definitions_json),
+          [definition]
+        );
+        assert.equal(
+          readFileSync(assets.resolveDictionaryAsset('Test', 'assets/image.png'), 'utf8'),
+          'image-bytes'
+        );
+        cleaned(path);
+        const duplicate = await archive('duplicate.zip', prefixes);
+        await assert.rejects(
+          zipImporter.importDictionaryZip(pathToFileURL(duplicate).href),
+          /already imported/u
+        );
+        cleaned(duplicate);
+        assert.equal(assets.dictionaryAssetDirectory('Test').exists, true);
+        await queries.deleteDictionaryByIdQuery(
+          sqlite.prepare('SELECT id FROM dictionaries').get().id
+        );
+      }
+    });
+
+    await t.test(
+      'ambiguous, untransformed, corrupt and partially extracted ZIPs are cleaned up',
+      async () => {
+        const ambiguous = await archive('multiple.zip', ['one/', 'two/']);
+        await assert.rejects(
+          zipImporter.importDictionaryZip(pathToFileURL(ambiguous).href),
+          /multiple dictionaries/u
+        );
+        cleaned(ambiguous);
+        const raw = await archive('raw-yomitan.zip', [''], { 'manifest.json': null });
+        await assert.rejects(
+          zipImporter.importDictionaryZip(pathToFileURL(raw).href),
+          /Expected a transformed dictionary/u
+        );
+        cleaned(raw);
+        const corrupt = join(pickerDirectory, 'corrupt.zip');
+        writeFileSync(corrupt, 'not a ZIP');
+        await assert.rejects(
+          zipImporter.importDictionaryZip(pathToFileURL(corrupt).href),
+          /Could not extract dictionary ZIP/u
+        );
+        cleaned(corrupt);
+        const partial = await archive('partial.zip');
+        failExtraction = true;
+        await assert.rejects(
+          zipImporter.importDictionaryZip(pathToFileURL(partial).href),
+          /Native extraction failed/u
+        );
+        failExtraction = false;
+        cleaned(partial);
+        assert.equal(sqlite.prepare('SELECT count(*) AS n FROM dictionaries').get().n, 0);
+      }
+    );
+
+    await t.test('failed bank imports roll back rows, assets and extracted files', async () => {
+      const path = await archive('bad-bank.zip', [''], {
+        'manifest.json': JSON.stringify({
+          ...inventory,
+          entries: 2,
+          termBanks: [{ path: 'term_bank_1.json', entries: 2 }],
+        }),
+      });
+      await assert.rejects(
+        zipImporter.importDictionaryZip(pathToFileURL(path).href),
+        /count mismatch/u
+      );
+      cleaned(path);
+      assert.equal(sqlite.prepare('SELECT count(*) AS n FROM dictionaries').get().n, 0);
+      assert.equal(sqlite.prepare('SELECT count(*) AS n FROM terms').get().n, 0);
+      assert.equal(assets.dictionaryAssetDirectory('Test').exists, false);
+    });
+
+    await t.test(
+      'ZIP picker cancellation is normal and rejected files do not leave cached copies',
+      async () => {
+        let result = { canceled: true };
+        const picker = loadTsx('../../../lib/file-system/file-system.ts', {
+          'expo-file-system': zipFs,
+          'expo-document-picker': { getDocumentAsync: async () => result },
+          'expo-image-picker': {},
+          'expo-sqlite': { defaultDatabaseDirectory: root },
+          'react-native-zip-archive': { unzip: unzipFile },
+        });
+        assert.equal(await picker.getDictionaryZipFile(), null);
+        const path = join(pickerDirectory, 'not-a-zip.txt');
+        writeFileSync(path, 'not a ZIP');
+        result = {
+          canceled: false,
+          assets: [{ name: 'not-a-zip.txt', uri: pathToFileURL(path).href }],
+        };
+        await assert.rejects(picker.getDictionaryZipFile(), /Expected a ZIP file/u);
+        assert.equal(existsSync(path), false);
+      }
+    );
   } finally {
     sqlite.close();
     rmSync(root, { recursive: true, force: true });

@@ -27,11 +27,13 @@ export async function getDictionaryZipFile() {
   if (result.canceled) return null;
 
   const asset = result.assets[0];
+  const file = new File(asset.uri);
   if (!asset.name.toLowerCase().endsWith('.zip')) {
+    if (file.exists) file.delete();
     throw new Error('Expected a ZIP file');
   }
 
-  return new File(asset.uri);
+  return file;
 }
 
 export async function getFile({ src }: { src: 'file' | 'photos' }) {

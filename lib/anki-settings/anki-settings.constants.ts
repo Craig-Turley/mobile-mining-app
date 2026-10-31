@@ -26,8 +26,10 @@ export const DEFAULT_CSS = `
     font-size: 25px;
   }
 
-  .meaning {
+  .glossary {
     font-size: 20px;
+    text-align: left;
+    width: 100%;
   }
 
   #answer {

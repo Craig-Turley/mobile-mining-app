@@ -36,11 +36,11 @@ export const AnkiModelFields = [
     htmlOrder: 1,
   },
   {
-    name: 'meaning',
-    label: 'Meaning',
+    name: 'glossary',
+    label: 'Glossary',
     allowedOnFront: true,
     allowedOnBack: true,
-    html: '<div class="meaning">{{meaning}}</div>',
+    html: '<div class="glossary">{{glossary}}</div>',
     htmlOrder: 3,
   },
   {
@@ -76,7 +76,9 @@ function toModelFields<const T extends readonly { readonly name: string }[]>(
   })) as ToModelFields<T>;
 }
 
-export const ModelFields = toModelFields(AnkiModelFields);
+export const ModelFields = toModelFields(
+  AnkiModelFields.filter(({ name }) => name !== 'FrontSide')
+);
 
 export const ModelFieldNames = AnkiModelFields.map((field) => field.name);
 

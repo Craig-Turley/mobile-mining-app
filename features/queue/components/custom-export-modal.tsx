@@ -8,16 +8,14 @@ import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from 'rea
 
 interface CustomExportModalProps {
   visible: boolean;
-  close: () => void;
   initialDeckApplicationId?: number | null;
   isSubmitting?: boolean;
   onClose: () => void;
-  onSubmit: (modelApplicationId: number) => void | Promise<void>;
+  onSubmit: (deckApplicationId: number) => void | Promise<void>;
 }
 
 export function CustomExportModal({
   visible,
-  close,
   initialDeckApplicationId,
   isSubmitting = false,
   onClose,
@@ -25,7 +23,11 @@ export function CustomExportModal({
 }: CustomExportModalProps) {
   const { colors } = useAppTheme();
 
-  const { data: decks, isLoading } = useQuery(allDecksQuery, NOPQueryMapper, []);
+  const {
+    data: decks,
+    isLoading,
+    error,
+  } = useQuery(allDecksQuery, NOPQueryMapper, [visible], { enabled: visible });
 
   const [selectedDeckId, setSelectedDeckId] = useState<number | null>(
     initialDeckApplicationId ?? null
@@ -38,7 +40,7 @@ export function CustomExportModal({
 
     const initialDeckExists =
       initialDeckApplicationId != null &&
-      decks.some((model) => model.applicationId === initialDeckApplicationId);
+      decks.some((deck) => deck.applicationId === initialDeckApplicationId);
 
     if (initialDeckExists) {
       setSelectedDeckId(initialDeckApplicationId);
@@ -54,19 +56,24 @@ export function CustomExportModal({
     }
 
     onClose();
-    close();
   };
 
-  const handleSelectDeck = (modelApplicationId: number) => {
-    setSelectedDeckId(modelApplicationId);
+  const handleSelectDeck = (deckApplicationId: number) => {
+    setSelectedDeckId(deckApplicationId);
   };
 
   const handleSubmit = async () => {
-    if (selectedDeckId == null || isSubmitting) {
+    if (
+      selectedDeckId == null ||
+      isSubmitting ||
+      isLoading ||
+      error != null ||
+      !decks?.some((deck) => deck.applicationId === selectedDeckId)
+    ) {
       return;
     }
 
-    close();
+    onClose();
     await onSubmit(selectedDeckId);
   };
 
@@ -81,7 +88,7 @@ export function CustomExportModal({
       <View className="flex-1 justify-center px-6">
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Close custom add modal"
+          accessibilityLabel="Close export modal"
           className="absolute inset-0 bg-black/60"
           disabled={isSubmitting}
           onPress={handleClose}
@@ -95,7 +102,7 @@ export function CustomExportModal({
               <Text className="text-xl font-bold text-foreground">Export</Text>
 
               <Text className="mt-1 text-sm text-mutedForeground">
-                Select the deck you want to export to.
+                Select a destination deck. Each entry uses the model chosen when it was queued.
               </Text>
             </View>
 
@@ -113,22 +120,31 @@ export function CustomExportModal({
           <View className="px-5 py-5">
             <Text className="mb-2 text-sm font-semibold text-foreground">Deck</Text>
 
-            {isLoading ? (
+            {isLoading || (visible && decks == null && error == null) ? (
               <View className="items-center justify-center rounded-2xl border border-border bg-background py-8">
                 <ActivityIndicator color={colors.foreground} />
 
-                <Text className="mt-3 text-sm text-mutedForeground">Loading models…</Text>
+                <Text className="mt-3 text-sm text-mutedForeground">Loading decks…</Text>
+              </View>
+            ) : error != null ? (
+              <View className="rounded-2xl border border-border bg-background px-4 py-8">
+                <Text className="text-center font-semibold text-foreground">
+                  Could not load decks
+                </Text>
+                <Text className="mt-1 text-center text-sm text-mutedForeground">
+                  {error instanceof Error ? error.message : 'Close this dialog and try again.'}
+                </Text>
               </View>
             ) : decks == null || decks.length === 0 ? (
               <View className="items-center rounded-2xl border border-border bg-background px-4 py-8">
                 <Ionicons name="warning-outline" size={26} color={colors.foreground} />
 
                 <Text className="mt-3 text-center font-semibold text-foreground">
-                  No models are available
+                  No decks are available
                 </Text>
 
                 <Text className="mt-1 text-center text-sm text-mutedForeground">
-                  Create a model before adding this entry.
+                  Create a deck in the Decks screen before exporting the queue.
                 </Text>
               </View>
             ) : (
@@ -184,13 +200,15 @@ export function CustomExportModal({
 
             <View className="flex-1">
               <Button
-                label={isSubmitting ? 'Adding…' : 'Add'}
+                label={isSubmitting ? 'Exporting…' : 'Export'}
                 disabled={
                   selectedDeckId == null ||
                   decks == null ||
                   decks.length === 0 ||
                   isLoading ||
-                  isSubmitting
+                  isSubmitting ||
+                  error != null ||
+                  !decks.some((deck) => deck.applicationId === selectedDeckId)
                 }
                 onPress={handleSubmit}
               />

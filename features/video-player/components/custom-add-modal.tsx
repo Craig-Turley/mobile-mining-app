@@ -23,7 +23,11 @@ export function CustomAddModal({
 }: CustomAddModalProps) {
   const { colors } = useAppTheme();
 
-  const { data: models, isLoading } = useQuery(allModelsQuery, NOPQueryMapper, []);
+  const {
+    data: models,
+    isLoading,
+    error,
+  } = useQuery(allModelsQuery, NOPQueryMapper, [visible], { enabled: visible });
 
   const [selectedModelId, setSelectedModelId] = useState<number | null>(
     initialModelApplicationId ?? null
@@ -55,7 +59,13 @@ export function CustomAddModal({
   };
 
   const handleSubmit = async () => {
-    if (selectedModelId == null || isSubmitting) {
+    if (
+      selectedModelId == null ||
+      isSubmitting ||
+      isLoading ||
+      error != null ||
+      !models?.some((model) => model.applicationId === selectedModelId)
+    ) {
       return;
     }
 
@@ -106,11 +116,20 @@ export function CustomAddModal({
           <View className="px-5 py-5">
             <Text className="mb-2 text-sm font-semibold text-foreground">Model</Text>
 
-            {isLoading ? (
+            {isLoading || (visible && models == null && error == null) ? (
               <View className="items-center justify-center rounded-2xl border border-border bg-background py-8">
                 <ActivityIndicator color={colors.foreground} />
 
                 <Text className="mt-3 text-sm text-mutedForeground">Loading models…</Text>
+              </View>
+            ) : error != null ? (
+              <View className="rounded-2xl border border-border bg-background px-4 py-8">
+                <Text className="text-center font-semibold text-foreground">
+                  Could not load models
+                </Text>
+                <Text className="mt-1 text-center text-sm text-mutedForeground">
+                  {error instanceof Error ? error.message : 'Close this dialog and try again.'}
+                </Text>
               </View>
             ) : models == null || models.length === 0 ? (
               <View className="items-center rounded-2xl border border-border bg-background px-4 py-8">
@@ -181,7 +200,9 @@ export function CustomAddModal({
                   models == null ||
                   models.length === 0 ||
                   isLoading ||
-                  isSubmitting
+                  isSubmitting ||
+                  error != null ||
+                  !models.some((model) => model.applicationId === selectedModelId)
                 }
                 onPress={handleSubmit}
               />

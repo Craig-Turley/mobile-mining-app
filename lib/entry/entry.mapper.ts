@@ -1,11 +1,17 @@
-import { StoredEntry } from '@/db/dictionaries/schema';
-import { Entry } from './entry.types';
+import type { StoredTerm } from '@/db/dictionaries/schema';
+import type { Entry } from './entry.types';
 
-export function mapStoredEntryToEntry(storedEntry: StoredEntry[]): Entry[] {
-  return storedEntry.map((entry) => ({
+export function mapStoredTermToEntry(entry: StoredTerm): Entry {
+  return {
     id: entry.id,
-    kanji: JSON.parse(entry.kanjiJson),
-    kana: JSON.parse(entry.kanaJson),
-    sense: JSON.parse(entry.senseJson),
-  }));
+    dictionary: entry.dictionary,
+    expression: entry.expression,
+    reading: entry.reading,
+    definition_tags: entry.definitionTags,
+    rules: entry.rules,
+    score: entry.score,
+    sequence: entry.sequence,
+    term_tags: entry.termTags,
+    definitions_json: entry.definitionsJson,
+  };
 }

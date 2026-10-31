@@ -33,8 +33,11 @@ export const QueueScreen: React.FC = () => {
   const { data: defaults } = useAppLiveQuery(getAppDefaultsQuery(), NOPQueryMapper);
   const insets = useSafeAreaInsets();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const exportFunc = async (deckId: number) => {
+    if (isExporting) return;
+    setIsExporting(true);
     try {
       await exportQueueToAnki(deckId, queuedItems);
 
@@ -56,6 +59,9 @@ export const QueueScreen: React.FC = () => {
       );
     } catch (error) {
       console.error('Failed to export Anki deck:', error);
+      Alert.alert('Anki export failed', error instanceof Error ? error.message : String(error));
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -82,7 +88,8 @@ export const QueueScreen: React.FC = () => {
               onPress={async () => {
                 setIsModalOpen(true);
               }}
-              disabled={queuedItems.length === 0}
+              disabled={queuedItems.length === 0 || isExporting}
+              loading={isExporting}
               style={{
                 marginBottom: insets.bottom,
               }}
@@ -92,9 +99,8 @@ export const QueueScreen: React.FC = () => {
           <CustomExportModal
             visible={isModalOpen}
             initialDeckApplicationId={defaults[0]?.deckApplicationId ?? null}
-            close={() => setIsModalOpen(false)}
-            isSubmitting={false}
-            onClose={() => {}}
+            isSubmitting={isExporting}
+            onClose={() => setIsModalOpen(false)}
             onSubmit={exportFunc}
           />
         </>
@@ -104,7 +110,7 @@ export const QueueScreen: React.FC = () => {
 };
 
 const QueueRow: React.FC<{ queItem: QueueItemWithModel }> = ({ queItem }) => {
-  const title = queItem.entry.kanji.map((kanji) => kanji.text).join(', ');
+  const title = queItem.entry.expression;
   const model = queItem.model.name;
 
   return (
@@ -117,6 +123,9 @@ const QueueRow: React.FC<{ queItem: QueueItemWithModel }> = ({ queItem }) => {
         <Text className="shrink font-semibold text-foreground" numberOfLines={1}>
           {title}
         </Text>
+        {queItem.entry.reading !== '' && queItem.entry.reading !== title && (
+          <Text className="text-sm text-mutedForeground">{queItem.entry.reading}</Text>
+        )}
 
         <View className="flex-row items-center gap-1">
           <Ionicons name="layers" size={14} className="text-mutedForeground" />
