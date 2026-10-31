@@ -2,22 +2,30 @@ import { dictionariesDb } from '@/db/dictionaries/client';
 import { dictionaries, terms } from '@/db/dictionaries/schema';
 import { Token } from '@kuzulabz/expo-kagome';
 import { eq, or, desc, sql } from 'drizzle-orm';
+import { removeDictionaryStyles } from '@/lib/dictionaries/cache';
+import { deleteDictionaryAssets } from '@/lib/dictionaries/assets';
 
-export function deleteDictionaryByIdQuery(id: number) {
-  return dictionariesDb.transaction(async (tx) => {
-    const [dictionary] = await tx
-      .select({ name: dictionaries.title })
-      .from(dictionaries)
-      .where(eq(dictionaries.id, id));
+export async function deleteDictionaryByIdQuery(id: number) {
+  let title: string | undefined;
+  await dictionariesDb.$client.withExclusiveTransactionAsync(async (tx) => {
+    const dictionary = await tx.getFirstAsync<{ name: string }>(
+      'SELECT title AS name FROM dictionaries WHERE id = ?',
+      id
+    );
 
     if (!dictionary) {
-      throw new Error("Dictionary not found");
+      throw new Error('Dictionary not found');
     }
 
     const dictionaryName = dictionary.name;
-    await tx.delete(terms).where(eq(terms.dictionary, dictionaryName));
-    await tx.delete(dictionaries).where(eq(dictionaries.id, id));
+    await tx.runAsync('DELETE FROM terms WHERE dictionary = ?', dictionaryName);
+    await tx.runAsync('DELETE FROM dictionaries WHERE id = ?', id);
+    title = dictionaryName;
   });
+  if (title) {
+    removeDictionaryStyles(title);
+    deleteDictionaryAssets(title);
+  }
 }
 
 export function getDictionariesQuery() {
@@ -25,23 +33,18 @@ export function getDictionariesQuery() {
 }
 
 export function lookupTokenQuery(token: Token) {
+  return lookupExpressionQuery(token.base_form, token.reading);
+}
+
+export function lookupExpressionQuery(baseForm: string, reading?: string) {
   if (!dictionariesDb) {
     throw new Error('Lookup database is not ready');
   }
 
-  const baseForm = token.base_form;
-  const reading = token.reading;
-
-  console.log(baseForm, reading);
   return dictionariesDb
     .select()
     .from(terms)
-    .where(
-      or(
-        eq(terms.expression, baseForm),
-        eq(terms.reading, reading),
-      ),
-    )
+    .where(or(eq(terms.expression, baseForm), eq(terms.reading, reading ?? baseForm)))
     .orderBy(
       sql`CASE
         WHEN ${terms.expression} = ${baseForm}
@@ -53,7 +56,7 @@ export function lookupTokenQuery(token: Token) {
           THEN 2
         ELSE 3
       END`,
-      desc(terms.score),
+      desc(terms.score)
     );
 }
 
@@ -115,10 +118,7 @@ export type InsertInstalledInput = {
 // }
 
 export function hasDictionaryQuery() {
-  return dictionariesDb
-    .select({ id: dictionaries.id })
-    .from(dictionaries)
-    .limit(1);
+  return dictionariesDb.select({ id: dictionaries.id }).from(dictionaries).limit(1);
 }
 
 // export function hasDictionaryQuery() {

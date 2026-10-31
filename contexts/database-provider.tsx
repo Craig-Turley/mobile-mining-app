@@ -6,6 +6,8 @@ import { dictionariesDb } from '@/db/dictionaries/client';
 import appMigrations from '@/drizzle/app/migrations';
 import dictionariesMigration from '@/drizzle/dictionaries/migrations';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { initializeCssCache } from '@/lib/dictionaries/cache';
+import { getDictionariesQuery } from '@/db/features/dictionaries/dictionaries.queries';
 import {
   attachAndBuildViews /* InstalledDictionary */,
 } from '@/db/features/dictionaries/dictionaries.actions';
@@ -30,7 +32,7 @@ export function DatabaseProvider({ children }: Props) {
     );
   }
 
-  const migrationsReady = appMigration.success; /*  && dictionaryMigration.success */
+  const migrationsReady = appMigration.success && dictionaryMigration.success;
   if (!migrationsReady) {
     return (
       <SafeAreaView edges={['top', 'bottom', 'left', 'right']}>
@@ -54,6 +56,7 @@ function DictionaryAttachProvider({ children }: Props) {
     (async () => {
       try {
         await attachAndBuildViews();
+        initializeCssCache(await getDictionariesQuery());
         if (!cancelled) setStatus('ready');
       } catch (e) {
         if (!cancelled) {

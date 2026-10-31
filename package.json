@@ -21,6 +21,9 @@
     "@streamparser/json": "^0.0.26",
     "babel-plugin-inline-import": "^3.0.0",
     "clsx": "^2.1.1",
+    "css-select": "^7.0.0",
+    "css-tree": "^3.2.1",
+    "domhandler": "^6.0.1",
     "drizzle-orm": "^0.45.2",
     "expo": "~55.0.28",
     "expo-asset": "~55.0.18",
@@ -58,6 +61,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
+    "@types/css-tree": "^3.2.0",
     "@types/react": "~19.2.10",
     "babel-preset-expo": "^55.0.18",
     "better-sqlite3": "^12.10.1",

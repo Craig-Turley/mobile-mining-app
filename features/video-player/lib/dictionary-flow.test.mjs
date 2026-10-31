@@ -1,10 +1,24 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import test from 'node:test';
 import vm from 'node:vm';
 import React from 'react';
 import ts from 'typescript';
+import * as cssSelect from 'css-select';
 
 // Run: node --test features/video-player/lib/dictionary-flow.test.mjs
 // React Native hosts are stubbed: these tests verify tree structure, not device measurements.
@@ -15,6 +29,7 @@ const native = {
   View: 'View',
   Image: 'Image',
   Pressable: 'Pressable',
+  ScrollView: 'ScrollView',
   Linking: {
     openURL: (href) => {
       opened.push(href);
@@ -44,6 +59,16 @@ function loadTsx(relative, imports = {}) {
   return module.exports;
 }
 const flow = loadTsx('./dictionary-flow.ts');
+const diagnostics = loadTsx('../../../lib/dictionaries/diagnostics.ts');
+const nativeStyle = loadTsx('../../../lib/dictionaries/native-style.ts', {
+  './diagnostics': diagnostics,
+});
+const css = loadTsx('../../../lib/dictionaries/css.ts', {
+  'css-select': cssSelect,
+  './native-style': nativeStyle,
+  './diagnostics': diagnostics,
+});
+const manifest = loadTsx('../../../lib/dictionaries/manifest.ts');
 const node = (component, children = [], extra = {}) => ({
   component,
   props: {},
@@ -162,6 +187,574 @@ const rubyComponents = loadTsx('../../../components/ui/ruby.tsx', {
 const renderer = loadTsx('./render-entry-modal.tsx', {
   '@/components/ui/ruby': rubyComponents,
   './dictionary-flow': flow,
+  '@/lib/dictionaries/css': css,
+  '@/lib/dictionaries/native-style': nativeStyle,
+});
+
+const environment = { width: 360, height: 780, fontSize: 16, color: '#333333', dark: false };
+const element = (tag, children = [], extra = {}) =>
+  node(
+    {
+      div: 'View',
+      span: 'Text',
+      ul: 'List',
+      li: 'ListItem',
+      table: 'Table',
+      tr: 'TableRow',
+      td: 'TableCell',
+      a: 'Link',
+    }[tag] ?? 'Text',
+    children,
+    { source: { tag, ...extra }, props: {} }
+  );
+const styled = (children, stylesheet, env = environment) =>
+  css.styleDictionaryTree(children, css.compileCSS(stylesheet), env);
+
+test('cascade resolves specificity, important, inline styles and source order before flow', () => {
+  const tree = styled(
+    [
+      element('div', [
+        element('span', ['inside'], {
+          id: 'target',
+          class: 'word',
+          style: { display: 'inline', color: 'purple' },
+        }),
+      ]),
+    ],
+    `
+    div { display: inline; color: green; }
+    span { display: block !important; color: red; }
+    #target { color: blue; }
+    .word { color: orange !important; }
+    span.word { color: brown !important; }
+  `
+  );
+  assert.equal(tree[0].computed.display, 'inline');
+  assert.equal(tree[0].children[0].computed.display, 'block');
+  assert.equal(tree[0].children[0].computed.text.color, '#a52a2a');
+  assert.equal(flow.buildFlow(tree)[0].kind, 'block');
+  const inline = styled(
+    [element('span', ['text'], { style: { color: 'purple !important' } })],
+    '#target, span { color: red !important }'
+  );
+  assert.equal(inline[0].computed.text.color, '#800080');
+});
+
+test('synthetic text wrappers are not elements for siblings, nth-child, or empty selectors', () => {
+  const tree = styled(
+    [
+      element('div', [
+        node('Text', ['prefix']),
+        element('span', []),
+        node('Text', ['middle']),
+        element('span', ['last']),
+      ]),
+    ],
+    `
+    div > span:first-child { color: red; }
+    span:empty::before { content: '△'; color: green; }
+    span + span:nth-child(2) { color: blue; }
+  `
+  );
+  const first = tree[0].children[1];
+  const second = tree[0].children[3];
+  assert.equal(first.computed.text.color, '#ff0000');
+  assert.equal(first.children[0].children[0], '△');
+  assert.equal(first.children[0].computed.text.color, '#008000');
+  assert.equal(second.computed.text.color, '#0000ff');
+});
+
+test('attribute selectors preserve Yomitan data-sc namespace instead of treating data.class as class', () => {
+  const tree = styled(
+    [element('span', ['label'], { data: { class: 'tag', content: 'misc-info' } })],
+    `
+    .tag { display: none; }
+    [data-sc-class="tag"][data-sc-content="misc-info"] { background-color: brown; padding: .2em .3em; margin-right: .5em; }
+  `
+  );
+  assert.equal(tree[0].computed.display, 'inline');
+  assert.equal(tree[0].computed.box.backgroundColor, '#a52a2a');
+  assert.equal(tree[0].computed.box.paddingLeft, 4.8);
+  assert.equal(tree[0].computed.box.marginRight, 8);
+  assert.equal(flow.buildFlow(tree)[0].atoms[0].kind, 'box');
+});
+
+test('font sizes, custom properties, calc and inherited properties resolve without compounding em', () => {
+  const tree = styled(
+    [
+      element('div', [
+        node('Text', ['plain']),
+        element('span', ['small'], { style: { marginLeft: 0.5 } }),
+      ]),
+    ],
+    `
+    div { --base: 20px; font-size: var(--base); color: purple; margin-left: 12px; line-height: 1.2; }
+    span { font-size: .8em; padding: calc(2em / var(--divisor, 4)); border: 1px solid currentColor; }
+  `
+  );
+  const parent = tree[0],
+    synthetic = parent.children[0],
+    child = parent.children[1];
+  assert.equal(synthetic.computed.text.fontSize, 20);
+  assert.equal(child.computed.text.fontSize, 16);
+  assert.equal(child.computed.text.lineHeight, 19.2);
+  assert.equal(child.computed.box.paddingTop, 8);
+  assert.equal(child.computed.box.marginLeft, 8);
+  assert.equal(synthetic.computed.box.marginLeft, undefined);
+  assert.equal(child.computed.box.borderTopColor, '#800080');
+});
+
+test('functional selector specificity uses maximum :is and zero :where weight', () => {
+  const tree = styled(
+    [element('span', ['value'], { class: 'word' })],
+    `
+    :is(#other, span) { color: red; }
+    span.word { color: blue; }
+    :where(#target, .word) { color: green; }
+  `
+  );
+  assert.equal(tree[0].computed.text.color, '#ff0000');
+});
+
+test('overlapping media rules honor viewport, orientation and color scheme', () => {
+  const stylesheet = `span { color: black } @media (max-width: 400px) { span { color: red } }
+    @media screen and (min-width: 320px) and (prefers-color-scheme: dark) { span { color: blue } }
+    @media (orientation: landscape) { span { display: block } }`;
+  assert.equal(styled([element('span')], stylesheet)[0].computed.text.color, '#ff0000');
+  const dark = styled([element('span')], stylesheet, { ...environment, dark: true })[0];
+  assert.equal(dark.computed.text.color, '#0000ff');
+  const wide = styled([element('span')], stylesheet, {
+    ...environment,
+    width: 800,
+    height: 360,
+  })[0];
+  assert.equal(wide.computed.text.color, '#000000');
+  assert.equal(wide.computed.display, 'block');
+  assert.equal(css.matchesMedia('(width <= 400px)', environment), true);
+});
+
+test('HTML whitespace collapses across spans, while pre-wrap and nonbreaking spaces survive', () => {
+  const tree = styled(
+    [element('div', [node('Text', ['  hello \n ']), element('span', [' \t world\u00a0!  '])])],
+    ''
+  );
+  const atoms = flow.buildFlow(tree[0].children, [tree[0]])[0].atoms;
+  assert.equal(atoms.map((a) => a.text).join(''), 'hello world\u00a0!');
+  const pre = styled([element('span', [' a\n  b '])], 'span { white-space: pre-wrap }');
+  assert.equal(flow.buildFlow(pre)[0].atoms[0].text, ' a\n  b ');
+});
+
+test('native output honors stylesheet layout overrides, hidden nodes, styled tags and generated symbols', () => {
+  const tree = render(
+    [
+      element('div', [
+        element('span', ['inline']),
+        element('div', [' also inline']),
+        element('span', ['block']),
+        element('span', []),
+        element('span', ['hidden']),
+      ]),
+    ],
+    {
+      environment,
+      stylesheet: css.compileCSS(
+        `div div { display: inline } span:nth-child(3) { display: block } span:empty::before { content: '✕' } span:last-child { display: none } span:first-child { background: brown; padding: .2em .3em; }`
+      ),
+    }
+  );
+  assert.equal(content(tree), 'inline also inlineblock✕');
+  assert.ok(hosts(tree, 'View').some((v) => v.props.style?.backgroundColor === '#a52a2a'));
+  for (const textNode of hosts(tree, 'Text'))
+    assert.equal(hosts(textNode.children, 'View').length, 0);
+});
+
+test('sRGB color mixing preserves alpha and theme variable fallbacks', () => {
+  const tree = styled(
+    [element('div')],
+    'div { background-color: color-mix(in srgb, var(--text-color, var(--fg, #333)) 5%, transparent); }'
+  );
+  assert.equal(tree[0].computed.box.backgroundColor, 'rgba(51,51,51,0.05)');
+  assert.equal(nativeStyle.cssColor('color-mix(in srgb, lime, #333)', '#333'), 'rgba(26,153,26,1)');
+});
+
+test('manifest rejects unsupported schemas, traversal, collisions and inconsistent inventory', () => {
+  const valid = {
+    schemaVersion: 2,
+    format: 'react-native-component-tree',
+    entries: 1,
+    termBanks: [{ path: 'term_bank_1.json', entries: 1 }],
+    styles: 'styles.css',
+    assets: [{ path: 'assets/image.png', sourcePath: 'image.png' }],
+  };
+  assert.equal(manifest.parseManifest(valid), valid);
+  for (const invalid of [
+    { ...valid, schemaVersion: 1 },
+    { ...valid, entries: 2 },
+    { ...valid, styles: '../styles.css' },
+    { ...valid, styles: 'index.json' },
+    { ...valid, assets: [{ path: '/image.png', sourcePath: 'image.png' }] },
+  ])
+    assert.throws(() => manifest.parseManifest(invalid));
+});
+
+test('legacy schema-2 nested stylesheets still resolve with correct parent specificity', () => {
+  const tree = styled(
+    [element('div', [element('span', ['nested'])])],
+    `
+    div, #other { color: red; & > span { color: blue; &::before { content: '△' } } }
+    div span { color: green }
+  `
+  );
+  assert.equal(tree[0].children[0].computed.text.color, '#0000ff');
+  assert.equal(tree[0].children[0].children[0].children[0], '△');
+});
+
+test('variables resolve before shorthand expansion and invalid colors do not reach native styles', () => {
+  const tree = styled(
+    [element('span')],
+    'span { --pad: 1em 2em; --border: 2px solid purple; padding: var(--pad); border: var(--border); color: invalidcolor; }'
+  );
+  assert.equal(tree[0].computed.box.paddingLeft, 32);
+  assert.equal(tree[0].computed.box.paddingTop, 16);
+  assert.equal(tree[0].computed.box.borderLeftWidth, 2);
+  assert.equal(tree[0].computed.box.borderLeftColor, '#800080');
+  assert.equal(tree[0].computed.text.color, environment.color);
+});
+
+test('native text alignment, initial resets, opacity and scaled em boxes use computed styles', () => {
+  const tree = render([element('div', [element('span', ['center'])])], {
+    environment,
+    stylesheet: css.compileCSS(
+      'div { text-align: center; font-weight: bold } span { font-weight: initial }'
+    ),
+  });
+  assert.equal(hosts(tree, 'Text')[0].props.style.textAlign, 'center');
+  assert.equal(hosts(tree, 'Text').at(-1).props.style.fontWeight, 'normal');
+  const scaled = styled([element('span', ['scaled'])], 'span { padding: 1em; opacity: .5 }', {
+    ...environment,
+    fontScale: 1.5,
+  });
+  assert.equal(scaled[0].computed.box.paddingLeft, 24);
+  assert.equal(scaled[0].computed.box.opacity, 0.5);
+  assert.equal(flow.buildFlow(scaled)[0].atoms[0].kind, 'box');
+  assert.equal(css.matchesMedia('not (unknown-feature: on)', environment), false);
+});
+
+test('list display overrides and CSS custom markers are reflected in native content', () => {
+  const list = element('ul', [
+    element('li', ['one']),
+    element('li', ['two']),
+    element('li', ['hidden']),
+  ]);
+  const tree = render([list], {
+    environment,
+    stylesheet: css.compileCSS(
+      'ul { list-style-type: "＊" } li:nth-child(2) { display: block } li:last-child { display: none }'
+    ),
+  });
+  assert.equal(content(tree), '＊onetwo');
+});
+
+test('preformatted lines and block-displayed ruby retain their native semantic layout', () => {
+  const pre = render([element('span', ['first\nsecond'])], {
+    environment,
+    stylesheet: css.compileCSS('span { white-space: pre }'),
+  });
+  assert.equal(hosts(pre, 'View').filter((v) => v.props.style?.flexWrap === 'nowrap').length, 2);
+  assert.equal(content(pre), 'firstsecond');
+  const blockRuby = ruby();
+  blockRuby.source = { tag: 'ruby' };
+  const tree = render([blockRuby], {
+    environment,
+    stylesheet: css.compileCSS('ruby { display: block }'),
+  });
+  assert.equal(content(tree), 'かん漢');
+  for (const text of hosts(tree, 'Text')) assert.equal(hosts(text.children, 'View').length, 0);
+});
+
+test('custom properties inherit computed values and support function fallbacks without changing quoted content', () => {
+  const tree = styled(
+    [element('div', [element('span', [])])],
+    `
+    div { --base: red; --alias: var(--base); }
+    span { --base: blue; color: var(--alias); background-color: var(--missing, rgb(1, 2, 3)); }
+    span::before { content: "var(--literal)"; }
+  `
+  );
+  const span = tree[0].children[0];
+  assert.equal(span.computed.text.color, '#ff0000');
+  assert.equal(span.computed.box.backgroundColor, 'rgba(1,2,3,1)');
+  assert.equal(span.children[0].children[0], 'var(--literal)');
+});
+
+test(
+  'real dictionary transformer output renders as valid native host trees',
+  { skip: !process.env.YOMITAN_SOURCE },
+  () => {
+    const source = process.env.YOMITAN_SOURCE;
+    const root = mkdtempSync(join(tmpdir(), 'dictionary-native-e2e-'));
+    try {
+      const input = join(root, 'input'),
+        output = join(root, 'output');
+      mkdirSync(input);
+      copyFileSync(join(source, 'index.json'), join(input, 'index.json'));
+      if (existsSync(join(source, 'styles.css')))
+        copyFileSync(join(source, 'styles.css'), join(input, 'styles.css'));
+      const entries = JSON.parse(readFileSync(join(source, 'term_bank_1.json'), 'utf8')).slice(
+        0,
+        8
+      );
+      writeFileSync(join(input, 'term_bank_1.json'), JSON.stringify(entries));
+      const assets = new Set();
+      function collect(value) {
+        if (!value || typeof value !== 'object') return;
+        if (typeof value.path === 'string') assets.add(value.path);
+        Object.values(value).forEach(collect);
+      }
+      collect(entries);
+      for (const path of assets) {
+        mkdirSync(dirname(join(input, path)), { recursive: true });
+        copyFileSync(join(source, path), join(input, path));
+      }
+      const result = spawnSync('cargo', ['run', '--quiet', '--', input, '--output', output], {
+        cwd: process.env.YOMITAN_TRANSFORMER ?? join(source, '..'),
+        encoding: 'utf8',
+      });
+      assert.equal(result.status, 0, result.stderr);
+      const converted = JSON.parse(readFileSync(join(output, 'term_bank_1.json'), 'utf8'));
+      const inventory = manifest.parseManifest(
+        JSON.parse(readFileSync(join(output, 'manifest.json'), 'utf8'))
+      );
+      const stylesheet = css.compileCSS(
+        inventory.styles ? readFileSync(join(output, inventory.styles), 'utf8') : ''
+      );
+      const legacyStylesheet = existsSync(join(source, 'styles.css'))
+        ? css.compileCSS(readFileSync(join(source, 'styles.css'), 'utf8'))
+        : [];
+      assert.equal(converted.length, 8);
+      for (const entry of converted)
+        for (const definition of entry[5]) {
+          if (definition.type !== 'content') continue;
+          const tree = expand(
+            renderer.renderDefinition(definition, {
+              environment,
+              stylesheet,
+              resolveAsset: (path) => `file://${join(output, path)}`,
+            })
+          );
+          const legacyTree = expand(
+            renderer.renderDefinition(definition, {
+              environment,
+              stylesheet: legacyStylesheet,
+              resolveAsset: (path) => `file://${join(output, path)}`,
+            })
+          );
+          assert.equal(
+            content(legacyTree),
+            content(tree),
+            'legacy nesting must retain the same text and generated symbols'
+          );
+          for (const text of hosts(tree, 'Text'))
+            assert.equal(hosts(text.children, 'View').length, 0);
+          for (const view of hosts(tree, 'View'))
+            assert.ok(
+              view.children.every((child) => typeof child !== 'string'),
+              'raw text inside native View'
+            );
+          assert.ok(content(tree).length > 0 || hosts(tree, 'Image').length > 0);
+        }
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  }
+);
+
+test('import persists CSS/assets transactionally, rolls back failed banks, and invalidates on deletion', async () => {
+  const SQLite = require('better-sqlite3');
+  const { drizzle } = require('drizzle-orm/better-sqlite3');
+  const root = mkdtempSync(join(tmpdir(), 'dictionary-import-test-'));
+  const sqlite = new SQLite(':memory:');
+  let failPromotion = false;
+  class Directory {
+    constructor(...parts) {
+      this.uri = join(...parts.map((p) => p.uri ?? p));
+    }
+    get exists() {
+      return existsSync(this.uri);
+    }
+    get parentDirectory() {
+      return new Directory(dirname(this.uri));
+    }
+    create() {
+      mkdirSync(this.uri, { recursive: true });
+    }
+    delete() {
+      rmSync(this.uri, { recursive: true });
+    }
+    move(destination) {
+      if (failPromotion) throw new Error('Simulated file promotion failure');
+      renameSync(this.uri, destination.uri);
+      this.uri = destination.uri;
+    }
+  }
+  class File {
+    constructor(...parts) {
+      this.uri = join(...parts.map((p) => p.uri ?? p));
+    }
+    get exists() {
+      return existsSync(this.uri);
+    }
+    get name() {
+      return this.uri.split('/').at(-1);
+    }
+    get parentDirectory() {
+      return new Directory(dirname(this.uri));
+    }
+    async text() {
+      return readFileSync(this.uri, 'utf8');
+    }
+    copy(destination) {
+      copyFileSync(this.uri, destination.uri);
+    }
+    stream() {
+      const bytes = readFileSync(this.uri);
+      return new ReadableStream({
+        start(controller) {
+          for (let offset = 0; offset < bytes.length; offset += 11)
+            controller.enqueue(bytes.subarray(offset, offset + 11));
+          controller.close();
+        },
+      });
+    }
+  }
+  const nativeFs = { Directory, File, Paths: { document: join(root, 'documents') } };
+  const assets = loadTsx('../../../lib/dictionaries/assets.ts', {
+    'expo-file-system': nativeFs,
+    './manifest': manifest,
+  });
+  const cache = loadTsx('../../../lib/dictionaries/cache.ts', { './css': css });
+  const schema = loadTsx('../../../db/dictionaries/schema.ts');
+  sqlite.exec(`CREATE TABLE dictionaries (id INTEGER PRIMARY KEY, title TEXT NOT NULL UNIQUE, revision TEXT NOT NULL,
+    format INTEGER, version INTEGER, author TEXT, description TEXT, attribution TEXT, source_language TEXT, target_language TEXT, css TEXT);
+    CREATE TABLE terms (id INTEGER PRIMARY KEY, dictionary TEXT, expression TEXT, reading TEXT, definition_tags TEXT, rules TEXT, score INTEGER, definitions_json TEXT, sequence INTEGER, term_tags TEXT);`);
+  const orm = drizzle(sqlite);
+  const params = (values) => (values.length === 1 && Array.isArray(values[0]) ? values[0] : values);
+  const tx = {
+    getFirstAsync: async (sql, ...values) => sqlite.prepare(sql).get(...params(values)),
+    runAsync: async (sql, ...values) => sqlite.prepare(sql).run(...params(values)),
+    prepareAsync: async (sql) => ({
+      executeAsync: async (values) => sqlite.prepare(sql).run(...values),
+      finalizeAsync: async () => {},
+    }),
+  };
+  const dictionariesDb = {
+    insert: (...args) => orm.insert(...args),
+    $client: {
+      withExclusiveTransactionAsync: async (fn) => {
+        sqlite.exec('BEGIN');
+        try {
+          await fn(tx);
+          sqlite.exec('COMMIT');
+        } catch (error) {
+          sqlite.exec('ROLLBACK');
+          throw error;
+        }
+      },
+    },
+  };
+  const importer = loadTsx('../../../db/lib/dictionary-to-sqlite.ts', {
+    'expo-file-system': nativeFs,
+    '../dictionaries/client': { dictionariesDb },
+    '../dictionaries/schema': schema,
+    '@/lib/dictionaries/manifest': manifest,
+    '@/lib/dictionaries/assets': assets,
+    '@/lib/dictionaries/cache': cache,
+    '@/lib/dictionaries/css': css,
+  });
+  const queries = loadTsx('../../../db/features/dictionaries/dictionaries.queries.ts', {
+    '@/db/dictionaries/client': { dictionariesDb },
+    '@/db/dictionaries/schema': schema,
+    '@/lib/dictionaries/cache': cache,
+    '@/lib/dictionaries/assets': assets,
+  });
+  const source = join(root, 'source');
+  mkdirSync(join(source, 'assets'), { recursive: true });
+  const inventory = {
+    schemaVersion: 2,
+    format: 'react-native-component-tree',
+    entries: 1,
+    termBanks: [{ path: 'term_bank_1.json', entries: 1 }],
+    styles: 'styles.css',
+    assets: [{ sourcePath: 'image.png', path: 'assets/image.png' }],
+  };
+  const definition = {
+    type: 'content',
+    children: [
+      element('span', ['日本語']),
+      node('DictionaryImage', [], { props: { assetPath: 'assets/image.png' } }),
+    ],
+  };
+  writeFileSync(join(source, 'manifest.json'), JSON.stringify(inventory));
+  writeFileSync(
+    join(source, 'index.json'),
+    JSON.stringify({ title: 'Test', revision: '1', format: 3 })
+  );
+  writeFileSync(
+    join(source, 'term_bank_1.json'),
+    JSON.stringify([['語', 'ご', '', '', 0, [definition], 1, '']])
+  );
+  writeFileSync(join(source, 'styles.css'), 'span { color: red }');
+  writeFileSync(join(source, 'assets/image.png'), 'image-bytes');
+  try {
+    await importer.convert(source);
+    assert.equal(sqlite.prepare('SELECT css FROM dictionaries').get().css, 'span { color: red }');
+    assert.equal(sqlite.prepare('SELECT count(*) AS n FROM terms').get().n, 1);
+    assert.equal(
+      readFileSync(assets.resolveDictionaryAsset('Test', 'assets/image.png'), 'utf8'),
+      'image-bytes'
+    );
+    assert.equal(cache.getDictionaryStyles('Test').length, 1);
+    await assert.rejects(importer.convert(source), /already imported/u);
+    assert.equal(assets.dictionaryAssetDirectory('Test').exists, true);
+
+    writeFileSync(
+      join(source, 'index.json'),
+      JSON.stringify({ title: 'Broken', revision: '1', format: 3 })
+    );
+    writeFileSync(join(source, 'manifest.json'), JSON.stringify({ ...inventory, entries: 2 }));
+    await assert.rejects(importer.convert(source), /Inconsistent/u);
+    writeFileSync(
+      join(source, 'manifest.json'),
+      JSON.stringify({
+        ...inventory,
+        entries: 2,
+        termBanks: [{ path: 'term_bank_1.json', entries: 2 }],
+      })
+    );
+    await assert.rejects(importer.convert(source), /count mismatch/u);
+    assert.equal(
+      sqlite.prepare("SELECT count(*) AS n FROM terms WHERE dictionary = 'Broken'").get().n,
+      0
+    );
+    assert.equal(assets.dictionaryAssetDirectory('Broken').exists, false);
+
+    writeFileSync(join(source, 'manifest.json'), JSON.stringify(inventory));
+    failPromotion = true;
+    await assert.rejects(importer.convert(source), /promotion failure/u);
+    failPromotion = false;
+    assert.equal(sqlite.prepare('SELECT count(*) AS n FROM dictionaries').get().n, 1);
+    assert.equal(
+      readdirSync(join(root, 'documents/dictionaries')).some((p) => p.startsWith('.import-')),
+      false
+    );
+    await queries.deleteDictionaryByIdQuery(sqlite.prepare('SELECT id FROM dictionaries').get().id);
+    assert.equal(sqlite.prepare('SELECT count(*) AS n FROM terms').get().n, 0);
+    assert.equal(assets.dictionaryAssetDirectory('Test').exists, false);
+    assert.equal(cache.getDictionaryStyles('Test').length, 0);
+  } finally {
+    sqlite.close();
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 function expand(value) {

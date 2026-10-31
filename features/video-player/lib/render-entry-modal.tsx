@@ -1,26 +1,56 @@
 import { Ruby } from '@/components/ui/ruby';
-import type { ComponentNode, StoredDefinition } from '@/db/dictionaries/schema';
-import React from 'react';
-import { Image, Linking, Pressable, Text, View, type TextStyle } from 'react-native';
-import { buildFlow, wrapInlineAtoms, type InlineAtom } from './dictionary-flow';
+import type { StoredDefinition } from '@/db/dictionaries/schema';
+import React, { useState } from 'react';
+import {
+  Image,
+  Linking,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+  type TextStyle,
+  type ImageStyle,
+} from 'react-native';
+import {
+  buildFlow,
+  groupRubyChildren,
+  wrapInlineAtoms,
+  type InlineAtom,
+  type LayoutNode,
+} from './dictionary-flow';
+import {
+  styleDictionaryTree,
+  type StyleEnvironment,
+  type Stylesheet,
+} from '@/lib/dictionaries/css';
+import { cssLength } from '@/lib/dictionaries/native-style';
 
 export interface DictionaryRenderOptions {
   onInternalLink?: (href: string) => void;
   resolveAsset?: (assetPath: string) => string | undefined;
+  stylesheet?: Stylesheet;
+  environment?: StyleEnvironment;
 }
 
-type Child = ComponentNode | string;
+type Child = LayoutNode | string;
 
 export function renderDefinition(
   definition: Extract<StoredDefinition, { type: 'content' }>,
   options: DictionaryRenderOptions = {}
 ): React.ReactNode {
-  return renderChildren(definition.children, [], options);
+  const children = options.environment
+    ? styleDictionaryTree(definition.children, options.stylesheet ?? [], options.environment)
+    : definition.children;
+  return renderChildren(children, [], options);
 }
 
-function textStyle(ancestors: ComponentNode[], annotation = false): TextStyle {
+function textStyle(ancestors: LayoutNode[], annotation = false): TextStyle {
   const style: TextStyle = { fontSize: annotation ? 10 : 16, lineHeight: annotation ? 14 : 24 };
   for (const node of ancestors) {
+    if (node.computed) {
+      Object.assign(style, node.computed.text);
+      continue;
+    }
     if (node.component === 'Link') {
       style.color = '#3b82f6';
       style.textDecorationLine = 'underline';
@@ -35,7 +65,7 @@ function textStyle(ancestors: ComponentNode[], annotation = false): TextStyle {
   return style;
 }
 
-function linkPress(ancestors: ComponentNode[], options: DictionaryRenderOptions) {
+function linkPress(ancestors: LayoutNode[], options: DictionaryRenderOptions) {
   const link = [...ancestors].reverse().find((node) => node.component === 'Link');
   const href = link?.props.href;
   if (typeof href !== 'string') return undefined;
@@ -46,10 +76,19 @@ function linkPress(ancestors: ComponentNode[], options: DictionaryRenderOptions)
 }
 
 function renderText(atoms: InlineAtom[], options: DictionaryRenderOptions, annotation: boolean) {
+  const nowrap = atoms.every((atom) =>
+    ['nowrap', 'pre'].includes(atom.ancestors.at(-1)?.computed?.whiteSpace ?? '')
+  );
   return (
     <Text
+      numberOfLines={nowrap ? 1 : undefined}
+      ellipsizeMode="clip"
       className="text-foreground"
-      style={{ ...textStyle([], annotation), flexShrink: 1, maxWidth: '100%' }}>
+      style={{
+        ...textStyle(atoms[0]?.ancestors ?? [], annotation),
+        flexShrink: 1,
+        maxWidth: '100%',
+      }}>
       {atoms.map((atom, index) =>
         atom.kind === 'break' ? (
           '\n'
@@ -66,19 +105,32 @@ function renderText(atoms: InlineAtom[], options: DictionaryRenderOptions, annot
   );
 }
 
-function renderImage(node: ComponentNode, options: DictionaryRenderOptions) {
+function renderImage(node: LayoutNode, options: DictionaryRenderOptions) {
   const assetPath = node.props.assetPath;
   const uri = typeof assetPath === 'string' ? options.resolveAsset?.(assetPath) : undefined;
   const source = uri ?? (typeof node.props.src === 'string' ? node.props.src : undefined);
   if (!source) return null;
-  const width = typeof node.props.width === 'number' ? node.props.width : 120;
-  const height = typeof node.props.height === 'number' ? node.props.height : 120;
+  const dimension = (name: 'width' | 'height') => {
+    const value = node.props[name];
+    if (typeof value !== 'number') return undefined;
+    const unit = node.props[`${name}Units`] ?? 'px';
+    const env = options.environment;
+    const scale = env?.fontScale ?? 1;
+    return env
+      ? cssLength(`${value}${unit}`, (node.computed?.text.fontSize ?? 16) * scale, {
+          ...env,
+          fontSize: env.fontSize * scale,
+        })
+      : value;
+  };
+  const width = dimension('width') ?? 120;
+  const height = dimension('height') ?? 120;
   return (
     <Image
       source={{ uri: source }}
       accessibilityLabel={typeof node.props.alt === 'string' ? node.props.alt : undefined}
       resizeMode="contain"
-      style={{ width, height, maxWidth: '100%' }}
+      style={{ width, height, maxWidth: '100%', ...node.computed?.box } as ImageStyle}
     />
   );
 }
@@ -88,7 +140,11 @@ function renderInline(
   options: DictionaryRenderOptions,
   annotation = false
 ): React.ReactNode {
-  if (atoms.every((atom) => atom.kind === 'text' || atom.kind === 'break')) {
+  const nowrap = atoms.every((atom) =>
+    ['nowrap', 'pre'].includes(atom.ancestors.at(-1)?.computed?.whiteSpace ?? '')
+  );
+  const pre = atoms.some((atom) => atom.ancestors.at(-1)?.computed?.whiteSpace === 'pre');
+  if (!pre && atoms.every((atom) => atom.kind === 'text' || atom.kind === 'break')) {
     return renderText(atoms, options, annotation);
   }
   return (
@@ -96,47 +152,64 @@ function renderInline(
       {wrapInlineAtoms(atoms).map((line, lineIndex) => (
         <View
           key={lineIndex}
-          style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+          style={{
+            flexDirection: 'row',
+            flexWrap: nowrap ? 'nowrap' : 'wrap',
+            alignItems: 'flex-end',
+          }}>
           {line.length === 0
             ? renderText([{ kind: 'text', text: '\u200b', ancestors: [] }], options, annotation)
             : line.map((unit, index) => (
-              <View
-                key={index}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'flex-end',
-                  maxWidth: '100%',
-                  flexShrink: 0,
-                }}>
-                {unit.every((atom) => atom.kind === 'text')
-                  ? renderText(unit, options, annotation)
-                  : unit.map((atom, atomIndex) => (
-                    <React.Fragment key={atomIndex}>
-                      {atom.kind === 'ruby' ? (
-                        <Ruby
-                          groups={[
-                            {
-                              base: renderChildren(atom.base, atom.ancestors, options),
-                              annotation: renderChildren(
-                                atom.annotation,
-                                atom.ancestors,
-                                options,
-                                true
-                              ),
-                            },
-                          ]}
-                        />
-                      ) : atom.kind === 'image' ? (
-                        <Pressable onPress={linkPress(atom.ancestors, options)}>
-                          {renderImage(atom.node, options)}
-                        </Pressable>
-                      ) : (
-                        renderText([atom], options, annotation)
-                      )}
-                    </React.Fragment>
-                  ))}
-              </View>
-            ))}
+                <View
+                  key={index}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'flex-end',
+                    maxWidth: '100%',
+                    flexShrink: 0,
+                  }}>
+                  {unit.every((atom) => atom.kind === 'text')
+                    ? renderText(unit, options, annotation)
+                    : unit.map((atom, atomIndex) => (
+                        <React.Fragment key={atomIndex}>
+                          {atom.kind === 'ruby' ? (
+                            <Ruby
+                              style={atom.ancestors.at(-1)?.computed?.box}
+                              groups={[
+                                {
+                                  base: renderChildren(atom.base, atom.ancestors, options),
+                                  annotation: renderChildren(
+                                    atom.annotation,
+                                    atom.ancestors,
+                                    options,
+                                    true
+                                  ),
+                                },
+                              ]}
+                            />
+                          ) : atom.kind === 'box' ? (
+                            <View
+                              style={{
+                                ...atom.node.computed?.box,
+                                maxWidth: '100%',
+                                alignSelf:
+                                  atom.node.computed?.values['vertical-align'] === 'super'
+                                    ? 'flex-start'
+                                    : 'flex-end',
+                              }}>
+                              {renderContents(atom.node, atom.ancestors, options, annotation)}
+                            </View>
+                          ) : atom.kind === 'image' ? (
+                            <Pressable onPress={linkPress(atom.ancestors, options)}>
+                              {renderImage(atom.node, options)}
+                            </Pressable>
+                          ) : (
+                            renderText([atom], options, annotation)
+                          )}
+                        </React.Fragment>
+                      ))}
+                </View>
+              ))}
         </View>
       ))}
     </View>
@@ -145,7 +218,7 @@ function renderInline(
 
 function renderChildren(
   children: Child[],
-  ancestors: ComponentNode[],
+  ancestors: LayoutNode[],
   options: DictionaryRenderOptions,
   annotation = false
 ): React.ReactNode {
@@ -159,26 +232,25 @@ function renderChildren(
 }
 
 function renderBlock(
-  node: ComponentNode,
-  ancestors: ComponentNode[],
+  node: LayoutNode,
+  ancestors: LayoutNode[],
   options: DictionaryRenderOptions
 ): React.ReactNode {
   const context = [...ancestors, node];
-  const children = renderChildren(node.children, context, options);
+  const children = renderContents(node, context, options);
+  const box = node.computed?.box;
+  if (node.computed?.display === 'flex') return <View style={box}>{children}</View>;
+  if (node.computed?.display === 'list-item')
+    return renderListItem(node, ancestors, options, 0, false);
   switch (node.component) {
     case 'List':
       return (
-        <View className="my-1 gap-1 pl-4">
+        <View style={{ paddingLeft: 16, marginVertical: 4, ...box }}>
           {node.children.map((child, index) =>
             typeof child !== 'string' && child.component === 'ListItem' ? (
-              <View key={index} className="flex-row items-start">
-                <Text className="mr-2 text-foreground" style={textStyle(context)}>
-                  {node.props.ordered ? `${index + 1}.` : '\u2022'}
-                </Text>
-                <View className="flex-1">
-                  {renderChildren(child.children, [...context, child], options)}
-                </View>
-              </View>
+              <React.Fragment key={index}>
+                {renderListItem(child, context, options, index, node.props.ordered === true)}
+              </React.Fragment>
             ) : (
               <React.Fragment key={index}>
                 {renderChildren([child], context, options)}
@@ -188,23 +260,136 @@ function renderBlock(
         </View>
       );
     case 'ListItem':
+      return renderListItem(node, ancestors, options, 0, false);
+    case 'Table':
       return (
-        <View className="flex-row items-start">
-          <Text className="mr-2 text-foreground">{'\u2022'}</Text>
-          <View className="flex-1">{children}</View>
+        <ScrollView horizontal style={{ maxWidth: '100%' }}>
+          <View style={{ marginVertical: 8, ...box }}>{children}</View>
+        </ScrollView>
+      );
+    case 'TableRow':
+      return <View style={{ flexDirection: 'row', ...box }}>{children}</View>;
+    case 'TableCell':
+      return (
+        <View
+          accessibilityRole={node.props.header ? 'header' : undefined}
+          style={{
+            flexGrow: typeof node.props.colSpan === 'number' ? node.props.colSpan : 1,
+            flexBasis: 0,
+            minWidth: 48,
+            padding: 4,
+            ...box,
+          }}>
+          {children}
         </View>
       );
-    case 'Table':
-      return <View className="my-2 border border-gray-300">{children}</View>;
-    case 'TableRow':
-      return <View className="flex-row border-b border-gray-300">{children}</View>;
-    case 'TableCell':
-      return <View className="flex-1 border-r border-gray-300 p-2">{children}</View>;
     case 'Details':
-      return <View className="my-2">{children}</View>;
+      return <DictionaryDetails node={node} ancestors={ancestors} options={options} />;
     case 'DictionaryImage':
       return renderImage(node, options);
+    case 'Ruby':
+      return (
+        <View style={box}>
+          <Ruby
+            groups={groupRubyChildren(node.children).map((group) => ({
+              base: renderChildren(group.base, context, options),
+              annotation: renderChildren(group.annotation, context, options, true),
+            }))}
+          />
+        </View>
+      );
     default:
-      return <View>{children}</View>;
+      return <View style={box}>{children}</View>;
   }
+}
+
+function renderContents(
+  node: LayoutNode,
+  context: LayoutNode[],
+  options: DictionaryRenderOptions,
+  annotation = false
+) {
+  if (['flex', 'inline-flex'].includes(node.computed?.display ?? '')) {
+    return node.children.map((child, index) => (
+      <React.Fragment key={index}>
+        {renderChildren([child], context, options, annotation)}
+      </React.Fragment>
+    ));
+  }
+  return renderChildren(node.children, context, options, annotation);
+}
+
+function renderListItem(
+  node: LayoutNode,
+  ancestors: LayoutNode[],
+  options: DictionaryRenderOptions,
+  index: number,
+  ordered: boolean
+) {
+  if (node.computed?.display === 'none') return null;
+  if (node.computed && node.computed.display !== 'list-item') {
+    return ['inline', 'inline-block', 'inline-flex', 'contents'].includes(node.computed.display) ? (
+      renderChildren([node], ancestors, options)
+    ) : (
+      <View style={node.computed.box}>
+        {renderChildren(node.children, [...ancestors, node], options)}
+      </View>
+    );
+  }
+  const context = [...ancestors, node];
+  const marker = node.computed?.values['list-style-type'] ?? (ordered ? 'decimal' : 'disc');
+  const symbol =
+    marker === 'none'
+      ? ''
+      : marker === 'decimal'
+        ? `${index + 1}.`
+        : marker === 'circle'
+          ? '◦'
+          : marker === 'square'
+            ? '▪'
+            : /^['"]/u.test(marker)
+              ? marker.slice(1, -1)
+              : '•';
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'flex-start', ...node.computed?.box }}>
+      {symbol !== '' && <Text style={{ marginRight: 8, ...textStyle(context) }}>{symbol}</Text>}
+      <View style={{ flex: 1 }}>{renderChildren(node.children, context, options)}</View>
+    </View>
+  );
+}
+
+function DictionaryDetails({
+  node,
+  ancestors,
+  options,
+}: {
+  node: LayoutNode;
+  ancestors: LayoutNode[];
+  options: DictionaryRenderOptions;
+}) {
+  const [open, setOpen] = useState(node.props.open === true);
+  const summary = node.children.find(
+    (child) => typeof child !== 'string' && child.component === 'Summary'
+  );
+  const context = [...ancestors, node];
+  return (
+    <View style={node.computed?.box}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
+        onPress={() => setOpen((value) => !value)}>
+        {summary ? (
+          renderChildren([summary], context, options)
+        ) : (
+          <Text style={textStyle(context)}>{open ? '▾ Details' : '▸ Details'}</Text>
+        )}
+      </Pressable>
+      {open &&
+        renderChildren(
+          node.children.filter((child) => child !== summary),
+          context,
+          options
+        )}
+    </View>
+  );
 }

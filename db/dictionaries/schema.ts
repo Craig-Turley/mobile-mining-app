@@ -11,6 +11,7 @@ export const dictionaries = sqliteTable('dictionaries', {
   attribution: text('attribution'),
   sourceLanguage: text('source_language'),
   targetLanguage: text('target_language'),
+  css: text('css'),
 });
 
 export type StoredDictionary = typeof dictionaries.$inferSelect;

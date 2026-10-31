@@ -1,15 +1,18 @@
 import type { ComponentNode } from '@/db/dictionaries/schema';
+import type { ComputedStyle } from '@/lib/dictionaries/native-style';
 
-type Child = ComponentNode | string;
-export type TextAtom = { kind: 'text'; text: string; ancestors: ComponentNode[] };
+export type LayoutNode = ComponentNode & { computed?: ComputedStyle };
+type Child = LayoutNode | string;
+export type TextAtom = { kind: 'text'; text: string; ancestors: LayoutNode[] };
 export type InlineAtom =
   | TextAtom
-  | { kind: 'break'; ancestors: ComponentNode[] }
-  | { kind: 'ruby'; base: Child[]; annotation: Child[]; ancestors: ComponentNode[] }
-  | { kind: 'image'; node: ComponentNode; ancestors: ComponentNode[] };
+  | { kind: 'break'; ancestors: LayoutNode[] }
+  | { kind: 'ruby'; base: Child[]; annotation: Child[]; ancestors: LayoutNode[] }
+  | { kind: 'box'; node: LayoutNode; ancestors: LayoutNode[] }
+  | { kind: 'image'; node: LayoutNode; ancestors: LayoutNode[] };
 export type FlowSegment =
   | { kind: 'inline'; atoms: InlineAtom[] }
-  | { kind: 'block'; node: ComponentNode; ancestors: ComponentNode[] };
+  | { kind: 'block'; node: LayoutNode; ancestors: LayoutNode[] };
 
 export function groupRubyChildren(children: Child[]) {
   const groups: { base: Child[]; annotation: Child[] }[] = [];
@@ -27,25 +30,33 @@ export function groupRubyChildren(children: Child[]) {
   return groups;
 }
 
-export function buildFlow(children: Child[], ancestors: ComponentNode[] = []): FlowSegment[] {
+export function buildFlow(children: Child[], ancestors: LayoutNode[] = []): FlowSegment[] {
   const segments: FlowSegment[] = [];
   function append(atom: InlineAtom) {
     const last = segments[segments.length - 1];
     if (last?.kind === 'inline') last.atoms.push(atom);
     else segments.push({ kind: 'inline', atoms: [atom] });
   }
-  function visit(child: Child, parents: ComponentNode[]) {
+
+  function visit(child: Child, parents: LayoutNode[]) {
     if (typeof child === 'string') {
       if (child) append({ kind: 'text', text: child, ancestors: parents });
       return;
     }
     const context = [...parents, child];
     if (child.component === 'RubyFallback') return;
-    if (child.source?.style?.display === 'none') return;
-    const inline = ['Text', 'Link', 'RubyText', 'Ruby', 'DictionaryImage', 'LineBreak'].includes(
-      child.component
-    );
-    if (!inline || child.source?.style?.display === 'block') {
+    const display = child.computed?.display ?? child.source?.style?.display;
+    if (display === 'none') return;
+    if (display === 'contents') {
+      child.children.forEach((nested) => visit(nested, context));
+      return;
+    }
+    const inline = display
+      ? ['inline', 'inline-block', 'inline-flex', 'contents'].includes(String(display))
+      : ['Text', 'Link', 'RubyText', 'Ruby', 'DictionaryImage', 'LineBreak'].includes(
+          child.component
+        );
+    if (!inline) {
       segments.push({ kind: 'block', node: child, ancestors: parents });
     } else if (child.component === 'LineBreak') {
       append({ kind: 'break', ancestors: context });
@@ -56,11 +67,56 @@ export function buildFlow(children: Child[], ancestors: ComponentNode[] = []): F
         if (group.annotation.length) append({ kind: 'ruby', ...group, ancestors: context });
         else group.base.forEach((base) => visit(base, context));
       }
+    } else if (child.computed?.inlineBox) {
+      append({ kind: 'box', node: child, ancestors: context });
     } else {
       child.children.forEach((nested) => visit(nested, context));
     }
   }
+
   children.forEach((child) => visit(child, ancestors));
+  // HTML whitespace collapses across span boundaries, not separately in each string.
+  for (const segment of segments) {
+    if (segment.kind !== 'inline') continue;
+    let atLineStart = true;
+    let space = false;
+    for (const atom of segment.atoms) {
+      if (atom.kind === 'break') {
+        atLineStart = true;
+        space = false;
+        continue;
+      }
+      if (atom.kind !== 'text') {
+        atLineStart = false;
+        space = false;
+        continue;
+      }
+      const mode = atom.ancestors.at(-1)?.computed?.whiteSpace;
+      if (!mode || ['pre', 'pre-wrap', 'break-spaces'].includes(mode)) {
+        atLineStart = atom.text.endsWith('\n');
+        space = /[ \t\r\n\f]$/u.test(atom.text);
+        continue;
+      }
+      atom.text =
+        mode === 'pre-line'
+          ? atom.text.replace(/[ \t\f]+/gu, ' ').replace(/ *\r?\n */gu, '\n')
+          : atom.text.replace(/[ \t\r\n\f]+/gu, ' ');
+      if ((atLineStart || space) && atom.text.startsWith(' ')) atom.text = atom.text.slice(1);
+      if (atom.text) {
+        atLineStart = atom.text.endsWith('\n');
+        space = atom.text.endsWith(' ');
+      }
+    }
+    for (let i = segment.atoms.length - 1; i >= 0; i--) {
+      const atom = segment.atoms[i];
+      if (atom.kind !== 'text') break;
+      const mode = atom.ancestors.at(-1)?.computed?.whiteSpace;
+      if (!mode || ['pre', 'pre-wrap', 'break-spaces'].includes(mode)) break;
+      atom.text = atom.text.replace(/ +$/u, '');
+      if (atom.text) break;
+    }
+    segment.atoms = segment.atoms.filter((a) => a.kind !== 'text' || a.text.length > 0);
+  }
   return segments;
 }
 
@@ -72,21 +128,21 @@ export function splitTextForWrapping(text: string): string[] {
   const segments =
     typeof Intl.Segmenter === 'function'
       ? Array.from(
-        new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(text),
-        (s) => s.segment
-      )
+          new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(text),
+          (s) => s.segment
+        )
       : Array.from(text).reduce<string[]>((parts, character) => {
-        if (
-          parts.length &&
-          (/\p{M}|\p{Emoji_Modifier}|\u200d/u.test(character) ||
-            parts[parts.length - 1].endsWith('\u200d') ||
-            (/^\p{Regional_Indicator}$/u.test(character) &&
-              /^\p{Regional_Indicator}$/u.test(parts[parts.length - 1])))
-        ) {
-          parts[parts.length - 1] += character;
-        } else parts.push(character);
-        return parts;
-      }, []);
+          if (
+            parts.length &&
+            (/\p{M}|\p{Emoji_Modifier}|\u200d/u.test(character) ||
+              parts[parts.length - 1].endsWith('\u200d') ||
+              (/^\p{Regional_Indicator}$/u.test(character) &&
+                /^\p{Regional_Indicator}$/u.test(parts[parts.length - 1])))
+          ) {
+            parts[parts.length - 1] += character;
+          } else parts.push(character);
+          return parts;
+        }, []);
   const chunks: string[] = [];
   let word = '';
   let prefix = '';
