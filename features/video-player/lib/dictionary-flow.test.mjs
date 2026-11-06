@@ -1,25 +1,14 @@
 import assert from 'node:assert/strict';
-import {
-  copyFileSync,
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  readdirSync,
-  renameSync,
-  rmSync,
-  writeFileSync,
-} from 'node:fs';
-import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { createRequire } from 'node:module';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { pathToFileURL } from 'node:url';
 import test from 'node:test';
 import vm from 'node:vm';
 import React from 'react';
 import ts from 'typescript';
 import * as cssSelect from 'css-select';
+import SQLite from 'better-sqlite3';
 
 // Run: node --test features/video-player/lib/dictionary-flow.test.mjs
 // React Native hosts are stubbed: these tests verify tree structure, not device measurements.
@@ -378,22 +367,33 @@ test('sRGB color mixing preserves alpha and theme variable fallbacks', () => {
   assert.equal(nativeStyle.cssColor('color-mix(in srgb, lime, #333)', '#333'), 'rgba(26,153,26,1)');
 });
 
-test('manifest rejects unsupported schemas, traversal, collisions and inconsistent inventory', () => {
+test('bundle manifest rejects unsupported schemas, traversal and inventory collisions', () => {
   const valid = {
-    schemaVersion: 2,
-    format: 'react-native-component-tree',
+    schemaVersion: 1,
+    format: 'mobile-mining-app-sqlite',
+    converterVersion: '1.0.0',
+    database: { path: 'term_bank.db', schemaVersion: 1 },
+    definitionsFormat: 'react-native-component-tree',
+    definitionsSchemaVersion: 1,
     entries: 1,
-    termBanks: [{ path: 'term_bank_1.json', entries: 1 }],
+    sourceBanks: 1,
     styles: 'styles.css',
     assets: [{ path: 'assets/image.png', sourcePath: 'image.png' }],
+    supportingFiles: ['supporting/tag_bank_1.json'],
   };
   assert.equal(manifest.parseManifest(valid), valid);
   for (const invalid of [
-    { ...valid, schemaVersion: 1 },
-    { ...valid, entries: 2 },
+    { ...valid, schemaVersion: 2 },
+    { ...valid, format: 'react-native-component-tree' },
+    { ...valid, database: { path: '../term_bank.db', schemaVersion: 1 } },
+    { ...valid, database: { path: 'term_bank.db', schemaVersion: 2 } },
+    { ...valid, definitionsSchemaVersion: 2 },
+    { ...valid, entries: -1 },
     { ...valid, styles: '../styles.css' },
     { ...valid, styles: 'index.json' },
     { ...valid, assets: [{ path: '/image.png', sourcePath: 'image.png' }] },
+    { ...valid, supportingFiles: ['../tag_bank_1.json'] },
+    { ...valid, supportingFiles: ['term_bank.db'] },
   ])
     assert.throws(() => manifest.parseManifest(invalid));
 });
@@ -489,71 +489,34 @@ test('custom properties inherit computed values and support function fallbacks w
 });
 
 test(
-  'real dictionary transformer output renders as valid native host trees',
-  { skip: !process.env.YOMITAN_SOURCE },
+  'prebuilt dictionary definitions render as valid native host trees',
+  { skip: !process.env.DICTIONARY_TEST_BUNDLE },
   () => {
-    const source = process.env.YOMITAN_SOURCE;
-    const root = mkdtempSync(join(tmpdir(), 'dictionary-native-e2e-'));
+    const directory = process.env.DICTIONARY_TEST_BUNDLE;
+    const inventory = manifest.parseManifest(
+      JSON.parse(readFileSync(join(directory, 'manifest.json'), 'utf8'))
+    );
+    const database = new SQLite(join(directory, inventory.database.path), {
+      readonly: true,
+      fileMustExist: true,
+    });
     try {
-      const input = join(root, 'input'),
-        output = join(root, 'output');
-      mkdirSync(input);
-      copyFileSync(join(source, 'index.json'), join(input, 'index.json'));
-      if (existsSync(join(source, 'styles.css')))
-        copyFileSync(join(source, 'styles.css'), join(input, 'styles.css'));
-      const entries = JSON.parse(readFileSync(join(source, 'term_bank_1.json'), 'utf8')).slice(
-        0,
-        8
-      );
-      writeFileSync(join(input, 'term_bank_1.json'), JSON.stringify(entries));
-      const assets = new Set();
-      function collect(value) {
-        if (!value || typeof value !== 'object') return;
-        if (typeof value.path === 'string') assets.add(value.path);
-        Object.values(value).forEach(collect);
-      }
-      collect(entries);
-      for (const path of assets) {
-        mkdirSync(dirname(join(input, path)), { recursive: true });
-        copyFileSync(join(source, path), join(input, path));
-      }
-      const result = spawnSync('cargo', ['run', '--quiet', '--', input, '--output', output], {
-        cwd: process.env.YOMITAN_TRANSFORMER ?? join(source, '..'),
-        encoding: 'utf8',
-      });
-      assert.equal(result.status, 0, result.stderr);
-      const converted = JSON.parse(readFileSync(join(output, 'term_bank_1.json'), 'utf8'));
-      const inventory = manifest.parseManifest(
-        JSON.parse(readFileSync(join(output, 'manifest.json'), 'utf8'))
-      );
+      const converted = database
+        .prepare('SELECT definitions_json FROM terms ORDER BY id LIMIT 8')
+        .all();
       const stylesheet = css.compileCSS(
-        inventory.styles ? readFileSync(join(output, inventory.styles), 'utf8') : ''
+        inventory.styles ? readFileSync(join(directory, inventory.styles), 'utf8') : ''
       );
-      const legacyStylesheet = existsSync(join(source, 'styles.css'))
-        ? css.compileCSS(readFileSync(join(source, 'styles.css'), 'utf8'))
-        : [];
-      assert.equal(converted.length, 8);
+      assert.equal(converted.length, Math.min(8, inventory.entries));
       for (const entry of converted)
-        for (const definition of entry[5]) {
+        for (const definition of JSON.parse(entry.definitions_json)) {
           if (definition.type !== 'content') continue;
           const tree = expand(
             renderer.renderDefinition(definition, {
               environment,
               stylesheet,
-              resolveAsset: (path) => `file://${join(output, path)}`,
+              resolveAsset: (path) => pathToFileURL(join(directory, path)).href,
             })
-          );
-          const legacyTree = expand(
-            renderer.renderDefinition(definition, {
-              environment,
-              stylesheet: legacyStylesheet,
-              resolveAsset: (path) => `file://${join(output, path)}`,
-            })
-          );
-          assert.equal(
-            content(legacyTree),
-            content(tree),
-            'legacy nesting must retain the same text and generated symbols'
           );
           for (const text of hosts(tree, 'Text'))
             assert.equal(hosts(text.children, 'View').length, 0);
@@ -565,391 +528,10 @@ test(
           assert.ok(content(tree).length > 0 || hosts(tree, 'Image').length > 0);
         }
     } finally {
-      rmSync(root, { recursive: true, force: true });
+      database.close();
     }
   }
 );
-
-test('folder and ZIP imports persist CSS/assets transactionally and clean up failed imports', async (t) => {
-  const SQLite = require('better-sqlite3');
-  const { drizzle } = require('drizzle-orm/better-sqlite3');
-  const root = mkdtempSync(join(tmpdir(), 'dictionary-import-test-'));
-  const sqlite = new SQLite(':memory:');
-  let failPromotion = false;
-  class Directory {
-    constructor(...parts) {
-      this.uri = join(...parts.map((p) => p.uri ?? p));
-    }
-    get exists() {
-      return existsSync(this.uri);
-    }
-    get name() {
-      return this.uri.split('/').at(-1);
-    }
-    list() {
-      return readdirSync(this.uri, { withFileTypes: true }).map((item) =>
-        item.isDirectory() ? new Directory(this, item.name) : new File(this, item.name)
-      );
-    }
-    get parentDirectory() {
-      return new Directory(dirname(this.uri));
-    }
-    create() {
-      mkdirSync(this.uri, { recursive: true });
-    }
-    delete() {
-      rmSync(this.uri, { recursive: true });
-    }
-    move(destination) {
-      if (failPromotion) throw new Error('Simulated file promotion failure');
-      renameSync(this.uri, destination.uri);
-      this.uri = destination.uri;
-    }
-  }
-  class File {
-    constructor(...parts) {
-      this.uri = join(...parts.map((p) => p.uri ?? p));
-    }
-    get exists() {
-      return existsSync(this.uri);
-    }
-    get name() {
-      return this.uri.split('/').at(-1);
-    }
-    get parentDirectory() {
-      return new Directory(dirname(this.uri));
-    }
-    async text() {
-      return readFileSync(this.uri, 'utf8');
-    }
-    copy(destination) {
-      copyFileSync(this.uri, destination.uri);
-    }
-    delete() {
-      rmSync(this.uri);
-    }
-    stream() {
-      const bytes = readFileSync(this.uri);
-      return new ReadableStream({
-        start(controller) {
-          for (let offset = 0; offset < bytes.length; offset += 11)
-            controller.enqueue(bytes.subarray(offset, offset + 11));
-          controller.close();
-        },
-      });
-    }
-  }
-  const nativeFs = { Directory, File, Paths: { document: join(root, 'documents') } };
-  const assets = loadTsx('../../../lib/dictionaries/assets.ts', {
-    'expo-file-system': nativeFs,
-    './manifest': manifest,
-  });
-  const cache = loadTsx('../../../lib/dictionaries/cache.ts', { './css': css });
-  const schema = loadTsx('../../../db/dictionaries/schema.ts');
-  sqlite.exec(`CREATE TABLE dictionaries (id INTEGER PRIMARY KEY, title TEXT NOT NULL UNIQUE, revision TEXT NOT NULL,
-    format INTEGER, version INTEGER, author TEXT, description TEXT, attribution TEXT, source_language TEXT, target_language TEXT, css TEXT);
-    CREATE TABLE terms (id INTEGER PRIMARY KEY, dictionary TEXT, expression TEXT, reading TEXT, definition_tags TEXT, rules TEXT, score INTEGER, definitions_json TEXT, sequence INTEGER, term_tags TEXT);`);
-  const orm = drizzle(sqlite);
-  const params = (values) => (values.length === 1 && Array.isArray(values[0]) ? values[0] : values);
-  const tx = {
-    getFirstAsync: async (sql, ...values) => sqlite.prepare(sql).get(...params(values)),
-    runAsync: async (sql, ...values) => sqlite.prepare(sql).run(...params(values)),
-    prepareAsync: async (sql) => ({
-      executeAsync: async (values) => sqlite.prepare(sql).run(...values),
-      finalizeAsync: async () => {},
-    }),
-  };
-  const dictionariesDb = {
-    insert: (...args) => orm.insert(...args),
-    $client: {
-      withExclusiveTransactionAsync: async (fn) => {
-        sqlite.exec('BEGIN');
-        try {
-          await fn(tx);
-          sqlite.exec('COMMIT');
-        } catch (error) {
-          sqlite.exec('ROLLBACK');
-          throw error;
-        }
-      },
-    },
-  };
-  const importer = loadTsx('../../../db/lib/dictionary-to-sqlite.ts', {
-    'expo-file-system': nativeFs,
-    '../dictionaries/client': { dictionariesDb },
-    '../dictionaries/schema': schema,
-    '@/lib/dictionaries/manifest': manifest,
-    '@/lib/dictionaries/assets': assets,
-    '@/lib/dictionaries/cache': cache,
-    '@/lib/dictionaries/css': css,
-  });
-  const queries = loadTsx('../../../db/features/dictionaries/dictionaries.queries.ts', {
-    '@/db/dictionaries/client': { dictionariesDb },
-    '@/db/dictionaries/schema': schema,
-    '@/lib/dictionaries/cache': cache,
-    '@/lib/dictionaries/assets': assets,
-  });
-  const source = join(root, 'source');
-  mkdirSync(join(source, 'assets'), { recursive: true });
-  const inventory = {
-    schemaVersion: 2,
-    format: 'react-native-component-tree',
-    entries: 1,
-    termBanks: [{ path: 'term_bank_1.json', entries: 1 }],
-    styles: 'styles.css',
-    assets: [{ sourcePath: 'image.png', path: 'assets/image.png' }],
-  };
-  const definition = {
-    type: 'content',
-    children: [
-      element('span', ['日本語']),
-      node('DictionaryImage', [], { props: { assetPath: 'assets/image.png' } }),
-    ],
-  };
-  writeFileSync(join(source, 'manifest.json'), JSON.stringify(inventory));
-  writeFileSync(
-    join(source, 'index.json'),
-    JSON.stringify({ title: 'Test', revision: '1', format: 3 })
-  );
-  writeFileSync(
-    join(source, 'term_bank_1.json'),
-    JSON.stringify([['語', 'ご', '', '', 0, [definition], 1, '']])
-  );
-  writeFileSync(join(source, 'styles.css'), 'span { color: red }');
-  writeFileSync(join(source, 'assets/image.png'), 'image-bytes');
-  try {
-    await importer.convert(source);
-    assert.equal(sqlite.prepare('SELECT css FROM dictionaries').get().css, 'span { color: red }');
-    assert.equal(sqlite.prepare('SELECT count(*) AS n FROM terms').get().n, 1);
-    assert.equal(
-      readFileSync(assets.resolveDictionaryAsset('Test', 'assets/image.png'), 'utf8'),
-      'image-bytes'
-    );
-    assert.equal(cache.getDictionaryStyles('Test').length, 1);
-    await assert.rejects(importer.convert(source), /already imported/u);
-    assert.equal(assets.dictionaryAssetDirectory('Test').exists, true);
-
-    writeFileSync(
-      join(source, 'index.json'),
-      JSON.stringify({ title: 'Broken', revision: '1', format: 3 })
-    );
-    writeFileSync(join(source, 'manifest.json'), JSON.stringify({ ...inventory, entries: 2 }));
-    await assert.rejects(importer.convert(source), /Inconsistent/u);
-    writeFileSync(
-      join(source, 'manifest.json'),
-      JSON.stringify({
-        ...inventory,
-        entries: 2,
-        termBanks: [{ path: 'term_bank_1.json', entries: 2 }],
-      })
-    );
-    await assert.rejects(importer.convert(source), /count mismatch/u);
-    assert.equal(
-      sqlite.prepare("SELECT count(*) AS n FROM terms WHERE dictionary = 'Broken'").get().n,
-      0
-    );
-    assert.equal(assets.dictionaryAssetDirectory('Broken').exists, false);
-
-    writeFileSync(join(source, 'manifest.json'), JSON.stringify(inventory));
-    failPromotion = true;
-    await assert.rejects(importer.convert(source), /promotion failure/u);
-    failPromotion = false;
-    assert.equal(sqlite.prepare('SELECT count(*) AS n FROM dictionaries').get().n, 1);
-    assert.equal(
-      readdirSync(join(root, 'documents/dictionaries')).some((p) => p.startsWith('.import-')),
-      false
-    );
-    await queries.deleteDictionaryByIdQuery(sqlite.prepare('SELECT id FROM dictionaries').get().id);
-    assert.equal(sqlite.prepare('SELECT count(*) AS n FROM terms').get().n, 0);
-    assert.equal(assets.dictionaryAssetDirectory('Test').exists, false);
-    assert.equal(cache.getDictionaryStyles('Test').length, 0);
-
-    const JSZip = require('jszip');
-    const cacheDirectory = join(root, 'cache with spaces');
-    const pickerDirectory = join(root, 'picker cache');
-    mkdirSync(pickerDirectory);
-    class ZipFile {
-      constructor(...parts) {
-        this.file = new File(
-          ...parts.map((part) => {
-            const value = part.uri ?? part;
-            return value.startsWith('file:') ? fileURLToPath(value) : value;
-          })
-        );
-      }
-      get uri() {
-        return pathToFileURL(this.file.uri).href;
-      }
-      get exists() {
-        return this.file.exists;
-      }
-      delete() {
-        this.file.delete();
-      }
-    }
-    const zipFs = { Directory, File: ZipFile, Paths: { cache: cacheDirectory } };
-    let failExtraction = false;
-    const unzipFile = async (src, dest) => {
-      assert.ok(!src.startsWith('file:'));
-      assert.ok(!src.includes('%20'));
-      if (failExtraction) {
-        writeFileSync(join(dest, 'partial.txt'), 'partial');
-        throw new Error('Native extraction failed');
-      }
-      const zip = await JSZip.loadAsync(readFileSync(src));
-      for (const item of Object.values(zip.files)) {
-        const target = join(dest, item.name);
-        if (item.dir) mkdirSync(target, { recursive: true });
-        else {
-          mkdirSync(dirname(target), { recursive: true });
-          writeFileSync(target, await item.async('uint8array'));
-        }
-      }
-      return dest;
-    };
-    const zipImporter = loadTsx('../../../features/dictionaries/lib/import-dictionary-zip.ts', {
-      'expo-file-system': zipFs,
-      '@/db/lib/dictionary-to-sqlite': importer,
-      '@/lib/file-system': { unzipFile },
-    });
-    const sourceFiles = [
-      'index.json',
-      'manifest.json',
-      'term_bank_1.json',
-      'styles.css',
-      'assets/image.png',
-    ];
-    writeFileSync(
-      join(source, 'index.json'),
-      JSON.stringify({ title: 'Test', revision: '1', format: 3 })
-    );
-    async function archive(name, prefixes = [''], overrides = {}) {
-      const zip = new JSZip();
-      for (const prefix of prefixes)
-        for (const path of sourceFiles) {
-          if (overrides[path] === null) continue;
-          zip.file(`${prefix}${path}`, overrides[path] ?? readFileSync(join(source, path)));
-        }
-      zip.file('__MACOSX/._index.json', 'metadata');
-      const path = join(pickerDirectory, name);
-      writeFileSync(path, await zip.generateAsync({ type: 'uint8array' }));
-      return path;
-    }
-    function cleaned(path) {
-      assert.equal(existsSync(path), false, 'cached picker ZIP must be deleted');
-      assert.deepEqual(readdirSync(cacheDirectory), [], 'extracted files must be deleted');
-    }
-
-    await t.test('ZIP roots and single enclosing folders match directory imports', async () => {
-      for (const prefixes of [[''], ['Dictionary 日本語/']]) {
-        const path = await archive('My dictionary 日本語.zip', prefixes);
-        await zipImporter.importDictionaryZip(pathToFileURL(path).href);
-        assert.equal(
-          sqlite.prepare('SELECT css FROM dictionaries').get().css,
-          'span { color: red }'
-        );
-        assert.equal(sqlite.prepare('SELECT expression FROM terms').get().expression, '語');
-        assert.deepEqual(
-          JSON.parse(sqlite.prepare('SELECT definitions_json FROM terms').get().definitions_json),
-          [definition]
-        );
-        assert.equal(
-          readFileSync(assets.resolveDictionaryAsset('Test', 'assets/image.png'), 'utf8'),
-          'image-bytes'
-        );
-        cleaned(path);
-        const duplicate = await archive('duplicate.zip', prefixes);
-        await assert.rejects(
-          zipImporter.importDictionaryZip(pathToFileURL(duplicate).href),
-          /already imported/u
-        );
-        cleaned(duplicate);
-        assert.equal(assets.dictionaryAssetDirectory('Test').exists, true);
-        await queries.deleteDictionaryByIdQuery(
-          sqlite.prepare('SELECT id FROM dictionaries').get().id
-        );
-      }
-    });
-
-    await t.test(
-      'ambiguous, untransformed, corrupt and partially extracted ZIPs are cleaned up',
-      async () => {
-        const ambiguous = await archive('multiple.zip', ['one/', 'two/']);
-        await assert.rejects(
-          zipImporter.importDictionaryZip(pathToFileURL(ambiguous).href),
-          /multiple dictionaries/u
-        );
-        cleaned(ambiguous);
-        const raw = await archive('raw-yomitan.zip', [''], { 'manifest.json': null });
-        await assert.rejects(
-          zipImporter.importDictionaryZip(pathToFileURL(raw).href),
-          /Expected a transformed dictionary/u
-        );
-        cleaned(raw);
-        const corrupt = join(pickerDirectory, 'corrupt.zip');
-        writeFileSync(corrupt, 'not a ZIP');
-        await assert.rejects(
-          zipImporter.importDictionaryZip(pathToFileURL(corrupt).href),
-          /Could not extract dictionary ZIP/u
-        );
-        cleaned(corrupt);
-        const partial = await archive('partial.zip');
-        failExtraction = true;
-        await assert.rejects(
-          zipImporter.importDictionaryZip(pathToFileURL(partial).href),
-          /Native extraction failed/u
-        );
-        failExtraction = false;
-        cleaned(partial);
-        assert.equal(sqlite.prepare('SELECT count(*) AS n FROM dictionaries').get().n, 0);
-      }
-    );
-
-    await t.test('failed bank imports roll back rows, assets and extracted files', async () => {
-      const path = await archive('bad-bank.zip', [''], {
-        'manifest.json': JSON.stringify({
-          ...inventory,
-          entries: 2,
-          termBanks: [{ path: 'term_bank_1.json', entries: 2 }],
-        }),
-      });
-      await assert.rejects(
-        zipImporter.importDictionaryZip(pathToFileURL(path).href),
-        /count mismatch/u
-      );
-      cleaned(path);
-      assert.equal(sqlite.prepare('SELECT count(*) AS n FROM dictionaries').get().n, 0);
-      assert.equal(sqlite.prepare('SELECT count(*) AS n FROM terms').get().n, 0);
-      assert.equal(assets.dictionaryAssetDirectory('Test').exists, false);
-    });
-
-    await t.test(
-      'ZIP picker cancellation is normal and rejected files do not leave cached copies',
-      async () => {
-        let result = { canceled: true };
-        const picker = loadTsx('../../../lib/file-system/file-system.ts', {
-          'expo-file-system': zipFs,
-          'expo-document-picker': { getDocumentAsync: async () => result },
-          'expo-image-picker': {},
-          'expo-sqlite': { defaultDatabaseDirectory: root },
-          'react-native-zip-archive': { unzip: unzipFile },
-        });
-        assert.equal(await picker.getDictionaryZipFile(), null);
-        const path = join(pickerDirectory, 'not-a-zip.txt');
-        writeFileSync(path, 'not a ZIP');
-        result = {
-          canceled: false,
-          assets: [{ name: 'not-a-zip.txt', uri: pathToFileURL(path).href }],
-        };
-        await assert.rejects(picker.getDictionaryZipFile(), /Expected a ZIP file/u);
-        assert.equal(existsSync(path), false);
-      }
-    );
-  } finally {
-    sqlite.close();
-    rmSync(root, { recursive: true, force: true });
-  }
-});
 
 function expand(value) {
   if (Array.isArray(value)) return value.flatMap((child) => [].concat(expand(child)));

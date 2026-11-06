@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "3180d2f3-f698-49a9-8cb8-b0256c0d4537",
+  "id": "aac78ba2-9219-4674-894f-76b8aaf73d6a",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "dictionaries": {
@@ -76,6 +76,13 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
+        },
+        "css": {
+          "name": "css",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         }
       },
       "indexes": {
@@ -91,14 +98,15 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}
-    },
-    "terms": {
-      "name": "terms",
+    }
+  },
+  "views": {
+    "term_bank": {
       "columns": {
         "id": {
           "name": "id",
           "type": "integer",
-          "primaryKey": true,
+          "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
@@ -127,7 +135,7 @@
           "name": "definition_tags",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
         },
         "rules": {
@@ -166,36 +174,10 @@
           "autoincrement": false
         }
       },
-      "indexes": {
-        "idx_terms_dictionary": {
-          "name": "idx_terms_dictionary",
-          "columns": [
-            "dictionary"
-          ],
-          "isUnique": false
-        },
-        "idx_entries_expression": {
-          "name": "idx_entries_expression",
-          "columns": [
-            "expression"
-          ],
-          "isUnique": false
-        },
-        "idx_entries_reading": {
-          "name": "idx_entries_reading",
-          "columns": [
-            "reading"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
+      "name": "term_bank",
+      "isExisting": true
     }
   },
-  "views": {},
   "enums": {},
   "_meta": {
     "schemas": {},

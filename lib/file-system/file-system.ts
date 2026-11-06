@@ -1,12 +1,8 @@
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { Directory, Paths, File } from 'expo-file-system';
-import { defaultDatabaseDirectory } from 'expo-sqlite';
-import { unzip } from 'react-native-zip-archive';
 
 export type FilePath = 'videos' | 'subtitles' | 'temp';
-export const DefaultSQLiteDirectory = defaultDatabaseDirectory;
-export const DefaultSQLiteDownloadDirectory = new Directory(DefaultSQLiteDirectory, 'downloads');
 
 type FileData = {
   id: number;
@@ -16,24 +12,6 @@ type FileData = {
 
 export async function getDictionaryDirectory() {
   return Directory.pickDirectoryAsync();
-}
-
-export async function getDictionaryZipFile() {
-  const result = await DocumentPicker.getDocumentAsync({
-    type: ['application/zip', 'application/x-zip-compressed'],
-    copyToCacheDirectory: true,
-    multiple: false,
-  });
-  if (result.canceled) return null;
-
-  const asset = result.assets[0];
-  const file = new File(asset.uri);
-  if (!asset.name.toLowerCase().endsWith('.zip')) {
-    if (file.exists) file.delete();
-    throw new Error('Expected a ZIP file');
-  }
-
-  return file;
 }
 
 export async function getFile({ src }: { src: 'file' | 'photos' }) {
@@ -105,12 +83,6 @@ export function getFileName(uri: string) {
   return new File(uri).name;
 }
 
-export function getDatabasePath(name: string) {
-  return decodeURIComponent(
-    `${DefaultSQLiteDirectory.replace(/\/$/, '')}/${name}`.replace(/^file:\/\//, '')
-  );
-}
-
 export function listDirectoryContents(uri: string): string[] {
   const dir = new Directory(uri);
 
@@ -131,8 +103,4 @@ export function clearDirectory(uri: string) {
   for (const item of dir.list()) {
     item.delete();
   }
-}
-
-export async function unzipFile(src: string, dest: string) {
-  return unzip(src, dest);
 }

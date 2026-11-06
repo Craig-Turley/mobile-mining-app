@@ -51,12 +51,12 @@ links but do not gain the mobile app's lookup navigation inside Anki. Optional Y
 interactive image-collapse controls are not generated. Audio/video fields are outside
 this pipeline.
 
-## Pre-release data contracts
+## Data contracts
 
-No database columns or SQL migrations change. `upgradeAnkiData` runs after migrations:
-it removes incompatible legacy queue payloads and renames saved `meaning` model/form/
-template references to `glossary`, preserving model IDs and field/requirement indexes.
-This cleanup is idempotent and retains valid full-entry queue rows.
+Queued entries contain complete term snapshots from the attached `term_bank` view.
+The application reads `definitions_json` directly from prebuilt dictionary databases.
+`mapStoredModel` normalizes saved `meaning` model/form/template references to `glossary`
+when loading a model, preserving model IDs and field/requirement indexes.
 
 ## Verification
 
@@ -66,7 +66,7 @@ node --test lib/genanki/anki-export.test.mjs \
   features/video-player/lib/dictionary-flow.test.mjs
 
 # Optional integration against a local transformed dictionary:
-ANKI_TEST_DICTIONARY=/path/to/transformed-dictionary \
+ANKI_TEST_DICTIONARY=/path/to/dictionary-bundle \
   node --test lib/genanki/anki-export.test.mjs
 ```
 

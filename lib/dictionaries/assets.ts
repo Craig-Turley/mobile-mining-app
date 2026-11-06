@@ -2,7 +2,7 @@ import { Directory, File, Paths } from 'expo-file-system';
 import { safeDictionaryPath } from './manifest';
 
 // Deterministic per-title storage avoids persisting sandbox-specific absolute URIs.
-export function dictionaryAssetDirectory(title: string) {
+export function dictionaryDirectory(title: string) {
   // A bounded, URI-safe identifier also handles titles containing '.', '/', or very long text.
   let hash = 0x6c62272e07bb014262b821756295c58dn;
   for (let i = 0; i < title.length; i++) {
@@ -18,10 +18,10 @@ export function dictionaryAssetDirectory(title: string) {
 
 export function resolveDictionaryAsset(title: string, assetPath: string): string | undefined {
   if (!safeDictionaryPath(assetPath)) return undefined;
-  return new File(dictionaryAssetDirectory(title), assetPath).uri;
+  return new File(dictionaryDirectory(title), assetPath).uri;
 }
 
 export function deleteDictionaryAssets(title: string) {
-  const directory = dictionaryAssetDirectory(title);
+  const directory = dictionaryDirectory(title);
   if (directory.exists) directory.delete();
 }

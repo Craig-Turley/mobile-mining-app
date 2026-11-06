@@ -21,9 +21,7 @@ export async function exportQueueToAnki(deckId: number, queuedItems: QueueItemWi
   let fileUri: string;
   try {
     const notes = await prepareAnkiNotes(queuedItems, models, dictionaries, media.resolve);
-    console.log(JSON.stringify(notes));
     const preparedDeck = prepareDeckForExport(selectedDeck.deck, notes);
-    console.log(JSON.stringify(preparedDeck));
     fileUri = await exportToAnki(preparedDeck);
   } finally {
     media.dispose();
