@@ -25,7 +25,7 @@ export const VideoPlayerScreen: React.FC = () => {
             <SafeAreaView edges={['top', 'right', 'left']} className="flex-1 bg-background">
               <VideoPlayer />
               <SubtitlesPlayer />
-              <VideoPlayerControlCenter />
+              <VideoPlayerControlCenter className="mb-10 p-1" />
             </SafeAreaView>
           </EntryModalProvider>
         </SubtitlePlayerProvider>

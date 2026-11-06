@@ -4,13 +4,7 @@ import { router } from "expo-router";
 import { View, ViewProps } from "react-native";
 import { useVideoPlayerContext } from "../contexts/video-screen-context";
 import { useSubtitlePlayerContext } from "../contexts/subtitles-context";
-
-export interface VideoPlayerControlCenterProps extends ViewProps {
-  previousSubtitle: () => void;
-  replayCurrentSubtitle: () => void;
-  toggle: () => void;
-  nextSubtitle: () => void;
-}
+import { cn } from "@/utils/cn";
 
 type ControlButtonProps = {
   icon: React.ComponentProps<typeof Ionicons>["name"];
@@ -56,12 +50,14 @@ const ControlButton = ({
   );
 };
 
-export default function VideoPlayerControlCenter() {
+export type VideoPlayerControlCenterProps = ViewProps;
+
+export default function VideoPlayerControlCenter({ className, ...rest }: VideoPlayerControlCenterProps) {
   const { playing, play, pause } = useVideoPlayerContext();
   const { previousSubtitle, replayCurrentSubtitle, nextSubtitle } = useSubtitlePlayerContext();
 
   return (
-    <View className="w-full flex-row items-center justify-evenly p-2">
+    <View className={cn("w-full flex-row items-center justify-evenly p-2", className)} {...rest}>
       <ControlButton
         icon="close-outline"
         onPress={router.back}
