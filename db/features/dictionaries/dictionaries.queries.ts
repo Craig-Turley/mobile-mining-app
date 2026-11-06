@@ -47,8 +47,10 @@ export async function insertDictionaryQuery({
 
 export async function deleteDictionaryByIdQuery(id: number) {
   let title: string | undefined;
-  await dictionariesDb.$client.withExclusiveTransactionAsync(async (tx) => {
-    const dictionary = await tx.getFirstAsync<{ name: string }>(
+  await dictionariesDb.$client.withTransactionAsync(async () => {
+    const dictionary = await dictionariesDb.$client.getFirstAsync<{
+      name: string;
+    }>(
       'SELECT title AS name FROM dictionaries WHERE id = ?',
       id
     );
@@ -57,9 +59,12 @@ export async function deleteDictionaryByIdQuery(id: number) {
       throw new Error('Dictionary not found');
     }
 
-    const dictionaryName = dictionary.name;
-    await tx.runAsync('DELETE FROM dictionaries WHERE id = ?', id);
-    title = dictionaryName;
+    await dictionariesDb.$client.runAsync(
+      'DELETE FROM dictionaries WHERE id = ?',
+      id
+    );
+
+    title = dictionary.name;
   });
   if (title) {
     await attachAndBuildViews();
