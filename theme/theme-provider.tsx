@@ -1,7 +1,11 @@
-import React, { createContext, useContext, useMemo, useState } from 'react';
-import { View } from 'react-native';
-import { ColorTokens, darkColors, lightColors, type ThemeName } from './colors';
+import React, { createContext, useContext, useLayoutEffect, useMemo, useState } from 'react';
+import { Appearance, View } from 'react-native';
+import { ThemeProvider as NavigationThemeProvider } from '@react-navigation/native';
+import { StatusBar } from 'expo-status-bar';
+import * as SystemUI from 'expo-system-ui';
+import type { ColorTokens, ThemeName } from './colors';
 import { createThemeVars } from './theme-vars';
+import { DEFAULT_THEME, getAppTheme } from './app-theme';
 
 type ThemeContextValue = {
   theme: ThemeName;
@@ -13,11 +17,22 @@ type ThemeContextValue = {
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function AppThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<ThemeName>('dark');
+  const [theme, setTheme] = useState<ThemeName>(DEFAULT_THEME);
+  const appearance = getAppTheme(theme);
+  const { colors } = appearance;
+
+  useLayoutEffect(() => {
+    // NativeWind observes this same Appearance value. Navigation never writes it on focus.
+    if (Appearance.getColorScheme() !== theme) Appearance.setColorScheme(theme);
+    void SystemUI.setBackgroundColorAsync(colors.background).catch((error) => {
+      console.error('Could not update native root background:', error);
+    });
+    // Keep the app-level override across navigation/unmounts; resetting it flashes the OS theme.
+  }, [theme, colors.background]);
 
   const themeVars = useMemo(() => {
-    return createThemeVars(theme === 'dark' ? darkColors : lightColors);
-  }, [theme]);
+    return createThemeVars(colors);
+  }, [colors]);
 
   const value = useMemo<ThemeContextValue>(
     () => ({
@@ -26,16 +41,19 @@ export function AppThemeProvider({ children }: { children: React.ReactNode }) {
       toggleTheme: () => {
         setTheme((current) => (current === 'dark' ? 'light' : 'dark'));
       },
-      colors: theme === 'dark' ? darkColors : lightColors,
+      colors,
     }),
-    [theme]
+    [theme, colors]
   );
 
   return (
     <ThemeContext.Provider value={value}>
-      <View style={themeVars} className="flex-1 bg-background">
-        {children}
-      </View>
+      <NavigationThemeProvider value={appearance.navigationTheme}>
+        <View style={[themeVars, { flex: 1, backgroundColor: colors.background }]}>
+          <StatusBar style={appearance.statusBarStyle} />
+          {children}
+        </View>
+      </NavigationThemeProvider>
     </ThemeContext.Provider>
   );
 }

@@ -26,6 +26,7 @@ module.exports = {
         popoverForeground: 'var(--color-popover-foreground)',
 
         primary: 'var(--color-primary)',
+        primaryMuted: 'var(--color-primary-muted)',
         primaryForeground: 'var(--color-primary-foreground)',
 
         secondary: 'var(--color-secondary)',

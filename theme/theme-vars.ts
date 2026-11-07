@@ -16,6 +16,7 @@ export function createThemeVars(colors: ColorTokens) {
     '--color-popover-foreground': colors.popoverForeground,
 
     '--color-primary': colors.primary,
+    '--color-primary-muted': colors.primaryMuted,
     '--color-primary-foreground': colors.primaryForeground,
 
     '--color-secondary': colors.secondary,

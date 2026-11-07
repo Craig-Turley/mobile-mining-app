@@ -24,6 +24,7 @@
       "expo-asset",
       "expo-font",
       "expo-sharing",
+      "expo-system-ui",
       [
         "expo-build-properties",
         {
@@ -35,11 +36,12 @@
     ],
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0b0d14",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#0b0d14"
     },
     "assetBundlePatterns": ["**/*"],
     "ios": {

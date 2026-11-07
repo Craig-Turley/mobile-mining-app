@@ -12,6 +12,7 @@ export const lightColors = {
   popoverForeground: 'rgb(9, 11, 18)',
 
   primary: 'rgb(222, 28, 70)',
+  primaryMuted: 'rgba(222, 28, 70, 0.15)',
   primaryForeground: 'rgb(250, 248, 245)',
 
   secondary: 'rgb(224, 228, 239)',
