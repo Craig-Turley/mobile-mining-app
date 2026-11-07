@@ -7,6 +7,9 @@ import { DictionaryImportOverlay } from './dictionary-import-overlay';
 import { importDictionary } from '@/lib/dictionaries/import-dictionary';
 import { useMutation } from '@/db/hooks/use-mutation';
 import { NOPMutationMapper } from '@/db/hooks/use-app-live-query';
+import { attachAndBuildViews } from '@/db/features/dictionaries/dictionaries.actions';
+import { initializeCssCache } from '@/lib/dictionaries/cache';
+import { getDictionariesQuery } from '@/db/features/dictionaries/dictionaries.queries';
 
 export function DictionariesToolbar() {
   const { colors } = useAppTheme();
@@ -26,6 +29,8 @@ export function DictionariesToolbar() {
       const directory = await getDictionaryDirectory();
       if (!directory.exists) throw new Error('Dictionary not detected');
       await mutate(directory.uri);
+      await attachAndBuildViews();
+      initializeCssCache(await getDictionariesQuery());
     } catch (e) {
       if (
         typeof e === 'object' &&
