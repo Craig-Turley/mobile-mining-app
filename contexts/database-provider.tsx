@@ -9,7 +9,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { initializeCssCache } from '@/lib/dictionaries/cache';
 import { getDictionariesQuery } from '@/db/features/dictionaries/dictionaries.queries';
 import { attachAndBuildViews } from '@/db/features/dictionaries/dictionaries.actions';
-import { termBank } from '@/db/dictionaries/schema';
 
 type Props = {
   children: ReactNode;
@@ -55,6 +54,7 @@ function DictionaryAttachProvider({ children }: Props) {
     (async () => {
       try {
         await attachAndBuildViews();
+        console.log();
         initializeCssCache(await getDictionariesQuery());
         if (!cancelled) setStatus('ready');
       } catch (e) {

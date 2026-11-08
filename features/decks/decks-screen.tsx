@@ -44,9 +44,7 @@ export const DecksScreen: React.FC = () => {
             contentInsetAdjustmentBehavior="automatic"
             className="flex-1"
             contentContainerClassName="gap-3 p-3"
-            renderItem={({ item }) => (
-              <DeckRow deck={item} />
-            )}
+            renderItem={({ item }) => <DeckRow deck={item} />}
             keyExtractor={(item) => String(item.applicationId)}
           />
         )}

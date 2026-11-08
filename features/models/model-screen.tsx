@@ -26,7 +26,7 @@ cssInterop(Ionicons, {
   },
 });
 
-interface ModelsScreenProps { }
+interface ModelsScreenProps {}
 
 export const ModelsScreen: React.FC<ModelsScreenProps> = () => {
   const { data: models, isLoading } = useAppLiveQuery(allModelsQuery(), NOPQueryMapper);

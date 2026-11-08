@@ -88,9 +88,7 @@
       "indexes": {
         "dictionaries_title_unique": {
           "name": "dictionaries_title_unique",
-          "columns": [
-            "title"
-          ],
+          "columns": ["title"],
           "isUnique": true
         }
       },

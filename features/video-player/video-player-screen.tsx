@@ -15,9 +15,7 @@ export const VideoPlayerScreen: React.FC = () => {
 
   return (
     <>
-      <Stack.Screen
-        options={{ headerShown: false }}
-      />
+      <Stack.Screen options={{ headerShown: false }} />
 
       <VideoScreenProvider source={source}>
         <SubtitlePlayerProvider>
@@ -29,7 +27,7 @@ export const VideoPlayerScreen: React.FC = () => {
             </SafeAreaView>
           </EntryModalProvider>
         </SubtitlePlayerProvider>
-      </VideoScreenProvider >
+      </VideoScreenProvider>
     </>
   );
 };

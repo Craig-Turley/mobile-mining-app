@@ -31,12 +31,8 @@ export default function SubtitlesPlayer() {
 export function LocalSubtitlesPlayer() {
   const { player, source } = useLocalVideoPlayerContext();
 
-  const {
-    subtitles,
-    activeSubtitleIndex,
-    setSubtitles,
-    setActiveSubtitleIndex,
-  } = useSubtitlePlayerContext();
+  const { subtitles, activeSubtitleIndex, setSubtitles, setActiveSubtitleIndex } =
+    useSubtitlePlayerContext();
 
   const videoId = Number(source.videoId);
 
@@ -44,11 +40,7 @@ export function LocalSubtitlesPlayer() {
     data: videoData,
     error: videoError,
     isLoading: isVideoLoading,
-  } = useAppLiveQuery(
-    videoByIdQuery(videoId),
-    (rows) => rows[0] ?? null,
-    [videoId],
-  );
+  } = useAppLiveQuery(videoByIdQuery(videoId), (rows) => rows[0] ?? null, [videoId]);
 
   const subtitleId = videoData?.subtitle_id ?? null;
 
@@ -56,11 +48,7 @@ export function LocalSubtitlesPlayer() {
     data: subtitleFile,
     error: subtitleQueryError,
     isLoading: isSubtitleLoading,
-  } = useAppLiveQuery(
-    subtitleByIdQuery(subtitleId),
-    (rows) => rows[0],
-    [subtitleId],
-  );
+  } = useAppLiveQuery(subtitleByIdQuery(subtitleId), (rows) => rows[0], [subtitleId]);
 
   const [error, setError] = useState<SubtitleError | null>(null);
 
@@ -127,6 +115,7 @@ export function LocalSubtitlesPlayer() {
     };
   }, [
     subtitleId,
+    subtitleFile,
     subtitleFile?.id,
     subtitleFile?.relative_path,
     subtitleQueryError,
@@ -140,7 +129,7 @@ export function LocalSubtitlesPlayer() {
 
     setActiveSubtitleIndex((previousIndex) => {
       const nextIndex = currentSubtitles.findIndex(
-        (cue) => cue.start <= currentTime && currentTime <= cue.end,
+        (cue) => cue.start <= currentTime && currentTime <= cue.end
       );
 
       if (nextIndex === -1 || nextIndex === previousIndex) {
@@ -172,9 +161,7 @@ export function LocalSubtitlesPlayer() {
   if (videoError) {
     return (
       <View className="flex-1 items-center justify-center bg-background p-2">
-        <Text className="text-foreground">
-          There was an error retrieving the video.
-        </Text>
+        <Text className="text-foreground">There was an error retrieving the video.</Text>
       </View>
     );
   }
@@ -197,11 +184,8 @@ export function LocalSubtitlesPlayer() {
 
           <Pressable
             onPress={uploadSubtitle}
-            className="rounded-lg bg-primary px-6 py-3 active:opacity-80"
-          >
-            <Text className="text-center text-base font-semibold text-foreground">
-              Upload
-            </Text>
+            className="rounded-lg bg-primary px-6 py-3 active:opacity-80">
+            <Text className="text-center text-base font-semibold text-foreground">Upload</Text>
           </Pressable>
         </View>
       );
@@ -209,50 +193,30 @@ export function LocalSubtitlesPlayer() {
     case 'missing_file':
       return (
         <View className="flex-1 items-center justify-center bg-background p-2">
-          <Text className="text-foreground">
-            There was an error retrieving the file.
-          </Text>
+          <Text className="text-foreground">There was an error retrieving the file.</Text>
         </View>
       );
 
     case 'upload_error':
       return (
         <View className="flex-1 items-center justify-center bg-background p-2">
-          <Text className="text-foreground">
-            There was an error uploading the file.
-          </Text>
+          <Text className="text-foreground">There was an error uploading the file.</Text>
         </View>
       );
   }
 
-  return (
-    <SubtitleList
-      listRef={subtitleListRef}
-      keyPrefix={`${subtitleId}`}
-    />
-  );
+  return <SubtitleList listRef={subtitleListRef} keyPrefix={`${subtitleId}`} />;
 }
 
 function YoutubeSubtitlesPlayer() {
-  const { player, getTimestamp, source } =
-    useYoutubeVideoPlayerContext();
+  const { player, getTimestamp, source } = useYoutubeVideoPlayerContext();
 
-  const {
-    subtitles,
-    activeSubtitleIndex,
-    setSubtitles,
-    setActiveSubtitleIndex,
-  } = useSubtitlePlayerContext();
+  const { subtitles, activeSubtitleIndex, setSubtitles, setActiveSubtitleIndex } =
+    useSubtitlePlayerContext();
 
-  const captions = useMemo(
-    () => JSON.parse(source.captions) as YoutubeCaptions,
-    [source.captions],
-  );
+  const captions = useMemo(() => JSON.parse(source.captions) as YoutubeCaptions, [source.captions]);
 
-  const parsedSubtitles = useMemo(
-    () => parseYoutubeSubtitles(captions.captions),
-    [captions],
-  );
+  const parsedSubtitles = useMemo(() => parseYoutubeSubtitles(captions.captions), [captions]);
 
   const subtitleListRef = useRef<FlatList<SubtitleCue> | null>(null);
   const subtitlesRef = useRef<SubtitleCue[]>([]);
@@ -269,11 +233,7 @@ function YoutubeSubtitlesPlayer() {
       setSubtitles([]);
       setActiveSubtitleIndex(-1);
     };
-  }, [
-    parsedSubtitles,
-    setSubtitles,
-    setActiveSubtitleIndex,
-  ]);
+  }, [parsedSubtitles, setSubtitles, setActiveSubtitleIndex]);
 
   useEffect(() => {
     let cancelled = false;
@@ -287,7 +247,7 @@ function YoutubeSubtitlesPlayer() {
 
       setActiveSubtitleIndex((previousIndex) => {
         const nextIndex = currentSubtitles.findIndex(
-          (cue) => cue.start <= currentTime && currentTime <= cue.end,
+          (cue) => cue.start <= currentTime && currentTime <= cue.end
         );
 
         if (nextIndex === -1 || nextIndex === previousIndex) {
@@ -318,12 +278,7 @@ function YoutubeSubtitlesPlayer() {
     });
   }, [activeSubtitleIndex]);
 
-  return (
-    <SubtitleList
-      listRef={subtitleListRef}
-      keyPrefix={`${source.videoId}`}
-    />
-  );
+  return <SubtitleList listRef={subtitleListRef} keyPrefix={`${source.videoId}`} />;
 }
 
 type SubtitleListProps = {
@@ -331,14 +286,8 @@ type SubtitleListProps = {
   keyPrefix: string;
 };
 
-function SubtitleList({
-  listRef,
-  keyPrefix,
-}: SubtitleListProps) {
-  const {
-    subtitles,
-    activeSubtitleIndex,
-  } = useSubtitlePlayerContext();
+function SubtitleList({ listRef, keyPrefix }: SubtitleListProps) {
+  const { subtitles, activeSubtitleIndex } = useSubtitlePlayerContext();
 
   return (
     <View className="flex-1 bg-background p-2">
@@ -348,10 +297,7 @@ function SubtitleList({
         extraData={activeSubtitleIndex}
         keyExtractor={(item) => `${keyPrefix}-${item.id}`}
         renderItem={({ item, index }) => (
-          <Subtitle
-            cue={item}
-            active={activeSubtitleIndex === index}
-          />
+          <Subtitle cue={item} active={activeSubtitleIndex === index} />
         )}
         onScrollToIndexFailed={(info) => {
           listRef.current?.scrollToOffset({

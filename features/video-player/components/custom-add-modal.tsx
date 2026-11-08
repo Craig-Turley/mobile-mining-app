@@ -77,7 +77,6 @@ export function CustomAddModal({
     <Modal
       visible={visible}
       transparent
-      animationType="fade"
       statusBarTranslucent
       presentationStyle="overFullScreen"
       onRequestClose={handleClose}>

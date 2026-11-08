@@ -22,8 +22,7 @@ type SubtitlePlayerContextValue = {
   setActiveSubtitleIndex: React.Dispatch<React.SetStateAction<number>>;
 };
 
-const SubtitlePlayerContext =
-  createContext<SubtitlePlayerContextValue | null>(null);
+const SubtitlePlayerContext = createContext<SubtitlePlayerContextValue | null>(null);
 
 export function SubtitlePlayerProvider({ children }: PropsWithChildren) {
   const { seekTo } = useVideoPlayerContext();
@@ -31,10 +30,7 @@ export function SubtitlePlayerProvider({ children }: PropsWithChildren) {
   const [subtitles, setSubtitles] = useState<SubtitleCue[]>([]);
   const [activeSubtitleIndex, setActiveSubtitleIndex] = useState(-1);
 
-  const activeSubtitle =
-    activeSubtitleIndex >= 0
-      ? subtitles[activeSubtitleIndex] ?? null
-      : null;
+  const activeSubtitle = activeSubtitleIndex >= 0 ? (subtitles[activeSubtitleIndex] ?? null) : null;
 
   const nextSubtitle = useCallback(() => {
     const nextIndex = activeSubtitleIndex + 1;
@@ -80,23 +76,17 @@ export function SubtitlePlayerProvider({ children }: PropsWithChildren) {
       nextSubtitle,
       previousSubtitle,
       replayCurrentSubtitle,
-    ],
+    ]
   );
 
-  return (
-    <SubtitlePlayerContext.Provider value={value}>
-      {children}
-    </SubtitlePlayerContext.Provider>
-  );
+  return <SubtitlePlayerContext.Provider value={value}>{children}</SubtitlePlayerContext.Provider>;
 }
 
 export function useSubtitlePlayerContext() {
   const context = useContext(SubtitlePlayerContext);
 
   if (!context) {
-    throw new Error(
-      'useSubtitlePlayerContext must be used inside SubtitlePlayerProvider',
-    );
+    throw new Error('useSubtitlePlayerContext must be used inside SubtitlePlayerProvider');
   }
 
   return context;

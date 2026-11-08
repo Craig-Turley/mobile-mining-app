@@ -100,26 +100,13 @@ function LocalMediaPlayerProvider({
     player.timeUpdateEventInterval = 0.25;
   });
 
-  const { isPlaying: playing } = useEvent(
-    player,
-    'playingChange',
-    { isPlaying: player.playing }
-  );
+  const { isPlaying: playing } = useEvent(player, 'playingChange', { isPlaying: player.playing });
 
-  const getTimestamp = useCallback(
-    async () => player.currentTime,
-    [player]
-  );
+  const getTimestamp = useCallback(async () => player.currentTime, [player]);
 
-  const play = useCallback(
-    async () => player.play(),
-    [player]
-  );
+  const play = useCallback(async () => player.play(), [player]);
 
-  const pause = useCallback(
-    async () => player.pause(),
-    [player]
-  );
+  const pause = useCallback(async () => player.pause(), [player]);
 
   const seekTo = useCallback(
     async (seconds: number) => {
@@ -139,22 +126,10 @@ function LocalMediaPlayerProvider({
       pause,
       seekTo,
     }),
-    [
-      source,
-      player,
-      playing,
-      getTimestamp,
-      play,
-      pause,
-      seekTo,
-    ]
+    [source, player, playing, getTimestamp, play, pause, seekTo]
   );
 
-  return (
-    <VideoScreenContext.Provider value={value}>
-      {children}
-    </VideoScreenContext.Provider>
-  );
+  return <VideoScreenContext.Provider value={value}>{children}</VideoScreenContext.Provider>;
 }
 
 function YoutubeMediaPlayerProvider({

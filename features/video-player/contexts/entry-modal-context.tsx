@@ -5,7 +5,6 @@ import React, {
   useState,
   useRef,
   type ReactNode,
-  useEffect,
   useCallback,
 } from 'react';
 import {
@@ -29,24 +28,19 @@ type EntryModalProviderProps = {
 
 export function EntryModalProvider({ children }: EntryModalProviderProps) {
   const bottomSheetRef = useRef<BottomSheetModalType>(null);
-
   const [token, setTokenState] = useState<Token | null>(null);
 
   const setToken = useCallback((nextToken: Token) => {
     setTokenState(nextToken);
-  }, []);
-
-  useEffect(() => {
-    if (!token) return;
     bottomSheetRef.current?.present();
-  }, [token]);
+  }, []);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <BottomSheetModalProvider>
         <EntryModalContext.Provider value={{ setToken }}>
           {children}
-          <EntryBottomSheetModal ref={bottomSheetRef} token={token}></EntryBottomSheetModal>
+          <EntryBottomSheetModal ref={bottomSheetRef} token={token} />
         </EntryModalContext.Provider>
       </BottomSheetModalProvider>
     </GestureHandlerRootView>

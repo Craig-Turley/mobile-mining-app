@@ -57,7 +57,9 @@ export const EntryBottomSheetModal = forwardRef<
     expression: string;
     reading?: string;
   } | null>(null);
+
   const currentLookup = internalLookup?.token === token ? internalLookup : null;
+
   const { data: lookupResult, isLoading } = useQuery(
     async () => ({
       token,
@@ -70,17 +72,21 @@ export const EntryBottomSheetModal = forwardRef<
     [token, currentLookup],
     { enabled: token !== null }
   );
+
   const entries =
     lookupResult?.token === token && lookupResult?.lookup === currentLookup
       ? lookupResult.entries
       : null;
+
   const [selection, setSelection] = useState<{ entries: typeof entries; index: number } | null>(
     null
   );
+
   const activeIndex =
     selection?.entries === entries
       ? Math.min(selection.index, Math.max(0, (entries?.length ?? 0) - 1))
       : 0;
+
   const activeEntry = !isLoading ? (entries?.[activeIndex] ?? null) : null;
   const changeEntry = useCallback(
     (direction: number) => {
@@ -277,7 +283,7 @@ export const EntryBottomSheetModal = forwardRef<
             {!isDefaultsLoading &&
               defaultsError == null &&
               defaults?.modelApplicationId == null && (
-                <View className="bg-primaryMuted w-full flex-row items-center justify-center gap-2 rounded-full border-2 border-border px-4 py-2">
+                <View className="w-full flex-row items-center justify-center gap-2 rounded-full border-2 border-border bg-primaryMuted px-4 py-2">
                   <Ionicons name="warning" size={18} className="text-primary" />
 
                   <Text className="flex-1 text-center text-[11px] font-semibold text-primary">
@@ -331,6 +337,9 @@ export const EntryBottomSheetModal = forwardRef<
         backgroundStyle={{
           backgroundColor: colors.surface,
         }}
+        handleIndicatorStyle={{
+          backgroundColor: colors.foreground,
+        }}
         handleComponent={renderHandle}
         footerComponent={renderFooter}>
         <BottomSheetScrollView
@@ -338,6 +347,7 @@ export const EntryBottomSheetModal = forwardRef<
           onLayout={(event) => setContentWidth(Math.max(0, event.nativeEvent.layout.width - 32))}
           contentContainerClassName="px-4"
           contentContainerStyle={{
+            flexGrow: 1,
             paddingBottom: 88 + insets.bottom,
           }}>
           {currentLookup && (
@@ -345,6 +355,7 @@ export const EntryBottomSheetModal = forwardRef<
               label="Back to selected word"
               variant="secondary"
               onPress={() => setInternalLookup(null)}
+              className="mb-2"
             />
           )}
           {isLoading ? (
@@ -352,9 +363,11 @@ export const EntryBottomSheetModal = forwardRef<
           ) : token && activeEntry != null ? (
             renderedEntry
           ) : (
-            <Text className="text-foreground">
-              {token ? 'No definitions found.' : 'No token selected.'}
-            </Text>
+            <View className="flex-1 items-center justify-center">
+              <Text className="text-center text-foreground">
+                {token ? 'No definitions found.' : 'No token selected.'}
+              </Text>
+            </View>
           )}
         </BottomSheetScrollView>
       </BottomSheetModal>

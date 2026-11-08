@@ -136,7 +136,11 @@ export function Button({
   const resolvedIconSize = iconSize ?? (size === 'sm' ? 16 : size === 'lg' ? 20 : 18);
   const content = label ?? children;
   const iconElement = icon ? (
-    <Ionicons name={icon} size={resolvedIconSize} className={cn(textVariants[variant], iconClassName)} />
+    <Ionicons
+      name={icon}
+      size={resolvedIconSize}
+      className={cn(textVariants[variant], iconClassName)}
+    />
   ) : null;
 
   return (

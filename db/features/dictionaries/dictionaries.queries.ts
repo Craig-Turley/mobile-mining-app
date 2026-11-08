@@ -50,19 +50,13 @@ export async function deleteDictionaryByIdQuery(id: number) {
   await dictionariesDb.$client.withTransactionAsync(async () => {
     const dictionary = await dictionariesDb.$client.getFirstAsync<{
       name: string;
-    }>(
-      'SELECT title AS name FROM dictionaries WHERE id = ?',
-      id
-    );
+    }>('SELECT title AS name FROM dictionaries WHERE id = ?', id);
 
     if (!dictionary) {
       throw new Error('Dictionary not found');
     }
 
-    await dictionariesDb.$client.runAsync(
-      'DELETE FROM dictionaries WHERE id = ?',
-      id
-    );
+    await dictionariesDb.$client.runAsync('DELETE FROM dictionaries WHERE id = ?', id);
 
     title = dictionary.name;
   });
@@ -92,11 +86,8 @@ export function lookupExpressionQuery(input: string[]) {
     .from(termBank)
     .where(
       terms.length > 0
-        ? or(
-          inArray(termBank.expression, terms),
-          inArray(termBank.reading, terms),
-        )
-        : sql`0`,
+        ? or(inArray(termBank.expression, terms), inArray(termBank.reading, terms))
+        : sql`0`
     );
 }
 

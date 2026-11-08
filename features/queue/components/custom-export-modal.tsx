@@ -81,7 +81,6 @@ export function CustomExportModal({
     <Modal
       visible={visible}
       transparent
-      animationType="fade"
       statusBarTranslucent
       presentationStyle="overFullScreen"
       onRequestClose={handleClose}>

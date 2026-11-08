@@ -31,39 +31,38 @@ export function useQuery<TDbData, TData>(
   const mapResultRef = useRef(mapResult);
   mapResultRef.current = mapResult;
 
-  const [data, setData] = useState<TData | null>(null);
-  const [isLoading, setIsLoading] = useState(enabled);
-  const [error, setError] = useState<unknown>(null);
+  const [result, setResult] = useState<{
+    deps: React.DependencyList;
+    data: TData | null;
+    error: unknown;
+  } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
     if (!enabled) {
-      setData(null);
-      setIsLoading(false);
-      setError(null);
       return;
     }
 
     async function run() {
-      setIsLoading(true);
-      setError(null);
-
       try {
         const dbData = await queryFnRef.current();
         const mappedData = mapResultRef.current(dbData);
 
         if (!cancelled) {
-          setData(mappedData);
+          setResult({
+            deps: [...deps],
+            data: mappedData,
+            error: null,
+          });
         }
       } catch (error) {
         if (!cancelled) {
-          setError(error);
-          setData(null);
-        }
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false);
+          setResult({
+            deps: [...deps],
+            data: null,
+            error,
+          });
         }
       }
     }
@@ -77,10 +76,16 @@ export function useQuery<TDbData, TData>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, ...deps]);
 
+  const isCurrentResult =
+    enabled &&
+    result !== null &&
+    result.deps.length === deps.length &&
+    result.deps.every((dep, index) => Object.is(dep, deps[index]));
+
   return {
-    data,
-    isLoading,
-    error,
-    isError: error !== null,
+    data: isCurrentResult ? result.data : null,
+    isLoading: enabled && !isCurrentResult,
+    error: isCurrentResult ? result.error : null,
+    isError: isCurrentResult && result.error !== null,
   };
 }

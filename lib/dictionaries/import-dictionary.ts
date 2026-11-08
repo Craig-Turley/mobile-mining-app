@@ -35,7 +35,7 @@ export async function importDictionary(uri: string) {
 
   const destination = dictionaryDirectory(index.title);
   if (destination.exists) {
-    console.log("DICT", destination.uri)
+    console.log('DICT', destination.uri);
     throw new Error(`Dictionary "${index.title}" already exists`);
   }
 

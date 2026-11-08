@@ -31,8 +31,8 @@ export async function attachAndBuildViews() {
   const entriesUnion =
     installed.length > 0
       ? installed
-        .map(({ alias }) => `SELECT * FROM "${alias.replace(/"/g, '""')}".terms`)
-        .join('\nUNION ALL\n')
+          .map(({ alias }) => `SELECT * FROM "${alias.replace(/"/g, '""')}".terms`)
+          .join('\nUNION ALL\n')
       : `
       SELECT
         NULL AS id,

@@ -7,7 +7,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { cssInterop } from 'nativewind';
 import { QueueItemWithModel } from '@/db/app/schema';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getAppDefaultsQuery } from '@/db/features/defaults/defaults.queries';
 import { NOPQueryMapper } from '@/db/hooks/use-query';
 import { useAppLiveQuery } from '@/db/hooks/use-app-live-query';
 import {
@@ -30,7 +29,6 @@ cssInterop(Ionicons, {
 
 export const QueueScreen: React.FC = () => {
   const { data: queuedItems, isLoading } = useAppLiveQuery(allQueueItemsQuery(), NOPQueryMapper);
-  const { data: defaults } = useAppLiveQuery(getAppDefaultsQuery(), NOPQueryMapper);
   const insets = useSafeAreaInsets();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -98,7 +96,7 @@ export const QueueScreen: React.FC = () => {
 
           <CustomExportModal
             visible={isModalOpen}
-            initialDeckApplicationId={defaults[0]?.deckApplicationId ?? null}
+            initialDeckApplicationId={0}
             isSubmitting={isExporting}
             onClose={() => setIsModalOpen(false)}
             onSubmit={exportFunc}

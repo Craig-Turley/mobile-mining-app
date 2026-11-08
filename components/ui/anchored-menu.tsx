@@ -152,7 +152,6 @@ export function AnchoredMenu({
       <Modal
         visible={visible}
         transparent
-        animationType="fade"
         presentationStyle="overFullScreen"
         statusBarTranslucent
         onRequestClose={closeMenu}>
