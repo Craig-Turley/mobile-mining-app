@@ -1,7 +1,7 @@
 import { dictionariesDb } from '@/db/dictionaries/client';
 import { dictionaries, termBank } from '@/db/dictionaries/schema';
 import { Token } from '@kuzulabz/expo-kagome';
-import { eq, or, desc, sql, inArray } from 'drizzle-orm';
+import { or, sql, inArray } from 'drizzle-orm';
 import { removeDictionaryStyles } from '@/lib/dictionaries/cache';
 import { deleteDictionaryAssets } from '@/lib/dictionaries/assets';
 import { attachAndBuildViews } from './dictionaries.actions';
@@ -87,18 +87,16 @@ export function lookupExpressionQuery(input: string[]) {
   }
 
   const terms = input.filter((term) => term !== '');
-  if (terms.length === 0) {
-    return [];
-  }
-
   return dictionariesDb
     .select()
     .from(termBank)
     .where(
-      or(
-        inArray(termBank.expression, terms),
-        inArray(termBank.reading, terms),
-      ),
+      terms.length > 0
+        ? or(
+          inArray(termBank.expression, terms),
+          inArray(termBank.reading, terms),
+        )
+        : sql`0`,
     );
 }
 
