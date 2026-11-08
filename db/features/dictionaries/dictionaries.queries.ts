@@ -1,7 +1,7 @@
 import { dictionariesDb } from '@/db/dictionaries/client';
 import { dictionaries, termBank } from '@/db/dictionaries/schema';
 import { Token } from '@kuzulabz/expo-kagome';
-import { eq, or, desc, sql } from 'drizzle-orm';
+import { eq, or, desc, sql, inArray } from 'drizzle-orm';
 import { removeDictionaryStyles } from '@/lib/dictionaries/cache';
 import { deleteDictionaryAssets } from '@/lib/dictionaries/assets';
 import { attachAndBuildViews } from './dictionaries.actions';
@@ -78,30 +78,27 @@ export function getDictionariesQuery() {
 }
 
 export function lookupTokenQuery(token: Token) {
-  return lookupExpressionQuery(token.base_form, token.reading);
+  return lookupExpressionQuery([token.base_form]);
 }
 
-export function lookupExpressionQuery(baseForm: string, reading?: string) {
+export function lookupExpressionQuery(input: string[]) {
   if (!dictionariesDb) {
     throw new Error('Lookup database is not ready');
+  }
+
+  const terms = input.filter((term) => term !== '');
+  if (terms.length === 0) {
+    return [];
   }
 
   return dictionariesDb
     .select()
     .from(termBank)
-    .where(or(eq(termBank.expression, baseForm), eq(termBank.reading, reading ?? baseForm)))
-    .orderBy(
-      sql`CASE
-        WHEN ${termBank.expression} = ${baseForm}
-          AND ${termBank.reading} = ${reading ?? ''}
-          THEN 0
-        WHEN ${termBank.expression} = ${baseForm}
-          THEN 1
-        WHEN ${termBank.reading} = ${baseForm}
-          THEN 2
-        ELSE 3
-      END`,
-      desc(termBank.score)
+    .where(
+      or(
+        inArray(termBank.expression, terms),
+        inArray(termBank.reading, terms),
+      ),
     );
 }
 

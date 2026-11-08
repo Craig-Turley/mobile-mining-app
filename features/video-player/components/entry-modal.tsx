@@ -63,7 +63,7 @@ export const EntryBottomSheetModal = forwardRef<
       token,
       lookup: currentLookup,
       entries: await (currentLookup
-        ? lookupExpressionQuery(currentLookup.expression, currentLookup.reading)
+        ? lookupExpressionQuery([currentLookup.expression])
         : lookupTokenQuery(token!)),
     }),
     NOPQueryMapper,
