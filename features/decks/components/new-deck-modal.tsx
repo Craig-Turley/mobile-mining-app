@@ -6,9 +6,8 @@ import {
   type BottomSheetModal as BottomSheetModalType,
 } from '@gorhom/bottom-sheet';
 import { Pressable, Text, View } from 'react-native';
-import { forwardRef, useState } from 'react';
+import { forwardRef, useRef } from 'react';
 import { cssInterop } from 'nativewind';
-import { darkColors, lightColors } from '@/theme/colors';
 import { useAppTheme } from '@/theme/theme-provider';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,7 +18,7 @@ import { useMutation } from '@/db/hooks/use-mutation';
 import { upsertDeckQuery } from '@/db/features/decks/decks.queries';
 import { NOPMutationMapper } from '@/db/hooks/use-app-live-query';
 
-interface NewDeckModalProps extends BottomSheetModalProps {}
+interface NewDeckModalProps extends BottomSheetModalProps { }
 
 cssInterop(BottomSheetScrollView, {
   className: 'style',
@@ -28,6 +27,10 @@ cssInterop(BottomSheetScrollView, {
 cssInterop(BottomSheetModal, {
   backgroundClassName: 'backgroundStyle',
   handleIndicatorClassName: 'handleIndicatorStyle',
+});
+
+cssInterop(BottomSheetTextInput, {
+  className: 'style',
 });
 
 function newDeckForm() {
@@ -42,14 +45,25 @@ export const NewDeckBottomSheetModal = forwardRef<
   BottomSheetModalType,
   Omit<NewDeckModalProps, 'children'>
 >((_, ref) => {
-  const bgColor = useAppTheme().theme === 'light' ? lightColors.surface : darkColors.surface;
-
+  const { colors } = useAppTheme();
   const insets = useSafeAreaInsets();
 
-  const [form, setForm] = useState<DeckFormData>(newDeckForm());
-  const { close } = useNewDeckModal();
+  const formRef = useRef<DeckFormData>(newDeckForm());
 
+  const { close } = useNewDeckModal();
   const { mutate: saveDeck } = useMutation(upsertDeckQuery, NOPMutationMapper);
+
+  const handleSubmit = () => {
+    const form = formRef.current;
+
+    saveDeck({
+      deckFormData: form,
+      deck: formDataToDeck(form),
+    });
+
+    formRef.current = newDeckForm();
+    close();
+  };
 
   return (
     <BottomSheetModal
@@ -62,8 +76,9 @@ export const NewDeckBottomSheetModal = forwardRef<
       keyboardBlurBehavior="restore"
       android_keyboardInputMode="adjustResize"
       backgroundStyle={{
-        backgroundColor: bgColor,
-      }}>
+        backgroundColor: colors.surface,
+      }}
+    >
       <BottomSheetScrollView
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{
@@ -71,58 +86,40 @@ export const NewDeckBottomSheetModal = forwardRef<
           paddingTop: 8,
           paddingBottom: 16 + insets.bottom,
           gap: 16,
-        }}>
+        }}
+      >
         <View className="mb-4 flex-row items-center justify-between">
           <View>
-            <Text className="uppercase tracking-[3px] text-primary">New deck</Text>
+            <Text className="text-primary">
+              New deck
+            </Text>
 
-            <Text className="mt-1 text-lg font-semibold text-foreground">Configure deck</Text>
+            <Text className="mt-1 text-lg font-semibold text-foreground">
+              Configure deck
+            </Text>
           </View>
-
-          {/*
-          <Pressable
-            className="rounded-full p-2 active:bg-accent"
-            accessibilityRole="button"
-            accessibilityLabel="Close"
-            onPress={() => {
-              if (
-                typeof ref !== "function" &&
-                ref?.current
-              ) {
-                ref.current.dismiss();
-              }
-            }}
-          >
-            <Ionicons
-              name="close"
-              size={18}
-              className="text-mutedForeground"
-            />
-          </Pressable>
-          */}
         </View>
 
         <View className="gap-4">
           <View className="gap-3">
-            <Text className="text-[10px] uppercase tracking-widest text-mutedForeground">Name</Text>
+            <Text className="text-[10px] uppercase tracking-widest text-mutedForeground">
+              Name
+            </Text>
 
             <BottomSheetTextInput
-              value={form.name}
-              onChangeText={(text) =>
-                setForm((prev) => ({
-                  ...prev,
-                  name: text,
-                }))
-              }
+              defaultValue=""
+              onChangeText={(name) => {
+                formRef.current.name = name;
+              }}
               placeholder="e.g. Mining · Kanji"
-              placeholderTextColor="#888"
-              className="rounded-lg border border-border bg-surface p-3 text-lg text-foreground"
+              placeholderTextColor={colors.mutedForeground}
               returnKeyType="done"
+              className="h-12 rounded-xl border border-border bg-background px-4 text-base text-foreground"
             />
 
             <Text className="text-[10px] text-mutedForeground">
-              If you wish to import into a pre-existing deck, the name must match your Anki deck
-              exactlty
+              If you wish to import into a pre-existing deck, the name must
+              match your Anki deck exactly.
             </Text>
           </View>
 
@@ -132,70 +129,32 @@ export const NewDeckBottomSheetModal = forwardRef<
             </Text>
 
             <BottomSheetTextInput
-              value={form.description}
-              onChangeText={(text) =>
-                setForm((prev) => ({
-                  ...prev,
-                  description: text,
-                }))
-              }
+              defaultValue=""
+              onChangeText={(description) => {
+                formRef.current.description = description;
+              }}
               placeholder="e.g. Main deck for..."
-              placeholderTextColor="#888"
-              className="rounded-lg border border-border bg-surface p-3 text-lg text-foreground"
+              placeholderTextColor={colors.mutedForeground}
               multiline
+              className="min-h-24 rounded-xl border border-border bg-background px-4 py-3 text-base text-foreground"
+              textAlignVertical="top"
             />
-          </View>
-
-          <View className="gap-3">
-            {/*
-            <Text className="text-[10px] uppercase tracking-widest text-mutedForeground">
-              Parent deck
-            </Text>
-
-            <View className="flex-row flex-wrap gap-1.5">
-              {["", ...decks.map(deck => deck.name)].map(parent => {
-                const selected = newParent === parent;
-
-                return (
-                  <Pressable
-                    key={parent || "root"}
-                    className={
-                      selected
-                        ? "rounded-full border border-primary bg-primary/15 px-2.5 py-1"
-                        : "rounded-full border border-border px-2.5 py-1"
-                    }
-                  >
-                    <Text
-                      className={
-                        selected
-                          ? "text-sm text-primary"
-                          : "text-sm text-mutedForeground"
-                      }
-                    >
-                      {parent || "— None —"}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-            */}
           </View>
 
           <Pressable
             className="h-11 flex-row items-center justify-center gap-2 rounded-xl bg-primary active:opacity-90"
             accessibilityRole="button"
-            onPress={async () => {
-              saveDeck({
-                deckFormData: form,
-                deck: formDataToDeck(form),
-              });
+            onPress={handleSubmit}
+          >
+            <Ionicons
+              name="checkmark"
+              size={18}
+              color={colors.primaryForeground}
+            />
 
-              setForm(newDeckForm());
-              close();
-            }}>
-            <Ionicons name="checkmark" size={18} className="text-primary-foreground" />
-
-            <Text className="text-primary-foreground text-sm font-semibold">Create deck</Text>
+            <Text className="text-sm font-semibold text-primary-foreground">
+              Create deck
+            </Text>
           </Pressable>
         </View>
       </BottomSheetScrollView>
