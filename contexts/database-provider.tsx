@@ -21,11 +21,18 @@ export function DatabaseProvider({ children }: Props) {
   const migrationError = appMigration.error ?? dictionaryMigration.error;
   if (migrationError) {
     return (
-      <SafeAreaView edges={['top', 'bottom', 'left', 'right']}>
-        <Text>Database setup failed.</Text>
-        <Text>
-          {migrationError instanceof Error ? migrationError.message : String(migrationError)}
+      <SafeAreaView
+        edges={['top', 'bottom', 'left', 'right']}
+        className="flex-1 items-center justify-center px-6"
+      >
+        <Text className="text-center text-foreground font-bold text-2xl">
+          Database setup failed.
         </Text>
+        {/*<Text className="text-center text-foreground">
+          {migrationError instanceof Error
+            ? migrationError.message
+            : String(migrationError)}
+        </Text>*/}
       </SafeAreaView>
     );
   }
@@ -33,10 +40,13 @@ export function DatabaseProvider({ children }: Props) {
   const migrationsReady = appMigration.success && dictionaryMigration.success;
   if (!migrationsReady) {
     return (
-      <SafeAreaView edges={['top', 'bottom', 'left', 'right']}>
-        <View>
-          <ActivityIndicator />
-          <Text>Preparing databases...</Text>
+      <SafeAreaView
+        edges={['top', 'bottom', 'left', 'right']}
+        className="flex-1 items-center justify-center px-6"
+      >
+        <View className="items-center gap-3">
+          <ActivityIndicator size="large" />
+          <Text className="text-center font-bold text-2xl text-foreground">Preparing database...</Text>
         </View>
       </SafeAreaView>
     );
@@ -54,7 +64,6 @@ function DictionaryAttachProvider({ children }: Props) {
     (async () => {
       try {
         await attachAndBuildViews();
-        console.log();
         initializeCssCache(await getDictionariesQuery());
         if (!cancelled) setStatus('ready');
       } catch (e) {
@@ -71,18 +80,33 @@ function DictionaryAttachProvider({ children }: Props) {
 
   if (status === 'error') {
     return (
-      <SafeAreaView edges={['top', 'bottom', 'left', 'right']}>
-        <Text>Database setup failed.</Text>
-        <Text>{error instanceof Error ? error.message : String(error)}</Text>
+      <SafeAreaView
+        edges={['top', 'bottom', 'left', 'right']}
+        className="flex-1 items-center justify-center px-6"
+      >
+        <View className="items-center gap-3">
+          <Text className="text-center text-2xl font-bold text-foreground">
+            Database setup failed.
+          </Text>
+          {/*<Text className="text-center text-mutedForeground">
+            {error instanceof Error ? error.message : String(error)}
+          </Text>*/}
+        </View>
       </SafeAreaView>
     );
   }
+
   if (status === 'attaching') {
     return (
-      <SafeAreaView edges={['top', 'bottom', 'left', 'right']}>
-        <View>
-          <ActivityIndicator />
-          <Text>Loading dictionaries...</Text>
+      <SafeAreaView
+        edges={['top', 'bottom', 'left', 'right']}
+        className="flex-1 items-center justify-center px-6"
+      >
+        <View className="items-center gap-3">
+          <ActivityIndicator size="large" />
+          <Text className="text-center text-foreground text-2xl font-bold">
+            Loading dictionaries...
+          </Text>
         </View>
       </SafeAreaView>
     );
