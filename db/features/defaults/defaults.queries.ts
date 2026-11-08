@@ -7,7 +7,6 @@ const DEFAULTS_APPLICATION_ID = 1;
 
 export type SetDefaultsInput = {
   modelApplicationId: number | null;
-  deckApplicationId: number | null;
 };
 
 export function getAppDefaultsQuery() {
@@ -18,19 +17,17 @@ export function getAppDefaultsQuery() {
     .limit(1);
 }
 
-export function setAppDefaultsQuery({ modelApplicationId, deckApplicationId }: SetDefaultsInput) {
+export function setAppDefaultsQuery({ modelApplicationId }: SetDefaultsInput) {
   return appDb
     .insert(defaults)
     .values({
       applicationId: DEFAULTS_APPLICATION_ID,
       modelApplicationId,
-      deckApplicationId,
     })
     .onConflictDoUpdate({
       target: defaults.applicationId,
       set: {
         modelApplicationId,
-        deckApplicationId,
         updatedAt: sql`CURRENT_TIMESTAMP`,
       },
     })
@@ -48,23 +45,6 @@ export function setDefaultModelQuery(modelApplicationId: number | null) {
       target: defaults.applicationId,
       set: {
         modelApplicationId,
-        updatedAt: sql`CURRENT_TIMESTAMP`,
-      },
-    })
-    .returning();
-}
-
-export function setDefaultDeckQuery(deckApplicationId: number | null) {
-  return appDb
-    .insert(defaults)
-    .values({
-      applicationId: DEFAULTS_APPLICATION_ID,
-      deckApplicationId,
-    })
-    .onConflictDoUpdate({
-      target: defaults.applicationId,
-      set: {
-        deckApplicationId,
         updatedAt: sql`CURRENT_TIMESTAMP`,
       },
     })

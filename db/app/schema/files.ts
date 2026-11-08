@@ -3,11 +3,8 @@ import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 export const subtitles = sqliteTable('subtitles', {
   id: integer('id').primaryKey(),
-
   name: text('name').notNull(),
-
   relativePath: text('relative_path').notNull(),
-
   createdAt: text('created_at')
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
@@ -17,15 +14,11 @@ export const videos = sqliteTable(
   'videos',
   {
     id: integer('id').primaryKey(),
-
     name: text('name').notNull(),
-
     relativePath: text('relative_path').notNull(),
-
     subtitleId: integer('subtitle_id').references(() => subtitles.id, {
       onDelete: 'set null',
     }),
-
     createdAt: text('created_at')
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),

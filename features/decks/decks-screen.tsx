@@ -9,7 +9,6 @@ import { StoredDeck } from '@/db/app/schema';
 import { AnchoredMenu, AnchoredMenuItem, AnchoredMenuTrigger } from '@/components/ui/anchored-menu';
 import { allDecksQuery, deleteDeckQuery } from '@/db/features/decks/decks.queries';
 import { NOPMutationMapper, useAppLiveQuery } from '@/db/hooks/use-app-live-query';
-import { getAppDefaultsQuery, setDefaultDeckQuery } from '@/db/features/defaults/defaults.queries';
 
 remapProps(FlatList, {
   className: 'style',
@@ -31,8 +30,6 @@ export const DecksScreen: React.FC = () => {
     NOPMutationMapper
   );
 
-  const { data: defaults } = useAppLiveQuery(getAppDefaultsQuery(), (rows) => rows[0] ?? null);
-
   return (
     <NewDeckModalProvider>
       <View className="flex-1 bg-background">
@@ -48,7 +45,7 @@ export const DecksScreen: React.FC = () => {
             className="flex-1"
             contentContainerClassName="gap-3 p-3"
             renderItem={({ item }) => (
-              <DeckRow deck={item} isDefault={defaults?.deckApplicationId === item.applicationId} />
+              <DeckRow deck={item} />
             )}
             keyExtractor={(item) => String(item.applicationId)}
           />
@@ -58,7 +55,7 @@ export const DecksScreen: React.FC = () => {
   );
 };
 
-const DeckRow: React.FC<{ deck: StoredDeck; isDefault: boolean }> = ({ deck, isDefault }) => {
+const DeckRow: React.FC<{ deck: StoredDeck }> = ({ deck }) => {
   return (
     <Pressable
       className={cn(
@@ -73,11 +70,6 @@ const DeckRow: React.FC<{ deck: StoredDeck; isDefault: boolean }> = ({ deck, isD
           <Text className="shrink font-semibold text-foreground" numberOfLines={1}>
             {deck.deck.name}
           </Text>
-          {isDefault ? (
-            <View className="bg-primary/15 shrink-0 rounded-full px-2 py-0.5">
-              <Text className="text-[9px] font-semibold text-primary">Default</Text>
-            </View>
-          ) : null}
         </View>
 
         <View className="flex-row items-center gap-2">
@@ -109,12 +101,6 @@ const DeckRow: React.FC<{ deck: StoredDeck; isDefault: boolean }> = ({ deck, isD
         <AnchoredMenuTrigger accessibilityLabel={`Open actions for ${deck.deck.name}`}>
           <Ionicons name="ellipsis-vertical" size={18} className="text-mutedForeground" />
         </AnchoredMenuTrigger>
-
-        <AnchoredMenuItem
-          icon="checkmark-circle-outline"
-          label="Set as default"
-          onPress={async () => setDefaultDeckQuery(deck.applicationId)}
-        />
 
         <AnchoredMenuItem
           icon="trash-outline"

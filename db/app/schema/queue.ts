@@ -6,24 +6,20 @@ import { models } from './models';
 
 export const queue = sqliteTable('queue', {
   applicationId: integer('application_id').primaryKey({ autoIncrement: true }),
-
   entry: text('entry', {
     mode: 'json',
   })
     .$type<Entry>()
     .notNull(),
-
   modelApplicationId: integer('model_application_id')
     .notNull()
     .references(() => models.applicationId, {
       onDelete: 'cascade',
       onUpdate: 'cascade',
     }),
-
   createdAt: text('created_at')
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
-
   updatedAt: text('updated_at')
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`)
