@@ -73,11 +73,9 @@ export function useQuery<TDbData, TData>(
       cancelled = true;
     };
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, ...deps]);
 
   const isCurrentResult =
-    enabled &&
     result !== null &&
     result.deps.length === deps.length &&
     result.deps.every((dep, index) => Object.is(dep, deps[index]));

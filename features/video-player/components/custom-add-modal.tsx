@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { allModelsQuery } from '@/db/features/models/models.queries';
-import { NOPQueryMapper, useQuery } from '@/db/hooks/use-query';
+import { useAppLiveQuery } from '@/db/hooks/use-app-live-query';
+import { NOPQueryMapper } from '@/db/hooks/use-query';
 import { useAppTheme } from '@/theme/theme-provider';
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
@@ -27,7 +28,7 @@ export function CustomAddModal({
     data: models,
     isLoading,
     error,
-  } = useQuery(allModelsQuery, NOPQueryMapper, [visible], { enabled: visible });
+  } = useAppLiveQuery(allModelsQuery(), NOPQueryMapper, []);
 
   const [selectedModelId, setSelectedModelId] = useState<number | null>(
     initialModelApplicationId ?? null
@@ -77,6 +78,7 @@ export function CustomAddModal({
     <Modal
       visible={visible}
       transparent
+      animationType='fade'
       statusBarTranslucent
       presentationStyle="overFullScreen"
       onRequestClose={handleClose}>
@@ -115,13 +117,7 @@ export function CustomAddModal({
           <View className="px-5 py-5">
             <Text className="mb-2 text-sm font-semibold text-foreground">Model</Text>
 
-            {isLoading || (visible && models == null && error == null) ? (
-              <View className="items-center justify-center rounded-2xl border border-border bg-background py-8">
-                <ActivityIndicator color={colors.foreground} />
-
-                <Text className="mt-3 text-sm text-mutedForeground">Loading models…</Text>
-              </View>
-            ) : error != null ? (
+            {error != null ? (
               <View className="rounded-2xl border border-border bg-background px-4 py-8">
                 <Text className="text-center font-semibold text-foreground">
                   Could not load models
@@ -129,6 +125,11 @@ export function CustomAddModal({
                 <Text className="mt-1 text-center text-sm text-mutedForeground">
                   {error instanceof Error ? error.message : 'Close this dialog and try again.'}
                 </Text>
+              </View>
+            ) : isLoading || (visible && models == null && error == null) ? (
+              <View className="items-center justify-center rounded-2xl border border-border bg-background py-8">
+                <ActivityIndicator color={colors.foreground} />
+                <Text className="mt-3 text-sm text-mutedForeground">Loading models…</Text>
               </View>
             ) : models == null || models.length === 0 ? (
               <View className="items-center rounded-2xl border border-border bg-background px-4 py-8">
@@ -158,15 +159,13 @@ export function CustomAddModal({
                         accessibilityState={{
                           selected: isSelected,
                         }}
-                        className={`min-h-14 flex-row items-center px-4 py-3 ${
-                          index !== models.length - 1 ? 'border-b border-border' : ''
-                        }`}
+                        className={`min-h-14 flex-row items-center px-4 py-3 ${index !== models.length - 1 ? 'border-b border-border' : ''
+                          }`}
                         onPress={() => setSelectedModelId(model.applicationId)}>
                         <Text
                           numberOfLines={2}
-                          className={`flex-1 text-base ${
-                            isSelected ? 'font-semibold text-primary' : 'text-foreground'
-                          }`}>
+                          className={`flex-1 text-base ${isSelected ? 'font-semibold text-primary' : 'text-foreground'
+                            }`}>
                           {model.modelFormData.name}
                         </Text>
 

@@ -19,7 +19,7 @@ type EntryModalContextType = {
 };
 
 const EntryModalContext = createContext<EntryModalContextType>({
-  setToken: () => {},
+  setToken: () => { },
 });
 
 type EntryModalProviderProps = {

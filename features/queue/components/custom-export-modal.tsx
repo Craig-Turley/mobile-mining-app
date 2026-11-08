@@ -1,9 +1,10 @@
 import { Button } from '@/components/ui/button';
 import { allDecksQuery } from '@/db/features/decks/decks.queries';
-import { NOPQueryMapper, useQuery } from '@/db/hooks/use-query';
+import { useAppLiveQuery } from '@/db/hooks/use-app-live-query';
+import { NOPQueryMapper } from '@/db/hooks/use-query';
 import { useAppTheme } from '@/theme/theme-provider';
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 
 interface CustomExportModalProps {
@@ -27,39 +28,25 @@ export function CustomExportModal({
     data: decks,
     isLoading,
     error,
-  } = useQuery(allDecksQuery, NOPQueryMapper, [visible], { enabled: visible });
+  } = useAppLiveQuery(allDecksQuery(), NOPQueryMapper, []);
 
-  const [selectedDeckId, setSelectedDeckId] = useState<number | null>(
-    initialDeckApplicationId ?? null
-  );
+  const [userSelectedDeckId, setUserSelectedDeckId] = useState<number | null>(null);
 
-  useEffect(() => {
-    if (!visible || decks == null) {
-      return;
-    }
-
-    const initialDeckExists =
-      initialDeckApplicationId != null &&
-      decks.some((deck) => deck.applicationId === initialDeckApplicationId);
-
-    if (initialDeckExists) {
-      setSelectedDeckId(initialDeckApplicationId);
-      return;
-    }
-
-    setSelectedDeckId(decks[0]?.applicationId ?? null);
-  }, [visible, initialDeckApplicationId, decks]);
+  const selectedDeckId =
+    decks?.find((deck) => deck.applicationId === userSelectedDeckId)?.applicationId ??
+    decks?.find((deck) => deck.applicationId === initialDeckApplicationId)?.applicationId ??
+    decks?.[0]?.applicationId ??
+    null;
 
   const handleClose = () => {
     if (isSubmitting) {
       return;
     }
-
     onClose();
   };
 
   const handleSelectDeck = (deckApplicationId: number) => {
-    setSelectedDeckId(deckApplicationId);
+    setUserSelectedDeckId(deckApplicationId);
   };
 
   const handleSubmit = async () => {
@@ -80,6 +67,7 @@ export function CustomExportModal({
   return (
     <Modal
       visible={visible}
+      animationType='fade'
       transparent
       statusBarTranslucent
       presentationStyle="overFullScreen"
@@ -162,17 +150,15 @@ export function CustomExportModal({
                         accessibilityState={{
                           selected: isSelected,
                         }}
-                        className={`min-h-14 flex-row items-center px-4 py-3 ${
-                          index !== decks.length - 1 ? 'border-b border-border' : ''
-                        }`}
+                        className={`min-h-14 flex-row items-center px-4 py-3 ${index !== decks.length - 1 ? 'border-b border-border' : ''
+                          }`}
                         onPress={() => {
                           handleSelectDeck(deck.applicationId);
                         }}>
                         <Text
                           numberOfLines={2}
-                          className={`flex-1 text-base ${
-                            isSelected ? 'font-semibold text-primary' : 'text-foreground'
-                          }`}>
+                          className={`flex-1 text-base ${isSelected ? 'font-semibold text-primary' : 'text-foreground'
+                            }`}>
                           {deck.deckFormData.name}
                         </Text>
 
