@@ -39,9 +39,9 @@ export default function ModelTemplatesSection({
     const nextTemplates = templates.map((template, index) =>
       index === currentTemplateIdx
         ? {
-            ...template,
-            ...updates,
-          }
+          ...template,
+          ...updates,
+        }
         : template
     );
 
@@ -68,7 +68,7 @@ export default function ModelTemplatesSection({
   };
 
   const addTemplate = () => {
-    const nextTemplate = createTemplateFormData(templates.length);
+    const nextTemplate = createTemplateFormData(templates.length, availableFields.map((name) => ({ name })));
 
     setModelTemplates([...templates, nextTemplate]);
 

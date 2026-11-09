@@ -38,16 +38,14 @@ cssInterop(Ionicons, {
   },
 });
 
-interface ScreenContentProps {}
+interface ScreenContentProps { }
 
 export const ModelCreateScreen: React.FC<ScreenContentProps> = () => {
   const { editModelFormData } = useLocalSearchParams<{
     editModelFormData?: string;
   }>();
 
-  // TODO: use the useMutation loading variables
-  const [isUpserting, setIsUpserting] = useState<boolean>(false);
-  const { mutate: upsertModel } = useMutation(upsertModelQuery, NOPMutationMapper);
+  const { mutate: upsertModel, isPending: isUpserting } = useMutation(upsertModelQuery, NOPMutationMapper);
   const parsedEditModelFormData = useMemo(() => {
     if (editModelFormData === undefined) return undefined;
 
@@ -67,7 +65,7 @@ export const ModelCreateScreen: React.FC<ScreenContentProps> = () => {
       : ModelFields.map(({ name }) => ({ name })),
     templates: parsedEditModelFormData
       ? parsedEditModelFormData.modelFormData.templates
-      : [createTemplateFormData(0)],
+      : [createTemplateFormData(0, ModelFields.map(({ name }) => ({ name })))],
   }));
 
   const availableFields = form.fields.map((field) => field.name) as readonly ModelFieldName[];
@@ -92,9 +90,7 @@ export const ModelCreateScreen: React.FC<ScreenContentProps> = () => {
               activeOpacity={0.7}
               disabled={isUpserting}
               onPress={async () => {
-                // TODO: add error handling
                 if (isUpserting) return;
-                setIsUpserting(true);
 
                 const constructedModel = formDataToModel(form);
                 await upsertModel({
