@@ -15,7 +15,6 @@ export const DEFAULT_CSS = `
     text-align: center;
     box-sizing: border-box;
     padding: 24px;
-    gap: 12px;
   }
 
   .expression {
