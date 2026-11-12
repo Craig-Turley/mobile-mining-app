@@ -1,5 +1,5 @@
 import { Ruby } from '@/components/ui/ruby';
-import type { StoredDefinition } from '@/db/dictionaries/schema';
+import type { StoredDefinition } from '@/lib/dictionaries/dictionary-content.types';
 import React, { useState } from 'react';
 import {
   Image,

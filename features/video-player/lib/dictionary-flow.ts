@@ -1,4 +1,4 @@
-import type { ComponentNode } from '@/db/dictionaries/schema';
+import type { ComponentNode } from '@/lib/dictionaries/dictionary-content.types';
 import type { ComputedStyle } from '@/lib/dictionaries/native-style';
 
 export type LayoutNode = ComponentNode & { computed?: ComputedStyle };

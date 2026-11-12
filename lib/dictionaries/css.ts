@@ -1,6 +1,6 @@
 import { compile } from 'css-select';
 import { clone, generate, lexer, parse, walk, type CssNode } from 'css-tree';
-import type { ComponentNode } from '@/db/dictionaries/schema';
+import type { ComponentNode } from './dictionary-content.types';
 import {
   computeNativeStyle,
   computeVariables,

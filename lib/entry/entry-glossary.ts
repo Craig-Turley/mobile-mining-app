@@ -1,5 +1,9 @@
 import { generate, List, parse, type CssNode } from 'css-tree';
-import type { ComponentName, ComponentNode, StoredDefinition } from '@/db/dictionaries/schema';
+import type {
+  ComponentName,
+  ComponentNode,
+  StoredDefinition,
+} from '@/lib/dictionaries/dictionary-content.types';
 import type { Entry } from './entry.types';
 import { rewriteCssAssets, scopeDictionaryCss } from './dictionary-css';
 import { escapeHtml, exportKey, type ResolveGlossaryAsset } from './html-utils';

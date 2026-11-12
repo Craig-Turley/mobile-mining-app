@@ -29,7 +29,7 @@ import {
 import { useAppLiveQuery } from '@/db/hooks/use-app-live-query';
 import { getAppDefaultsQuery } from '@/db/features/defaults/defaults.queries';
 import { renderDefinition } from '../lib/render-entry-modal';
-import { StoredDefinition } from '@/db/dictionaries/schema';
+import type { StoredDefinition } from '@/lib/dictionaries/dictionary-content.types';
 import { Ruby, RubyText } from '@/components/ui/ruby';
 import { getDictionaryStyles } from '@/lib/dictionaries/cache';
 import { resolveDictionaryAsset } from '@/lib/dictionaries/assets';

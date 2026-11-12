@@ -1,6 +1,6 @@
 import { generate, lexer, parse } from 'css-tree';
 import type { TextStyle, ViewStyle } from 'react-native';
-import type { ComponentNode } from '@/db/dictionaries/schema';
+import type { ComponentNode } from './dictionary-content.types';
 import type { StyleEnvironment } from './css';
 import { cssDiagnostic } from './diagnostics';
 
