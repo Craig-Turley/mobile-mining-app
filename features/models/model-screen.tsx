@@ -26,7 +26,7 @@ cssInterop(Ionicons, {
   },
 });
 
-interface ModelsScreenProps {}
+interface ModelsScreenProps { }
 
 export const ModelsScreen: React.FC<ModelsScreenProps> = () => {
   const { data: models, isLoading } = useAppLiveQuery(allModelsQuery(), NOPQueryMapper);
@@ -65,8 +65,8 @@ const ModelRow: React.FC<{
   storedModel: StoredModel;
   isDefault: boolean;
 }> = ({ storedModel, isDefault }) => {
-  const fieldCount = storedModel.model.flds?.length ?? 0;
-  const templateCount = storedModel.model.tmpls?.length ?? 0;
+  const fieldCount = storedModel.modelFormData.fields?.length ?? 0;
+  const templateCount = storedModel.modelFormData.templates?.length ?? 0;
 
   const editModel = () => {
     router.push({
@@ -86,7 +86,7 @@ const ModelRow: React.FC<{
       <Pressable onPress={editModel} className="min-w-0 flex-1">
         <View className="flex-row items-center gap-2">
           <Text className="shrink font-semibold text-foreground" numberOfLines={1}>
-            {storedModel.model.name}
+            {storedModel.modelFormData.name}
           </Text>
 
           {isDefault ? (
@@ -119,7 +119,7 @@ const ModelRow: React.FC<{
       <AnchoredMenu>
         <AnchoredMenuTrigger
           className="shrink-0"
-          accessibilityLabel={`Open actions for ${storedModel.model.name}`}>
+          accessibilityLabel={`Open actions for ${storedModel.modelFormData.name}`}>
           <Ionicons name="ellipsis-vertical" size={18} className="text-mutedForeground" />
         </AnchoredMenuTrigger>
 

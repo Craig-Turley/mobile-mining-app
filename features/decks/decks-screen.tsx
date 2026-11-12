@@ -66,13 +66,13 @@ const DeckRow: React.FC<{ deck: StoredDeck }> = ({ deck }) => {
       <View className="min-w-0 flex-1 gap-1">
         <View className="flex-row items-center gap-2">
           <Text className="shrink font-semibold text-foreground" numberOfLines={1}>
-            {deck.deck.name}
+            {deck.deckFormData.name}
           </Text>
         </View>
 
         <View className="flex-row items-center gap-2">
           <Text className="shrink text-mutedForeground" numberOfLines={1}>
-            {deck.deck.description.length > 0 ? deck.deck.description : 'No Description'}
+            {deck.deckFormData.description.length > 0 ? deck.deckFormData.description : 'No Description'}
           </Text>
         </View>
 
@@ -96,7 +96,7 @@ const DeckRow: React.FC<{ deck: StoredDeck }> = ({ deck }) => {
       </View>
 
       <AnchoredMenu>
-        <AnchoredMenuTrigger accessibilityLabel={`Open actions for ${deck.deck.name}`}>
+        <AnchoredMenuTrigger accessibilityLabel={`Open actions for ${deck.deckFormData.name}`}>
           <Ionicons name="ellipsis-vertical" size={18} className="text-mutedForeground" />
         </AnchoredMenuTrigger>
 

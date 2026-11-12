@@ -1,13 +1,11 @@
 import { eq, inArray, sql } from 'drizzle-orm';
-import { Model } from 'genanki-ts';
 import { appDb } from '@/db/app/client';
 import { models } from '@/db/app/schema/models';
-import { type ModelFormData, type AllowedModelField } from '@/lib/anki-settings';
+import { type ModelFormData } from '@/lib/anki-settings';
 
 export type UpsertModelInput = {
   applicationId?: number;
   modelFormData: ModelFormData;
-  model: Model<AllowedModelField[]>;
 };
 
 export function allModelsQuery() {
@@ -22,19 +20,17 @@ export function modelByApplicationQuery(applicationId: number) {
   return appDb.select().from(models).where(eq(models.applicationId, applicationId)).limit(1);
 }
 
-export function upsertModelQuery({ applicationId, modelFormData, model }: UpsertModelInput) {
+export function upsertModelQuery({ applicationId, modelFormData }: UpsertModelInput) {
   return appDb
     .insert(models)
     .values({
       applicationId,
       modelFormData,
-      model,
     })
     .onConflictDoUpdate({
       target: models.applicationId,
       set: {
         modelFormData,
-        model,
         updatedAt: sql`CURRENT_TIMESTAMP`,
       },
     })

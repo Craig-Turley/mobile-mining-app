@@ -17,7 +17,6 @@ import {
   AllowedModelField,
   ModelFieldName,
   createTemplateFormData,
-  formDataToModel,
 } from '@/lib/anki-settings';
 import { StoredModel } from '@/db/app/schema/models';
 import { useMutation } from '@/db/hooks/use-mutation';
@@ -92,11 +91,9 @@ export const ModelCreateScreen: React.FC<ScreenContentProps> = () => {
               onPress={async () => {
                 if (isUpserting) return;
 
-                const constructedModel = formDataToModel(form);
                 await upsertModel({
                   applicationId: parsedEditModelFormData?.applicationId,
                   modelFormData: form,
-                  model: constructedModel,
                 });
 
                 router.back();

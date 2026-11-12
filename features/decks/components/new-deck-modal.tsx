@@ -11,7 +11,7 @@ import { cssInterop } from 'nativewind';
 import { useAppTheme } from '@/theme/theme-provider';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { DeckFormData, formDataToDeck } from '@/lib/anki-settings';
+import { DeckFormData } from '@/lib/anki-settings';
 import { generateDeckId } from '@/lib/genanki';
 import { useNewDeckModal } from '../contexts/new-deck-modal-context';
 import { useMutation } from '@/db/hooks/use-mutation';
@@ -58,7 +58,6 @@ export const NewDeckBottomSheetModal = forwardRef<
 
     saveDeck({
       deckFormData: form,
-      deck: formDataToDeck(form),
     });
 
     formRef.current = newDeckForm();

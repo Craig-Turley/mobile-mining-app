@@ -6,7 +6,6 @@ import { decks, type StoredDeck } from '@/db/app/schema/decks';
 export type UpsertDeckInput = {
   applicationId?: number;
   deckFormData: StoredDeck['deckFormData'];
-  deck: StoredDeck['deck'];
 };
 
 export function allDecksQuery() {
@@ -19,19 +18,17 @@ export function deckByApplicationIdQuery(applicationId: number) {
   });
 }
 
-export function upsertDeckQuery({ applicationId, deckFormData, deck }: UpsertDeckInput) {
+export function upsertDeckQuery({ applicationId, deckFormData }: UpsertDeckInput) {
   return appDb
     .insert(decks)
     .values({
       applicationId,
       deckFormData,
-      deck,
     })
     .onConflictDoUpdate({
       target: decks.applicationId,
       set: {
         deckFormData,
-        deck,
         updatedAt: sql`CURRENT_TIMESTAMP`,
       },
     })

@@ -1,8 +1,7 @@
 import { sql } from 'drizzle-orm';
 import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
-import type { Model } from 'genanki-ts';
 
-import { AllowedModelField, ModelFormData } from '@/lib/anki-settings';
+import { ModelFormData } from '@/lib/anki-settings';
 
 export const models = sqliteTable('models', {
   applicationId: integer('application_id').primaryKey({ autoIncrement: true }),
@@ -10,11 +9,6 @@ export const models = sqliteTable('models', {
     mode: 'json',
   })
     .$type<ModelFormData>()
-    .notNull(),
-  model: text('model', {
-    mode: 'json',
-  })
-    .$type<Model<AllowedModelField[]>>()
     .notNull(),
   createdAt: text('created_at')
     .notNull()

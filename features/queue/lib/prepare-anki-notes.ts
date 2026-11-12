@@ -21,7 +21,7 @@ export async function prepareAnkiNotes(
   resolveAsset: ResolveEntryAsset
 ): Promise<PreparedAnkiNote<AllowedModelField[]>[]> {
   const models = new Map(
-    storedModels.map((stored) => [stored.applicationId, mapStoredModel(stored).model])
+    storedModels.map((stored) => [stored.applicationId, mapStoredModel(stored)])
   );
   const styles = new Map(
     dictionaries.map((dictionary) => [dictionary.title, dictionary.css ?? ''])

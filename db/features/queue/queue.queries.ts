@@ -26,7 +26,7 @@ export function allQueueItemsQuery() {
 
       model: {
         name: sql<string>`
-          json_extract(${models.model}, '$.name')
+          json_extract(${models.modelFormData}, '$.name')
         `,
       },
     })
