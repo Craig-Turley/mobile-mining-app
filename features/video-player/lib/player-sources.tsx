@@ -3,11 +3,12 @@ export type LocalMediaSource = {
   videoId: number;
 };
 
+/**
+ * @type captions: JSON.stringify(YoutubeCaptions)
+ * @type videoId: string 
+ */
 export type YoutubeMediaSource = {
   type: 'youtube';
-  /**
-   * @type YoutubeCaptions
-   */
   captions: string;
   videoId: string;
 };

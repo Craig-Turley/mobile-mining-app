@@ -26,8 +26,8 @@ export const videos = sqliteTable(
   (table) => [index('idx_videos_subtitle_id').on(table.subtitleId)]
 );
 
-export const subtitlesRelations = relations(subtitles, ({ many }) => ({
-  videos: many(videos),
+export const subtitlesRelations = relations(subtitles, ({ one }) => ({
+  videos: one(videos),
 }));
 
 export const videosRelations = relations(videos, ({ one }) => ({

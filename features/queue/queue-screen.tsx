@@ -1,12 +1,8 @@
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { View, Text, FlatList, Alert } from 'react-native';
-import { QueueToolbar } from './components/queue-toolbar';
-import { cn } from '@/utils/cn';
-import { Ionicons } from '@expo/vector-icons';
 import { cssInterop } from 'nativewind';
+import { View, Text, FlatList, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { QueueItemWithModel } from '@/db/app/schema';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NOPQueryMapper } from '@/db/hooks/use-query';
 import { useAppLiveQuery } from '@/db/hooks/use-app-live-query';
 import {
@@ -14,9 +10,14 @@ import {
   clearQueueQuery,
   deleteFromQueueQuery,
 } from '@/db/features/queue/queue.queries';
+import { Button } from '@/components/ui/button';
 import { AnchoredMenu, AnchoredMenuItem, AnchoredMenuTrigger } from '@/components/ui/anchored-menu';
+import { cn } from '@/utils/cn';
+import { QueueToolbar } from './components/queue-toolbar';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CustomExportModal } from './components/custom-export-modal';
 import { exportQueueToAnki } from './lib/export-to-anki';
+import { clearQueue } from './lib/clear-queue-alert';
 
 cssInterop(Ionicons, {
   className: {
@@ -38,23 +39,7 @@ export const QueueScreen: React.FC = () => {
     setIsExporting(true);
     try {
       await exportQueueToAnki(deckId, queuedItems);
-
-      Alert.alert(
-        'Clear export queue?',
-        'Would you like to remove the exported entries from the queue?',
-        [
-          {
-            text: 'No',
-            style: 'cancel',
-          },
-          {
-            text: 'Yes',
-            style: 'destructive',
-            onPress: clearQueueQuery,
-          },
-        ],
-        { cancelable: true }
-      );
+      clearQueue(clearQueueQuery);
     } catch (error) {
       console.error('Failed to export Anki deck:', error);
       Alert.alert('Anki export failed', error instanceof Error ? error.message : String(error));

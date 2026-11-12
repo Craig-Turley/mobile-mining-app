@@ -1,4 +1,4 @@
-import { ModelField, RequirementMode } from 'genanki-ts';
+import { Model, ModelField, RequirementMode } from 'genanki-ts';
 
 type AnkiModelFieldDefinition = ModelField & {
   label: string;
@@ -7,6 +7,8 @@ type AnkiModelFieldDefinition = ModelField & {
   html: string;
   htmlOrder: number;
 };
+
+export type AnkiModel = Model<AllowedModelField[]>;
 
 /**
  * Single source of truth for all model fields.

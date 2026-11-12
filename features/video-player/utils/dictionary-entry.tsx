@@ -5,11 +5,11 @@ type Node =
   | string
   | Node[]
   | {
-      tag: string;
-      content?: Node;
-      href?: string;
-      path?: string;
-    };
+    tag: string;
+    content?: Node;
+    href?: string;
+    path?: string;
+  };
 
 function Ruby({ base, reading }: { base: React.ReactNode; reading: React.ReactNode }) {
   return (
@@ -99,19 +99,3 @@ export function renderStructuredContent(node: Node, key = 'root'): React.ReactNo
       return <Text key={key}>{children}</Text>;
   }
 }
-
-// function DefinitionView({ definition }: { definition: any }) {
-//   if (typeof definition === 'string') {
-//     return <Text>{definition}</Text>;
-//   }
-//
-//   if (definition.type === 'text') {
-//     return <Text>{definition.text}</Text>;
-//   }
-//
-//   if (definition.type === 'structured-content') {
-//     return <View>{renderStructuredContent(definition.content)}</View>;
-//   }
-//
-//   return null;
-// }

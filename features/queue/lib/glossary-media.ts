@@ -14,13 +14,17 @@ export function createGlossaryMedia() {
 
   const resolve: ResolveEntryAsset = async (entry, url, source) => {
     if (/^[a-z][\w+.-]*:/iu.test(url)) throw new Error(`Expected a local dictionary asset: ${url}`);
+
     const match = url.match(/^([^?#]+)(.*)$/u);
     if (!match) throw new Error(`Invalid dictionary asset: ${url}`);
+
     const path = decodeURIComponent(match[1]).replace(/^(\.\/)+/u, '');
     const assetPath = source === 'transformed' ? path : `assets/${path}`;
     if (!safeDictionaryPath(assetPath)) throw new Error(`Unsafe dictionary asset: ${url}`);
+
     const uri = resolveDictionaryAsset(entry.dictionary, assetPath);
     if (!uri || !new File(uri).exists) throw new Error(`Missing dictionary asset: ${url}`);
+
     let media = files.get(uri);
     if (!media) {
       const bytes = await new File(uri).bytes();
@@ -32,6 +36,7 @@ export function createGlossaryMedia() {
       media = { filename, uri: file.uri };
       files.set(uri, media);
     }
+
     return { ...media, filename: media.filename + match[2] };
   };
 

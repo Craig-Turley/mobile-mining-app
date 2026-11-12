@@ -1,4 +1,4 @@
-import React, { PropsWithChildren } from 'react';
+import React from 'react';
 import { View, Text, Pressable, ViewProps } from 'react-native';
 import { VideoLoaderToolbar } from './components/video-loader-toolbar';
 import { router } from 'expo-router';
@@ -13,12 +13,8 @@ import { AnchoredMenu, AnchoredMenuItem, AnchoredMenuTrigger } from '@/component
 import { LocalMediaSource } from './lib/player-sources';
 import { cn } from '@/utils/cn';
 
-interface ScreenContentProps extends PropsWithChildren {}
-
-export const VideoLibraryScreen: React.FC<ScreenContentProps> = ({ children }) => {
-  const { data, error } = useAppLiveQuery(videosQuery(), NOPQueryMapper);
-
-  const isError = error !== undefined;
+export const VideoLibraryScreen: React.FC = () => {
+  const { data, isError } = useAppLiveQuery(videosQuery(), NOPQueryMapper);
 
   return (
     <View className="flex-1 gap-4 bg-background p-4">

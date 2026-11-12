@@ -10,7 +10,7 @@ export const DEFAULT_CSS = `
     flex-direction: column;
 
     align-items: center;
-    justify-content: flex-start;
+    justify-content: center;
 
     text-align: center;
     box-sizing: border-box;
