@@ -1,6 +1,8 @@
-import { Model, ModelField, RequirementMode } from 'genanki-ts';
+import type { Model } from 'genanki-ts';
+import { NoteFieldNames, TemplateFieldNames } from '@/db/app/schema/models';
+import type { AllowedModelField, TemplateFieldName } from '@/db/app/schema/models';
 
-type AnkiModelFieldDefinition = ModelField & {
+type AnkiTemplateFieldDefinition = {
   label: string;
   allowedOnFront: boolean;
   allowedOnBack: boolean;
@@ -10,18 +12,8 @@ type AnkiModelFieldDefinition = ModelField & {
 
 export type AnkiModel = Model<AllowedModelField[]>;
 
-/**
- * Single source of truth for all model fields.
- *
- * `as const` preserves:
- * - the exact field names
- * - the tuple length
- * - the tuple order
- *
- * `satisfies` verifies that every item is compatible with ModelField.
- */
-export const AnkiModelFields = [
-  {
+export const AnkiTemplateFields = {
+  expression: {
     name: 'expression',
     label: 'Expression',
     allowedOnFront: true,
@@ -29,7 +21,7 @@ export const AnkiModelFields = [
     html: '<div class="expression">{{expression}}</div>',
     htmlOrder: 2,
   },
-  {
+  reading: {
     name: 'reading',
     label: 'Reading',
     allowedOnFront: true,
@@ -37,7 +29,7 @@ export const AnkiModelFields = [
     html: '<div class="reading">{{reading}}</div>',
     htmlOrder: 1,
   },
-  {
+  glossary: {
     name: 'glossary',
     label: 'Glossary',
     allowedOnFront: true,
@@ -45,7 +37,7 @@ export const AnkiModelFields = [
     html: '<div class="glossary">{{glossary}}</div>',
     htmlOrder: 3,
   },
-  {
+  FrontSide: {
     name: 'FrontSide',
     label: 'Front Side',
     allowedOnFront: false,
@@ -56,80 +48,32 @@ export const AnkiModelFields = [
     `,
     htmlOrder: 0,
   },
-] as const satisfies readonly AnkiModelFieldDefinition[];
-
-export type ModelFieldName = (typeof AnkiModelFields)[number]['name'];
-
-export type AllowedModelField = ModelField & {
-  name: ModelFieldName;
+} as const satisfies {
+  [Name in TemplateFieldName]: AnkiTemplateFieldDefinition & { name: Name };
 };
 
-type ToModelFields<T extends readonly { readonly name: string }[]> = {
-  readonly [Index in keyof T]: {
-    readonly name: T[Index]['name'];
-  };
-};
+const templateFields = TemplateFieldNames.map((name) => AnkiTemplateFields[name]);
 
-function toModelFields<const T extends readonly { readonly name: string }[]>(
-  fields: T
-): ToModelFields<T> {
-  return fields.map(({ name }) => ({
-    name,
-  })) as ToModelFields<T>;
-}
+export const ModelFields: readonly AllowedModelField[] = NoteFieldNames.map((name) => ({ name }));
 
-export const ModelFields = toModelFields(
-  AnkiModelFields.filter(({ name }) => name !== 'FrontSide')
-);
+export const FrontSideModelFields = templateFields
+  .filter((field) => field.allowedOnFront)
+  .map(({ name }) => ({ name }));
 
-export const ModelFieldNames = AnkiModelFields.map((field) => field.name);
-
-export const FrontSideModelFields = AnkiModelFields.filter((field) => field.allowedOnFront).map(
-  ({ name }) => ({ name })
-) as AllowedModelField[];
-
-export const BackSideModelFields = AnkiModelFields.filter((field) => field.allowedOnBack).map(
-  ({ name }) => ({ name })
-) as AllowedModelField[];
+export const BackSideModelFields = templateFields
+  .filter((field) => field.allowedOnBack)
+  .map(({ name }) => ({ name }));
 
 export const modelFieldLabels = Object.fromEntries(
-  AnkiModelFields.map((field) => [field.name, field.label])
-) as Record<ModelFieldName, string>;
+  templateFields.map((field) => [field.name, field.label])
+) as Record<TemplateFieldName, string>;
 
 export const ModelElementsHTML: {
-  name: ModelFieldName;
+  name: TemplateFieldName;
   html: string;
-}[] = [...AnkiModelFields]
+}[] = [...templateFields]
   .sort((a, b) => a.htmlOrder - b.htmlOrder)
   .map(({ name, html }) => ({
     name,
     html,
   }));
-
-export type DeckFormData = {
-  applicationId?: number; // NOTE: this is the application identifer
-  id: number; // NOTE: this is the stable anki identifier
-  name: string;
-  description: string;
-};
-
-export type ModelFormData = {
-  applicationId?: number; // NOTE: this is the application identifer
-  id: number; // NOTE: this is the stable anki identifier
-  name: string;
-  fields: AllowedModelField[];
-  templates: TemplateFormData[];
-};
-
-export type TemplateFormData = {
-  id: string;
-  name: string;
-  frontFields: ModelFieldName[];
-  backFields: ModelFieldName[];
-  rule: RuleFormData;
-};
-
-export type RuleFormData = {
-  mode: RequirementMode;
-  fields: ModelFieldName[];
-};

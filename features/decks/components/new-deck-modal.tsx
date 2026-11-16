@@ -11,14 +11,14 @@ import { cssInterop } from 'nativewind';
 import { useAppTheme } from '@/theme/theme-provider';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { DeckFormData } from '@/lib/anki-settings';
+import type { DeckFormData } from '@/db/app/schema/decks';
 import { generateDeckId } from '@/lib/genanki';
 import { useNewDeckModal } from '../contexts/new-deck-modal-context';
 import { useMutation } from '@/db/hooks/use-mutation';
 import { upsertDeckQuery } from '@/db/features/decks/decks.queries';
 import { NOPMutationMapper } from '@/db/hooks/use-app-live-query';
 
-interface NewDeckModalProps extends BottomSheetModalProps { }
+interface NewDeckModalProps extends BottomSheetModalProps {}
 
 cssInterop(BottomSheetScrollView, {
   className: 'style',
@@ -76,8 +76,7 @@ export const NewDeckBottomSheetModal = forwardRef<
       android_keyboardInputMode="adjustResize"
       backgroundStyle={{
         backgroundColor: colors.surface,
-      }}
-    >
+      }}>
       <BottomSheetScrollView
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{
@@ -85,25 +84,18 @@ export const NewDeckBottomSheetModal = forwardRef<
           paddingTop: 8,
           paddingBottom: 16 + insets.bottom,
           gap: 16,
-        }}
-      >
+        }}>
         <View className="mb-4 flex-row items-center justify-between">
           <View>
-            <Text className="text-primary">
-              New deck
-            </Text>
+            <Text className="text-primary">New deck</Text>
 
-            <Text className="mt-1 text-lg font-semibold text-foreground">
-              Configure deck
-            </Text>
+            <Text className="mt-1 text-lg font-semibold text-foreground">Configure deck</Text>
           </View>
         </View>
 
         <View className="gap-4">
           <View className="gap-3">
-            <Text className="text-[10px] uppercase tracking-widest text-mutedForeground">
-              Name
-            </Text>
+            <Text className="text-[10px] uppercase tracking-widest text-mutedForeground">Name</Text>
 
             <BottomSheetTextInput
               defaultValue=""
@@ -117,8 +109,8 @@ export const NewDeckBottomSheetModal = forwardRef<
             />
 
             <Text className="text-[10px] text-mutedForeground">
-              If you wish to import into a pre-existing deck, the name must
-              match your Anki deck exactly.
+              If you wish to import into a pre-existing deck, the name must match your Anki deck
+              exactly.
             </Text>
           </View>
 
@@ -143,17 +135,10 @@ export const NewDeckBottomSheetModal = forwardRef<
           <Pressable
             className="h-11 flex-row items-center justify-center gap-2 rounded-xl bg-primary active:opacity-90"
             accessibilityRole="button"
-            onPress={handleSubmit}
-          >
-            <Ionicons
-              name="checkmark"
-              size={18}
-              color={colors.primaryForeground}
-            />
+            onPress={handleSubmit}>
+            <Ionicons name="checkmark" size={18} color={colors.primaryForeground} />
 
-            <Text className="text-sm font-semibold text-primary-foreground">
-              Create deck
-            </Text>
+            <Text className="text-primary-foreground text-sm font-semibold">Create deck</Text>
           </Pressable>
         </View>
       </BottomSheetScrollView>

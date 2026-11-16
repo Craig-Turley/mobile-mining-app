@@ -1,6 +1,9 @@
-import { AllowedModelField, TemplateFormData } from './anki-settings.types';
+import type { NoteFieldName, TemplateFormData } from '@/db/app/schema/models';
 
-export function createTemplateFormData(index: number, fields?: AllowedModelField[]): TemplateFormData {
+export function createTemplateFormData(
+  index: number,
+  fields: readonly NoteFieldName[] = []
+): TemplateFormData {
   return {
     id: `template-${Date.now()}-${index}`,
     name: `Template ${index + 1}`,
@@ -8,7 +11,7 @@ export function createTemplateFormData(index: number, fields?: AllowedModelField
     backFields: [],
     rule: {
       mode: 'any',
-      fields: fields ? fields.map(field => field.name) : [],
+      fields: [...fields],
     },
   };
 }

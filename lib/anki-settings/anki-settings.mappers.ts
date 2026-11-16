@@ -1,5 +1,6 @@
 import { Deck, Model } from 'genanki-ts';
-import { AllowedModelField, DeckFormData, ModelFormData } from './anki-settings.types';
+import type { DeckFormData } from '@/db/app/schema/decks';
+import type { AllowedModelField, ModelFormData } from '@/db/app/schema/models';
 import { buildReqs, buildTemplates } from './anki-settings.builders';
 import { DEFAULT_CSS } from './anki-settings.constants';
 

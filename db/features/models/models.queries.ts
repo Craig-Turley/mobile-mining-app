@@ -1,7 +1,7 @@
 import { eq, inArray, sql } from 'drizzle-orm';
 import { appDb } from '@/db/app/client';
 import { models } from '@/db/app/schema/models';
-import { type ModelFormData } from '@/lib/anki-settings';
+import type { ModelFormData } from '@/db/app/schema/models';
 
 export type UpsertModelInput = {
   applicationId?: number;

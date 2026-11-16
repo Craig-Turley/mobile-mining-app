@@ -11,14 +11,13 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { cssInterop } from 'nativewind';
 import { useAppTheme } from '@/theme/theme-provider';
-import {
-  ModelFields,
+import { ModelFields, createTemplateFormData } from '@/lib/anki-settings';
+import type {
+  StoredModel,
   ModelFormData,
   AllowedModelField,
-  ModelFieldName,
-  createTemplateFormData,
-} from '@/lib/anki-settings';
-import { StoredModel } from '@/db/app/schema/models';
+  NoteFieldName,
+} from '@/db/app/schema/models';
 import { useMutation } from '@/db/hooks/use-mutation';
 import { upsertModelQuery } from '@/db/features/models/models.queries';
 import { NOPMutationMapper } from '@/db/hooks/use-app-live-query';
@@ -37,14 +36,17 @@ cssInterop(Ionicons, {
   },
 });
 
-interface ScreenContentProps { }
+interface ScreenContentProps {}
 
 export const ModelCreateScreen: React.FC<ScreenContentProps> = () => {
   const { editModelFormData } = useLocalSearchParams<{
     editModelFormData?: string;
   }>();
 
-  const { mutate: upsertModel, isPending: isUpserting } = useMutation(upsertModelQuery, NOPMutationMapper);
+  const { mutate: upsertModel, isPending: isUpserting } = useMutation(
+    upsertModelQuery,
+    NOPMutationMapper
+  );
   const parsedEditModelFormData = useMemo(() => {
     if (editModelFormData === undefined) return undefined;
 
@@ -64,10 +66,15 @@ export const ModelCreateScreen: React.FC<ScreenContentProps> = () => {
       : ModelFields.map(({ name }) => ({ name })),
     templates: parsedEditModelFormData
       ? parsedEditModelFormData.modelFormData.templates
-      : [createTemplateFormData(0, ModelFields.map(({ name }) => ({ name })))],
+      : [
+          createTemplateFormData(
+            0,
+            ModelFields.map(({ name }) => name)
+          ),
+        ],
   }));
 
-  const availableFields = form.fields.map((field) => field.name) as readonly ModelFieldName[];
+  const availableFields = form.fields.map((field) => field.name);
 
   return (
     <>
@@ -131,15 +138,15 @@ export const ModelCreateScreen: React.FC<ScreenContentProps> = () => {
             availableFields={ModelFields}
             currentFields={form.fields}
             setModelFields={(fields: AllowedModelField[]) => {
-              const allowedFieldNames = new Set<ModelFieldName>(fields.map((field) => field.name));
+              const allowedFieldNames = new Set<NoteFieldName>(fields.map((field) => field.name));
 
               setForm((currentForm) => ({
                 ...currentForm,
                 fields,
                 templates: currentForm.templates.map((template) => ({
                   ...template,
-                  frontFields: template.frontFields.filter((fieldName) =>
-                    allowedFieldNames.has(fieldName)
+                  frontFields: template.frontFields.filter(
+                    (fieldName) => fieldName !== 'FrontSide' && allowedFieldNames.has(fieldName)
                   ),
                   backFields: template.backFields.filter(
                     (fieldName) => fieldName === 'FrontSide' || allowedFieldNames.has(fieldName)
@@ -155,7 +162,7 @@ export const ModelCreateScreen: React.FC<ScreenContentProps> = () => {
             }}
           />
           <ModelTemplatesSection
-            availableFields={[...availableFields, 'FrontSide']}
+            availableFields={availableFields}
             templates={form.templates}
             setModelTemplates={(templates) => {
               setForm((currentForm) => ({

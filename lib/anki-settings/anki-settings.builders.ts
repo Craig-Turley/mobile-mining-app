@@ -1,7 +1,8 @@
 import { CardTemplate, ModelField, ModelRequirement } from 'genanki-ts';
-import { ModelElementsHTML, ModelFieldName, TemplateFormData } from './anki-settings.types';
+import type { TemplateFieldName, TemplateFormData } from '@/db/app/schema/models';
+import { ModelElementsHTML } from './anki-settings.types';
 
-function formatHTML(fields: ModelFieldName[]): string {
+function formatHTML(fields: TemplateFieldName[]): string {
   const fieldsSet = new Set(fields);
 
   const content = ModelElementsHTML.filter(({ name }) => fieldsSet.has(name))

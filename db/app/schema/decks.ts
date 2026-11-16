@@ -1,7 +1,12 @@
 import { sql } from 'drizzle-orm';
 import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
-import { DeckFormData } from '@/lib/anki-settings';
+export type DeckFormData = {
+  applicationId?: number; // NOTE: this is the application identifer
+  id: number; // NOTE: this is the stable anki identifier
+  name: string;
+  description: string;
+};
 
 export const decks = sqliteTable('decks', {
   applicationId: integer('application_id').primaryKey({ autoIncrement: true }),

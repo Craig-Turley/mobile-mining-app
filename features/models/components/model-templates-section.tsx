@@ -6,16 +6,15 @@ import {
   BackSideModelFields,
   FrontSideModelFields,
   modelFieldLabels,
-  ModelFieldName,
   createTemplateFormData,
-  TemplateFormData,
 } from '@/lib/anki-settings';
+import type { NoteFieldName, TemplateFieldName, TemplateFormData } from '@/db/app/schema/models';
 import { useMemo, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/theme-provider';
 
 export interface ModelTemplatesSectionProps extends ViewProps {
-  availableFields: readonly ModelFieldName[];
+  availableFields: readonly NoteFieldName[];
   templates: TemplateFormData[];
   setModelTemplates: (tmpls: TemplateFormData[]) => void;
 }
@@ -39,9 +38,9 @@ export default function ModelTemplatesSection({
     const nextTemplates = templates.map((template, index) =>
       index === currentTemplateIdx
         ? {
-          ...template,
-          ...updates,
-        }
+            ...template,
+            ...updates,
+          }
         : template
     );
 
@@ -50,7 +49,7 @@ export default function ModelTemplatesSection({
 
   const toggleCurrentTemplateField = (
     side: 'frontFields' | 'backFields',
-    field: ModelFieldName
+    field: TemplateFieldName
   ) => {
     if (!currentTemplate) {
       return;
@@ -68,7 +67,7 @@ export default function ModelTemplatesSection({
   };
 
   const addTemplate = () => {
-    const nextTemplate = createTemplateFormData(templates.length, availableFields.map((name) => ({ name })));
+    const nextTemplate = createTemplateFormData(templates.length, availableFields);
 
     setModelTemplates([...templates, nextTemplate]);
 
@@ -88,7 +87,7 @@ export default function ModelTemplatesSection({
   };
 
   const availableFieldSet = useMemo(
-    () => new Set<ModelFieldName>(availableFields),
+    () => new Set<TemplateFieldName>(availableFields),
     [availableFields]
   );
 
@@ -189,7 +188,7 @@ export default function ModelTemplatesSection({
 
         <View className="mt-4 flex-row flex-wrap gap-2">
           {availableBackFields.map((field) => {
-            const enabled = currentTemplate.backFields.includes(field.name) ?? false;
+            const enabled = currentTemplate?.backFields.includes(field.name) ?? false;
 
             return (
               <Pressable

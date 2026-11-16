@@ -1,6 +1,6 @@
 import type { StoredModel, StoredQueueItem } from '@/db/app/schema';
 import type { Entry } from '@/lib/entry';
-import type { AllowedModelField } from '@/lib/anki-settings';
+import type { AllowedModelField, NoteFieldName } from '@/db/app/schema/models';
 import type { PreparedAnkiNote } from '@/lib/genanki/anki-deck-builder';
 import type { MediaFile, NoteFieldValue } from 'genanki-ts';
 import { mapStoredModel } from '@/features/models/model.mappers';
@@ -33,7 +33,7 @@ export async function prepareAnkiNotes(
     const model = models.get(item.modelApplicationId);
     if (!model) throw new Error(`Queued card references missing model ${item.modelApplicationId}.`);
     const entry = item.entry;
-    const fields: Partial<Record<AllowedModelField['name'], NoteFieldValue>> = {};
+    const fields: Partial<Record<NoteFieldName, NoteFieldValue>> = {};
     try {
       for (const field of model.flds) {
         switch (field.name) {
@@ -42,8 +42,6 @@ export async function prepareAnkiNotes(
             break;
           case 'reading':
             fields.reading = escapeHtml(entry.reading);
-            break;
-          case 'FrontSide':
             break;
           case 'glossary': {
             const css = styles.get(entry.dictionary);
