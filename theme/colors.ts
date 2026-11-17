@@ -1,4 +1,37 @@
-export const lightColors = {
+
+export type ColorTokens = {
+  background: string;
+  foreground: string;
+  surface: string;
+  surfaceElevated: string;
+  card: string;
+  cardForeground: string;
+  popover: string;
+  popoverForeground: string;
+  primary: string;
+  primaryMuted: string;
+  primaryForeground: string;
+  secondary: string;
+  secondaryForeground: string;
+  muted: string;
+  mutedForeground: string;
+  accent: string;
+  accentForeground: string;
+  destructive: string;
+  destructiveForeground: string;
+  border: string;
+  input: string;
+  ring: string;
+  jp: string;
+  jpMuted: string;
+  posNoun: string;
+  posVerb: string;
+  posAdj: string;
+  posParticle: string;
+  posAdv: string;
+}
+
+export const lightColors: ColorTokens = {
   background: 'rgb(247, 248, 252)',
   foreground: 'rgb(9, 11, 18)',
 
@@ -41,7 +74,7 @@ export const lightColors = {
   posAdv: 'rgb(169, 63, 151)',
 };
 
-export const darkColors = {
+export const darkColors: ColorTokens = {
   background: 'rgb(11, 13, 20)',
   foreground: 'rgb(246, 245, 241)',
 
@@ -84,5 +117,4 @@ export const darkColors = {
   posAdv: 'rgb(225, 139, 218)',
 };
 
-export type ColorTokens = typeof lightColors;
 export type ThemeName = 'light' | 'dark';
