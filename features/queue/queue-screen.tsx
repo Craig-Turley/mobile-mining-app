@@ -14,10 +14,10 @@ import { Button } from '@/components/ui/button';
 import { AnchoredMenu, AnchoredMenuItem, AnchoredMenuTrigger } from '@/components/ui/anchored-menu';
 import { cn } from '@/utils/cn';
 import { QueueToolbar } from './components/queue-toolbar';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CustomExportModal } from './components/custom-export-modal';
 import { exportQueueToAnki } from './lib/export-to-anki';
 import { clearQueue } from './lib/clear-queue-alert';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 cssInterop(Ionicons, {
   className: {
@@ -30,7 +30,6 @@ cssInterop(Ionicons, {
 
 export const QueueScreen: React.FC = () => {
   const { data: queuedItems, isLoading } = useAppLiveQuery(allQueueItemsQuery(), NOPQueryMapper);
-  const insets = useSafeAreaInsets();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -52,42 +51,40 @@ export const QueueScreen: React.FC = () => {
     <View className="flex-1 bg-background">
       <QueueToolbar />
       {isLoading ? (
-        <View>
+        <View className="flex-1">
           <Text className="text-foreground">Loading...</Text>
         </View>
       ) : (
-        <>
-          <FlatList
-            data={queuedItems}
-            contentInsetAdjustmentBehavior="automatic"
-            className="flex-1"
-            contentContainerClassName="gap-3 p-3"
-            renderItem={({ item }) => <QueueRow queItem={item} />}
-            keyExtractor={(item) => String(item.applicationId)}
-          />
-          <View className="shrink-0 bg-background px-4 pb-4 pt-3">
-            <Button
-              label="Export"
-              onPress={async () => {
-                setIsModalOpen(true);
-              }}
-              disabled={queuedItems.length === 0 || isExporting}
-              loading={isExporting}
-              style={{
-                marginBottom: insets.bottom,
-              }}
-            />
-          </View>
-
-          <CustomExportModal
-            visible={isModalOpen}
-            initialDeckApplicationId={0}
-            isSubmitting={isExporting}
-            onClose={() => setIsModalOpen(false)}
-            onSubmit={exportFunc}
-          />
-        </>
+        <FlatList
+          data={queuedItems}
+          contentInsetAdjustmentBehavior="automatic"
+          className="flex-1"
+          contentContainerClassName="gap-3 p-3"
+          renderItem={({ item }) => <QueueRow queItem={item} />}
+          keyExtractor={(item) => String(item.applicationId)}
+        />
       )}
+      {/* NativeTabs already applies the bottom safe area on Android. */}
+      <SafeAreaView style={{ flex: 0 }} >
+        <View className="shrink-0 bg-background px-4 pb-4 pt-3">
+          <Button
+            label="Export"
+            onPress={async () => {
+              setIsModalOpen(true);
+            }}
+            disabled={isLoading || queuedItems.length === 0 || isExporting}
+            loading={isExporting}
+          />
+        </View>
+      </SafeAreaView>
+
+      <CustomExportModal
+        visible={isModalOpen}
+        initialDeckApplicationId={0}
+        isSubmitting={isExporting}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={exportFunc}
+      />
     </View>
   );
 };
