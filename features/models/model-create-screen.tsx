@@ -36,7 +36,7 @@ cssInterop(Ionicons, {
   },
 });
 
-interface ScreenContentProps {}
+interface ScreenContentProps { }
 
 export const ModelCreateScreen: React.FC<ScreenContentProps> = () => {
   const { editModelFormData } = useLocalSearchParams<{
@@ -67,11 +67,11 @@ export const ModelCreateScreen: React.FC<ScreenContentProps> = () => {
     templates: parsedEditModelFormData
       ? parsedEditModelFormData.modelFormData.templates
       : [
-          createTemplateFormData(
-            0,
-            ModelFields.map(({ name }) => name)
-          ),
-        ],
+        createTemplateFormData(
+          0,
+          ModelFields.map(({ name }) => name)
+        ),
+      ],
   }));
 
   const availableFields = form.fields.map((field) => field.name);
@@ -119,7 +119,7 @@ export const ModelCreateScreen: React.FC<ScreenContentProps> = () => {
       />
 
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        className='flex-1 my-4'
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView
           className="flex-1 bg-background"
@@ -153,9 +153,19 @@ export const ModelCreateScreen: React.FC<ScreenContentProps> = () => {
                   ),
                   rule: {
                     ...template.rule,
-                    fields: template.rule.fields.filter((fieldName) =>
-                      allowedFieldNames.has(fieldName)
-                    ),
+                    fields: [
+                      ...template.rule.fields.filter((fieldName) =>
+                        fields.some((field) => field.name === fieldName)
+                      ),
+                      ...fields
+                        .filter(
+                          (field) =>
+                            !currentForm.fields.some(
+                              (previousField) => previousField.name === field.name
+                            )
+                        )
+                        .map((field) => field.name),
+                    ],
                   },
                 })),
               }));
