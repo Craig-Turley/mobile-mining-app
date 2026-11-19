@@ -37,8 +37,8 @@ export default function AppTabs() {
         <NativeTabs.Trigger.Label>Queue</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf="tray.full" drawable="custom_android_drawable" />
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="(anki-settings)" contentStyle={appearance.contentStyle}>
-        <NativeTabs.Trigger.Label>Anki</NativeTabs.Trigger.Label>
+      <NativeTabs.Trigger name="(configurations)" contentStyle={appearance.contentStyle}>
+        <NativeTabs.Trigger.Label>Configurations</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf="gear" drawable="custom_android_drawable" />
       </NativeTabs.Trigger>
     </NativeTabs>

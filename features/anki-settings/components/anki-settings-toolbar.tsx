@@ -8,7 +8,7 @@ export function AnkiSettingsToolbar() {
     <>
       <Stack.Screen
         options={{
-          title: 'Anki Settings',
+          title: 'Configurations',
           headerLargeTitle: false,
           headerTitleStyle: {
             color: colors.foreground,
