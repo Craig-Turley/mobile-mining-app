@@ -117,4 +117,91 @@ export const darkColors: ColorTokens = {
   posAdv: 'rgb(225, 139, 218)',
 };
 
+// export const lightColors: ColorTokens = {
+//   background: '#eff1f5',
+//   foreground: '#4c4f69',
+//
+//   surface: '#e6e9ef',
+//   surfaceElevated: '#ccd0da',
+//
+//   card: '#e6e9ef',
+//   cardForeground: '#4c4f69',
+//
+//   popover: '#eff1f5',
+//   popoverForeground: '#4c4f69',
+//
+//   primary: '#8839ef',
+//   primaryMuted: '#ea76cb',
+//   primaryForeground: '#eff1f5',
+//
+//   secondary: '#dce0e8',
+//   secondaryForeground: '#4c4f69',
+//
+//   muted: '#ccd0da',
+//   mutedForeground: '#6c6f85',
+//
+//   accent: '#1e66f5',
+//   accentForeground: '#eff1f5',
+//
+//   destructive: '#d20f39',
+//   destructiveForeground: '#eff1f5',
+//
+//   border: '#bcc0cc',
+//   input: '#ccd0da',
+//   ring: '#8839ef',
+//
+//   jp: '#4c4f69',
+//   jpMuted: '#6c6f85',
+//
+//   posNoun: '#1e66f5',
+//   posVerb: '#40a02b',
+//   posAdj: '#8839ef',
+//   posParticle: '#df8e1d',
+//   posAdv: '#179299',
+// };
+//
+// export const darkColors: ColorTokens = {
+//   background: '#1e1e2e',
+//   foreground: '#cdd6f4',
+//
+//   surface: '#181825',
+//   surfaceElevated: '#313244',
+//
+//   card: '#313244',
+//   cardForeground: '#cdd6f4',
+//
+//   popover: '#313244',
+//   popoverForeground: '#cdd6f4',
+//
+//   primary: '#cba6f7',
+//   primaryMuted: '#b4befe',
+//   primaryForeground: '#1e1e2e',
+//
+//   secondary: '#45475a',
+//   secondaryForeground: '#cdd6f4',
+//
+//   muted: '#45475a',
+//   mutedForeground: '#a6adc8',
+//
+//   accent: '#89b4fa',
+//   accentForeground: '#1e1e2e',
+//
+//   destructive: '#f38ba8',
+//   destructiveForeground: '#1e1e2e',
+//
+//   border: '#585b70',
+//   input: '#45475a',
+//   ring: '#cba6f7',
+//
+//   jp: '#cdd6f4',
+//   jpMuted: '#a6adc8',
+//
+//   posNoun: '#89b4fa',
+//   posVerb: '#a6e3a1',
+//   posAdj: '#cba6f7',
+//   posParticle: '#f9e2af',
+//   posAdv: '#94e2d5',
+// };
+
+
 export type ThemeName = 'light' | 'dark';
