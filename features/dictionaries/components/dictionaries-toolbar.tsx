@@ -1,5 +1,5 @@
 import { Alert } from 'react-native';
-import { getDictionaryDirectory } from '@/lib/file-system';
+import { getDictionaryFile } from '@/lib/file-system';
 import { useRef, useState } from 'react';
 import { useAppTheme } from '@/theme/theme-provider';
 import { Stack } from 'expo-router';
@@ -26,9 +26,9 @@ export function DictionariesToolbar() {
     picking.current = true;
     setIsPicking(true);
     try {
-      const directory = await getDictionaryDirectory();
-      if (!directory.exists) throw new Error('Dictionary not detected');
-      await mutate(directory.uri);
+      const file = await getDictionaryFile();
+      if (!file) return;
+      await mutate(file.uri);
       await attachAndBuildViews();
       initializeCssCache(await getDictionariesQuery());
     } catch (e) {

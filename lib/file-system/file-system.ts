@@ -10,8 +10,18 @@ type FileData = {
   name?: string;
 };
 
-export async function getDictionaryDirectory() {
-  return Directory.pickDirectoryAsync();
+export async function getDictionaryFile() {
+  const result = await DocumentPicker.getDocumentAsync({
+    type: ['application/zip', 'application/x-zip-compressed'],
+    copyToCacheDirectory: false,
+    multiple: false,
+  });
+  if (result.canceled) return;
+  const file = result.assets[0];
+  if (!file.name.toLowerCase().endsWith('.zip')) {
+    throw new Error('Please select a dictionary ZIP file');
+  }
+  return file;
 }
 
 export async function getFile({ src }: { src: 'file' | 'photos' }) {

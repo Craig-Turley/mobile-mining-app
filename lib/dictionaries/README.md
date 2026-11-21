@@ -1,8 +1,10 @@
 # Native dictionary rendering
 
-The app installs unpacked SQLite dictionary bundles from
+The app installs ZIP archives of SQLite dictionary bundles from
 `yomitan-dictionary-transformer`. The Dictionaries toolbar's **+** action opens the
-folder picker directly. Select a package containing:
+file picker. Select a `.zip` containing these files at the archive root or inside
+one enclosing folder. Archives with multiple possible bundles are rejected;
+macOS `__MACOSX` metadata is not treated as a bundle:
 
 ```text
 term_bank.db          # Prebuilt terms table and lookup indexes
@@ -23,10 +25,15 @@ legacy JSON-bank packages must be converted by the transformer before installati
 
 1. The Rust transformer builds the standalone terms database, preserves the
    semantic/source definition tree in `definitions_json`, and normalizes CSS.
-2. `import-dictionary.ts` validates the bundle manifest and declared files, copies
-   the complete folder into app-owned storage, and registers dictionary metadata and
-   CSS in the main database. The prebuilt database is copied unchanged. Failed copying
-   or registration removes the new destination; the selected source folder is retained.
+2. `import-dictionary.ts` copies the selected ZIP into app-owned staging storage,
+   checks archive paths and available extraction space, and extracts with
+   `react-native-zip-archive`, without loading the archive into JavaScript memory.
+   It validates the manifest and declared files, moves the extracted folder into
+   place without a second full copy, and registers metadata and CSS. The prebuilt
+   database is unchanged; the selected source ZIP is retained. Staging is removed
+   after success or failure and before dictionaries are attached on the next launch.
+   A receipt written before the move lets startup remove an unregistered destination
+   after a force-close, while preserving a successfully registered dictionary.
 3. `attachAndBuildViews()` attaches installed `term_bank.db` files on the main lookup
    connection at startup and constructs the temporary `term_bank` union view. Lookups
    read this view. Uninstall removes the metadata, rebuilds the attachments/view, and
@@ -85,6 +92,17 @@ maintain a writable terms table in the main database.
 
 Anki serialization and queue integration are outside this rendering pipeline.
 
+## ZIP installation
+
+The native ZIP dependency requires rebuilding the development client/app; a Metro
+reload is not enough, and Expo Go is not supported. Rebuild using `npm run ios` or
+`npm run android` (install iOS pods as required by your native build workflow).
+
+Allow storage for both the ZIP and its extracted contents. Extraction failures,
+including running out of storage, are cleaned up normally; force-closed imports
+are cleaned up on the next successful launch, not while the app is stopped.
+Raw Yomitan ZIPs still require conversion before installation.
+
 ## Verification
 
 From the app directory:
@@ -100,7 +118,10 @@ DICTIONARY_TEST_BUNDLE=/path/to/dictionary-bundle \
 
 The bundle tests use real SQLite files and a filesystem adapter, verify that copied
 databases remain byte-for-byte unchanged, and exercise union lookups and detachment
-before uninstall. They do not convert JSON banks or extract archives. Native renderer
+before uninstall. ZIP tests use a JavaScript extraction adapter and cover invalid
+archives, failed extraction/moving/registration, and interrupted-install recovery.
+They do not verify native extraction; test a large real ZIP on iOS and Android,
+including force-closing during import and reopening. Native renderer
 tests stub host components and do not verify device measurements. Visual acceptance
 on iOS/Android, narrow widths, larger fonts and both themes is still required, along
 with the additional real dictionaries when their samples are available.
