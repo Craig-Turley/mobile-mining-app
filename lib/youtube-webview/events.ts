@@ -2,7 +2,7 @@ export type YoutubeWebviewEvent = WatchNavigation | TimedText | YoutubeWebviewEr
 
 type WatchNavigation = {
   tag: 'watch';
-  videoId: string;
+  videoId: string | null;
   url: string;
 };
 
@@ -10,7 +10,9 @@ type TimedText = {
   tag: 'timedtext';
   transport: 'fetch' | 'xhr';
   url: string;
-  videoId: string;
+  status: number;
+  responseUrl: string;
+  videoId: string | null;
   contentType: string | null;
   body: string;
 };

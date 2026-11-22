@@ -7,7 +7,7 @@ import {
 } from '@/lib/youtube-webview';
 import { YoutubeWebviewEvent } from '@/lib/youtube-webview/events';
 import { router, Stack } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { View, Text } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
@@ -16,6 +16,8 @@ export default function YoutubeBrowserScreen() {
   const insets = useSafeAreaInsets();
   const [videoId, setVideoId] = useState<string | undefined>(undefined);
   const [captions, setCaptions] = useState<YoutubeCaptions | undefined>(undefined);
+  const [captionError, setCaptionError] = useState<string | undefined>(undefined);
+  const activeVideoId = useRef<string | undefined>(undefined);
 
   return (
     <>
@@ -201,6 +203,8 @@ export default function YoutubeBrowserScreen() {
                         tag: "timedtext",
                         transport: "fetch",
                         url: parsed.url,
+                        status: clonedResponse.status,
+                        responseUrl: clonedResponse.url,
                         videoId: parsed.videoId,
                         contentType:
                           clonedResponse.headers.get(
@@ -273,6 +277,8 @@ export default function YoutubeBrowserScreen() {
                             tag: "timedtext",
                             transport: "xhr",
                             url: parsed.url,
+                            status: this.status,
+                            responseUrl: this.responseURL,
                             videoId:
                               parsed.videoId,
                             contentType:
@@ -310,10 +316,53 @@ export default function YoutubeBrowserScreen() {
             try {
               const webviewEvent = JSON.parse(event.nativeEvent.data) as YoutubeWebviewEvent;
               switch (webviewEvent.tag) {
-                case 'watch':
-                  setVideoId(webviewEvent.videoId);
+                case 'watch': {
+                  const nextVideoId = webviewEvent.videoId?.trim() || undefined;
+                  if (activeVideoId.current !== nextVideoId) {
+                    setCaptions(undefined);
+                    setCaptionError(undefined);
+                  }
+                  activeVideoId.current = nextVideoId;
+                  setVideoId(nextVideoId);
                   break;
+                }
                 case 'timedtext':
+                  if (!webviewEvent.videoId || webviewEvent.videoId !== activeVideoId.current) {
+                    console.warn('Ignoring YouTube captions for a different video:', {
+                      activeVideoId: activeVideoId.current,
+                      captionVideoId: webviewEvent.videoId,
+                    });
+                    break;
+                  }
+                  setCaptionError(undefined);
+                  console.info('YouTube caption response:', {
+                    videoId: webviewEvent.videoId,
+                    transport: webviewEvent.transport,
+                    contentType: webviewEvent.contentType,
+                    bodyLength: webviewEvent.body.length,
+                    status: webviewEvent.status,
+                    // Do not log signed caption URL query parameters.
+                    responsePath: webviewEvent.responseUrl?.split('?')[0],
+                  });
+                  if (webviewEvent.status === 429) {
+                    setCaptionError(
+                      'YouTube is temporarily blocking caption requests (429). Wait before trying again; repeatedly toggling captions may prolong the block.'
+                    );
+                    break;
+                  }
+                  if (webviewEvent.status >= 400) {
+                    setCaptionError(
+                      `YouTube could not load captions (HTTP ${webviewEvent.status}). Try again later.`
+                    );
+                    break;
+                  }
+                  if (webviewEvent.body.trimStart().startsWith('<')) {
+                    console.warn('YouTube returned markup instead of caption JSON:', {
+                      bodyStart: webviewEvent.body.slice(0, 300),
+                      bodyEnd: webviewEvent.body.slice(-300),
+                    });
+                    throw new Error('Expected caption JSON but received markup from YouTube');
+                  }
                   const body = JSON.parse(webviewEvent.body) as {
                     events?: YoutubeCaptionEvent[];
                   };
@@ -328,19 +377,26 @@ export default function YoutubeBrowserScreen() {
                   setCaptions({ captions, videoId });
                   break;
                 case 'reset':
+                  activeVideoId.current = undefined;
                   setVideoId(undefined);
                   setCaptions(undefined);
+                  setCaptionError(undefined);
                   break;
                 case 'error':
                   throw new Error(webviewEvent.message);
               }
-            } catch {
-              // console.log("WebView raw message error:", e, event.nativeEvent.data);
+            } catch (error) {
+              console.warn('YouTube caption capture failed:', error);
+              if (activeVideoId.current) {
+                setCaptionError(
+                  `YouTube captions could not be read. ${error instanceof Error ? error.message : String(error)}`
+                );
+              }
             }
           }}
         />
 
-        {videoId !== undefined && (
+        {!!videoId && (
           <View
             className="absolute bottom-4 left-0 right-0 px-4"
             style={{
@@ -350,6 +406,13 @@ export default function YoutubeBrowserScreen() {
               <Text className="text-lg font-bold text-foreground">
                 {captions?.videoId !== videoId ? 'Enable Captions to Watch' : 'Watch Now'}
               </Text>
+              {captions?.videoId !== videoId && (
+                <Text className="text-sm text-foreground">
+                  {captionError
+                    ? `${captionError} (enabled VPN might cause your request to be blocked by YouTube)`
+                    : 'Waiting for caption data from YouTube. Turn on CC in the video.'}
+                </Text>
+              )}
               <Button
                 label="Play"
                 disabled={captions?.videoId !== videoId}
