@@ -12,7 +12,6 @@ import { useVideoPlayerContext } from './video-screen-context';
 type SubtitlePlayerContextValue = {
   subtitles: SubtitleCue[];
   activeSubtitleIndex: number;
-  activeSubtitle: SubtitleCue | null;
 
   nextSubtitle: () => void;
   previousSubtitle: () => void;
@@ -60,7 +59,6 @@ export function SubtitlePlayerProvider({ children }: PropsWithChildren) {
     () => ({
       subtitles,
       activeSubtitleIndex,
-      activeSubtitle,
 
       nextSubtitle,
       previousSubtitle,
@@ -72,7 +70,6 @@ export function SubtitlePlayerProvider({ children }: PropsWithChildren) {
     [
       subtitles,
       activeSubtitleIndex,
-      activeSubtitle,
       nextSubtitle,
       previousSubtitle,
       replayCurrentSubtitle,

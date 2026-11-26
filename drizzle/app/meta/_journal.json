@@ -5,36 +5,8 @@
     {
       "idx": 0,
       "version": "6",
-      "when": 1793891995291,
-      "tag": "0000_late_the_hand",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1794120681111,
-      "tag": "0001_strange_bromley",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1794493794631,
-      "tag": "0002_dazzling_bulldozer",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "6",
-      "when": 1794494834775,
-      "tag": "0003_zippy_deathstrike",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "6",
-      "when": 1794840034438,
-      "tag": "0004_rename_model_form_data",
+      "when": 1795698931232,
+      "tag": "0000_curly_la_nuit",
       "breakpoints": true
     }
   ]

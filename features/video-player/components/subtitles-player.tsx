@@ -97,6 +97,7 @@ export function LocalSubtitlesPlayer() {
       try {
         const file = await openFile(subtitleFile.relative_path);
         const parsed = parseSubtitles(file);
+        for (let i = 0; i < 10; i++) { console.log(parsed[i]) };
 
         if (cancelled) return;
 

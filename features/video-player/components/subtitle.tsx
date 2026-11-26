@@ -62,7 +62,7 @@ export default function Subtitle({ cue, active, onLayout }: SubtitleProps) {
   };
 
   return (
-    <Pressable onPress={() => seekTo(cue.start)}>
+    <Pressable onPress={() => seekTo(Math.ceil(cue.start) + 0.01)}>
       <View
         className={cn(
           'my-3 w-full gap-1 rounded-lg border-4 border-solid border-muted p-2 py-4',

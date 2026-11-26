@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "aac78ba2-9219-4674-894f-76b8aaf73d6a",
+  "id": "0dfc8e75-df0d-4e1f-9bc3-112d8b021727",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "dictionaries": {
@@ -88,7 +88,9 @@
       "indexes": {
         "dictionaries_title_unique": {
           "name": "dictionaries_title_unique",
-          "columns": ["title"],
+          "columns": [
+            "title"
+          ],
           "isUnique": true
         }
       },

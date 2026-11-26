@@ -110,7 +110,7 @@ function LocalMediaPlayerProvider({
 
   const seekTo = useCallback(
     async (seconds: number) => {
-      player.currentTime = seconds;
+      player.currentTime = Math.ceil(seconds) + 0.01;
     },
     [player]
   );
@@ -159,7 +159,7 @@ function YoutubeMediaPlayerProvider({
   }, []);
 
   const seekTo = useCallback(async (seconds: number) => {
-    playerRef.current?.seekTo(seconds, true);
+    playerRef.current?.seekTo(Math.ceil(seconds) + 0.01, true);
   }, []);
 
   const onChangeState = useCallback((state: string) => {
